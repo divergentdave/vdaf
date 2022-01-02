@@ -1,0 +1,1256 @@
+{
+  "magic": "E!vIA5L86J2I",
+  "timestamp": "2022-01-02T00:05:09.683169+00:00",
+  "repo": "cjpatton/vdaf",
+  "labels": [
+    {
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    },
+    {
+      "name": "documentation",
+      "description": "Improvements or additions to documentation",
+      "color": "0075ca"
+    },
+    {
+      "name": "duplicate",
+      "description": "This issue or pull request already exists",
+      "color": "cfd3d7"
+    },
+    {
+      "name": "enhancement",
+      "description": "New feature or request",
+      "color": "a2eeef"
+    },
+    {
+      "name": "help wanted",
+      "description": "Extra attention is needed",
+      "color": "008672"
+    },
+    {
+      "name": "good first issue",
+      "description": "Good for newcomers",
+      "color": "7057ff"
+    },
+    {
+      "name": "invalid",
+      "description": "This doesn't seem right",
+      "color": "e4e669"
+    },
+    {
+      "name": "question",
+      "description": "Further information is requested",
+      "color": "d876e3"
+    },
+    {
+      "name": "wontfix",
+      "description": "This will not be worked on",
+      "color": "ffffff"
+    }
+  ],
+  "issues": [
+    {
+      "number": 8,
+      "id": "I_kwDOGKuqOc4-qH_-",
+      "title": "Syntax: Use agg parameter for prepare-init only",
+      "url": "https://github.com/cjpatton/vdaf/issues/8",
+      "state": "CLOSED",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "This aggregation parameter isn't used anywhere but during the preparation phase. We may wind up wanting to specify a scheme that needs this, at which point we can add this back in. For now, removing this unnecessary joint will simplify the syntax.",
+      "createdAt": "2021-11-11T18:01:23Z",
+      "updatedAt": "2021-12-28T17:43:25Z",
+      "closedAt": "2021-12-28T17:43:25Z",
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "The aggregation parameter is used in hits in order to decode output shares and aggregate shares. Upon further reflection, it seems like we'll need something like this going forward.",
+          "createdAt": "2021-12-28T17:43:25Z",
+          "updatedAt": "2021-12-28T17:43:25Z"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "id": "I_kwDOGKuqOc4-qq61",
+      "title": "Can / should VDAF support DP shufflers?",
+      "url": "https://github.com/cjpatton/vdaf/issues/9",
+      "state": "OPEN",
+      "author": "csharrison",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Shuffle differential privacy (https://arxiv.org/pdf/1811.12469.pdf and many other papers) is a type of differential privacy where the privacy mechanism can be thought of as a composition of two pieces:\r\n1. A local randomizer applying some local noise to data (and stripping identifiers, etc)\r\n2. A central curator that takes as input a batch of client data and simply applies a permutation on it\r\n\r\nThe power of the shuffle DP is that the server-side mechanism is _simple_ and _general purpose_. The exact same shuffler can be used for different applications measuring different kinds of things. Privacy guarantees are based on two things:\r\n\r\n1. The level of local noise added to the data\r\n2. The number of clients that participate in a shuffle\r\n\r\nAt an intuitive level, the more reports you have, and the more noise is injected into the reports, the more a given client's input is \"hidden in the crowd\".\r\n\r\nIs this a good fit for VDAFs? Shuffling is conceptually a very simple task to ask a 2-party MPC protocol to do. I could imagine slotting this into the VDAF structure like:\r\n\r\n- Clients split their local data D into \"shares\" where Helper 1 gets Enc2(D) and Helper 2 gets Enc1(null). (Which helper gets the real message can be randomized). Note that nested encryption is used so that no helper can see any raw data before it is shuffled.\r\n- When each helper gets its batch of data, it will run it through a shuffle step, and send the shuffle results to the other helper\r\n- After the exchange, the helpers shuffle the exchanged batches one more time (ensuring all data is shuffled twice, once by each helper).\r\n- Helpers can then decrypt the data and share each shuffled batch to the collector\r\n\r\nPossible concerns:\r\n\r\n- In the simple example above, helpers learn a shuffled version of the true data (i.e. a DP release). The protocol is not zero-knowledge. This could probably be fixed, there is no need for helpers to learn any raw data.\r\n- We rely exclusively on DP for the protection. Whether this can be called \"aggregation\" is maybe subject for debate. Certainly you can say that (if the batches are large enough, with enough noise), that no individual's data can be learned\r\n- The splitting of shares and helpers independently shuffling partial batches is a bit awkward. Probably the ideal mechanism would be for clients to send all data to Helper 1, which shuffles and sends to Helper 2, which sends data to the collector. Parallel shuffling buys us nothing.\r\n- Some shuffle protocols may want some kind of \"label\" in the clear, with minimum batch sizes per label.\r\n\r\nAnyways, thoughts appreciated! Shuffling can be a simple and effective way to achieve good privacy with very simple mechanisms, but it doesn't fit so well into VDAFs.\r\n\r\ncc @schoppmp ",
+      "createdAt": "2021-11-11T21:24:52Z",
+      "updatedAt": "2021-11-16T18:36:01Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Interesting idea! This does indeed sound like a practical way to get good privacy. Even without DP, you get unlinkability of measurements to the client that sent them. This is basically what a mixnet does.\r\n\r\n* From a syntax perspective, this kind of construction doesn't fit because it requires the aggregation phase to be interactive. Currently the VDAF syntax permits interaction only during the preparation phase. More to the point, shuffling requires `O(n)` space to compute the aggregate result, where `n` is the number of measurements. On the other hand, evaluating the prio3 or hits VDAF requires just `O(1)` space.\r\n* From a security perspective, unlinkability of measurements to senders is useful, but is weaker than what we hope to achieve for, say, prio3 or hits, which is that they learn only the aggregate result. Perhaps there's a way to patch the scheme to prevent leaking the set of measurements, as you suggest. But suppose we manage to ensure that all the aggregators learn is the aggregate result: then what does shuffling buy us?\r\n* Broadening our perspective a bit, consider that VDAFs are *special purpose*  in the sense that a particular VDAF is only suitable for as particular (class of) aggregation functions. On the other hand, the shuffling scheme you're proposing is *general purpose*: pretty much any aggregation function can be computed this way, you just need to be able to define a \"null\" input. I think the purpose of this document should be to standardize an interface between general purpose \"wrapper\" protocols, like PPM, to special purpose schemes that are all ensure some baseline notion of security.\r\n\r\nMy own conclusion is that this protocol shape isn't appropriate for the VDAF document, however this may well be in-scope for what the PPM working group does.\r\n\r\nWhat do you think @bifurcation?",
+          "createdAt": "2021-11-15T17:55:34Z",
+          "updatedAt": "2021-11-15T17:55:34Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "By the way, I'm reading https://eprint.iacr.org/2021/1490.pdf right now. This protocol seems to have some shuffling, but also seems to aim for a security property stronger than unlinkability. I think if we can achieve the same security for this protocol as for prio3/hits, I think it's worth considering including it here.",
+          "createdAt": "2021-11-15T19:42:22Z",
+          "updatedAt": "2021-11-15T19:42:22Z"
+        },
+        {
+          "author": "csharrison",
+          "authorAssociation": "NONE",
+          "body": "Thanks @cjpatton , this makes sense to me. A few quick responses below:\r\n\r\n> From a security perspective, unlinkability of measurements to senders is useful, but is weaker than what we hope to achieve for, say, prio3 or hits, which is that they learn only the aggregate result. Perhaps there's a way to patch the scheme to prevent leaking the set of measurements, as you suggest. But suppose we manage to ensure that all the aggregators learn is the aggregate result: then what does shuffling buy us?\r\n\r\nOne thing shuffling buys you is flexibility. Let's say all my users input data in [0, 10]. You could imagine a couple of different ways of aggregating this data, e.g. reporting the sum, median, percentiles, etc. With a shuffled version of the data, you can compute all of these on the collector side without embedding the computations in the aggregators.\r\n\r\nThere is also flexibility in terms of data used. In principle (as long as you trust the clients), the aggregators can just be shuffling opaque bytes. Clients could update to submit different kinds of data without any behavior update needed on the aggregator side. For instance, rather than shuffling integers they could shuffle sketches or some other data structure.\r\n\r\n> By the way, I'm reading https://eprint.iacr.org/2021/1490.pdf right now. This protocol seems to have some shuffling, but also seems to aim for a security property stronger than unlinkability. I think if we can achieve the same security for this protocol as for prio3/hits, I think it's worth considering including it here.\r\n\r\nThis proposal is interesting but it isn't the same kind of general purpose shuffling I'm discussing here. That paper only discusses computing histograms.",
+          "createdAt": "2021-11-15T20:27:02Z",
+          "updatedAt": "2021-11-15T20:27:02Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "I agree the flexibility is attractive. My point about shuffling alone doesn't prevent aggregators from learning the set of measurements. Indeed, this is what makes it so flexible!",
+          "createdAt": "2021-11-15T21:30:45Z",
+          "updatedAt": "2021-11-15T21:30:45Z"
+        },
+        {
+          "author": "csharrison",
+          "authorAssociation": "NONE",
+          "body": "> I agree the flexibility is attractive. My point about shuffling alone doesn't prevent aggregators from learning the set of measurements. Indeed, this is what makes it so flexible!\r\n\r\nOh sorry I missed this point. It should be easy to ensure that the shuffled data is not visible to the aggregators if they don't collude with the collector - just ensure all the data is also encrypted to the collector's key. The requirement is just that the MPC shuffles opaque blobs.",
+          "createdAt": "2021-11-15T21:58:47Z",
+          "updatedAt": "2021-11-15T21:58:47Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Right, but the collector would see the set of measurements in the clear, right? All the aggregators have done is permuted them.",
+          "createdAt": "2021-11-15T22:18:58Z",
+          "updatedAt": "2021-11-15T22:18:58Z"
+        },
+        {
+          "author": "csharrison",
+          "authorAssociation": "NONE",
+          "body": "The collector sees the set of measurements \"in the clear\", but the technique is designed to be combined with local noise so it isn't really accurate to say that the final release contains the all of the original measurements.\r\n\r\n",
+          "createdAt": "2021-11-16T18:29:12Z",
+          "updatedAt": "2021-11-16T18:29:12Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Yes, true enough!",
+          "createdAt": "2021-11-16T18:36:01Z",
+          "updatedAt": "2021-11-16T18:36:01Z"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "id": "I_kwDOGKuqOc4-1Uh5",
+      "title": "Is Masked LARk a (V)DAF?",
+      "url": "https://github.com/cjpatton/vdaf/issues/10",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "[This paper](https://arxiv.org/pdf/2110.14794.pdf) describes a distributed computation of a gradient descent. We're given a set of `(x[i], y[i])` pairs, where `x[i]` is client `i`'s *feature* and `y[i]` is the corresponding *label*. From skimming the paper, my understanding is that stochastic gradient descent is computed iteratively as\r\n```\r\n\\theta_{j+1} = \\theta_j - \\eta * (f(x[1], y[1], \\theta_j) + ... + f(x[n], y[n], \\theta_j))\r\n```\r\nuntil we find a (locally) optimal model `\\theta_j`.  for a particular function `f`. (`\\eta` is a constant called the \"learning rate\".) What the paper shows is that each iteration can be computed by two aggregators who hold the plaintext features `x[1], ..., x[n]`, but only secret shares of the labels `y[1], ..., y[n]`. The features are kept privacy by adding DP.\r\n\r\nThis looks an awful lot like a distributed aggregation function:\r\n* measurement is a feature and label\r\n* aggregation parameter is the model `\\theta_j` from the previous step.\r\n* aggregate result is the model `\\theta_{j+1}` for the next step.\r\n\r\nAnd yet there are two important differences:\r\n1. The label is secret shared, but the feature is not. We can certainly formalize security in the usual way --- the aggregators learn nothing about the measurements beyond what they can deduce from their view of the protocol. But this definition isn't all that meaningful if the feature leaks a lot of information about the label.\r\n2. The output isn't verifiable. In particular, the current protocol appears to allow a client to submit bogus input shares and garble the output without being detected.\r\n\r\nAdding verifiability (i.e., solving (2)) seems quite feasible. I'm not sure how best to address (1). It might be worth reaching out to the papers' authors to see if they considered how they might keep the features secret.\r\n\r\n@csharrison I'm curious if you have thoughts here.",
+      "createdAt": "2021-11-15T22:17:30Z",
+      "updatedAt": "2021-11-15T22:17:30Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOGKuqOc4-5xna",
+      "title": "Syntax: Public preprocessing during the preparation phase",
+      "url": "https://github.com/cjpatton/vdaf/issues/11",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "For both prio3 and hits, each round of the preparation phase consists of a step of \"preprocessing\" of the previous round's messages. This preprocessing step is identical for all of the aggregators. In hits, for example, each aggregator begins each round by summing up the messages from the previous round. From Figure 15 in https://cjpatton.github.io/vdaf/draft-patton-cfrg-vdaf.html#name-preparation-3:\r\n```\r\n    ...\r\n    elif self.step == \"sketch round 1\" and len(inbound) == 2:\r\n      verifier_1 = Field[l].deocde_vec(inbound[0]) + \\             # ADD UP INPUT MESSAGES\r\n                   Field[l].deocde_vec(inbound[1])\r\n\r\n      verifier_share_2 = [\r\n        (verifier_1[0] * verifier_1[0] \\\r\n         - verifier_1[1] \\\r\n         - verifier_1[2]) * self.party_id \\\r\n        + A_share * verifer_1[0] \\\r\n        + B_share\r\n      ]\r\n\r\n      self.step = \"sketch round 2\"\r\n      return Field[l].encode_vec(verifier_share_2)\r\n\r\n    elif self.step == \"sketch round 2\" and len(inbound) == 2:\r\n      verifier_2 = Field[l].decode_vec(inbound[0]) + \\             # ADD UP INPUT MESSAGES\r\n                   Field[l].decode_vec(inbound[1])\r\n\r\n      if verifier_2 != 0: raise ERR_INVALID\r\n      return Field[l].encode_vec(self.output_share)\r\n   ...\r\n```\r\nThe essence of what's happening here is that, in each round, the aggregators are exchanging additive shares of a single message. prio3 is similar, although each message consists of an XOR-share of as byte string and an additive share of the FLP verifier. From Figure 10:\r\n```\r\n   ...\r\n   elif self.step == \"waiting\" and len(inbound) == SHARES:\r\n      k_joint_rand = zeros(KEY_SIZE)\r\n      verifier = vec_zeros(VERIFIER_LEN)\r\n      for r_share in inbound:\r\n        (k_joint_rand_share,\r\n         verifier_share) = decode_verifier_share(r_share)\r\n\r\n        k_joint_rand ^= k_joint_rand_share                           # ADD UP xor SHARES\r\n        verifer += verifier_share                                    # ADD UP ADDITIVE SHARES\r\n\r\n      if k_joint_rand != self.k_joint_rand: raise ERR_INVALID\r\n      if not flp_decide(verifier): raise ERR_INVALID\r\n      return Field.encode_vec(self.output_share)\r\n   ...\r\n```\r\nWhat we're likely to do in the PPM protocol is have one aggregator -- the Leader -- collect the verifier messages at each round and relay them to the other aggregators. We could save on communication cost if we have the Leader perform this public preprocessing step itself and disseminate the result.\r\n\r\nTo make this optimization generic, I'd like to propose that we lift the public processing step to an explicit part of the syntax. In particular, we'd change the preparation phase as follows (from Figure 6):\r\n```\r\n   # Each aggregator initializes its preparation state.\r\n    prep_states = []\r\n    for j in range(SHARES):\r\n      prep_states.append(PrepState(\r\n          verify_params[j], agg_param, nonce, input_shares[j]))\r\n\r\n    # Aggregators recover their output shares.\r\n-   inbound = []\r\n+   inbound = \"\"\r\n    for i in range(ROUNDS+1):\r\n      outbound = []\r\n      for j in range(SHARES):\r\n        outbound.append(prep_states[j].next(inbound))\r\n      # This is where we would send messages over the network\r\n      # in a distributed VDAF computation.\r\n-     inbound = outbound\r\n+     inbound = prep_preprocess(j, outbound)\r\n\r\n    # The final outputs of validation are the output shares\r\n    # for this input.\r\n    output_shares.append(outbound)\r\n```\r\n\r\nI don't think this syntactic change would decrease generality, but I also don't want it to be a nuisance. Maybe it makes sense to not call this out explicitly?",
+      "createdAt": "2021-11-16T21:12:25Z",
+      "updatedAt": "2021-11-17T17:09:01Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I actually think this could *increase* generality, since we're adding a stage that transforms outbound shares to some inbound parameter.  In the current framing, that stage has to be the identity transformation, such that the inbound parameter is the set of outbound shares.\r\n\r\nThe only real trouble I see here is that we don't currently have a name for the actor who would perform this transformation.  And just to confirm -- is this actor really untrusted in the examples we have today?  Or are they trusted in some limited way?",
+          "createdAt": "2021-11-17T16:03:32Z",
+          "updatedAt": "2021-11-17T16:03:32Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Who performs this transform will depend on how the VDAF is mapped to a protocol. It ought to be the case that *anyone* can perform this transform without impacting privacy. (We'll need to make this clear in security considerations.)",
+          "createdAt": "2021-11-17T17:09:01Z",
+          "updatedAt": "2021-11-17T17:09:01Z"
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "id": "I_kwDOGKuqOc4-98yb",
+      "title": "VDAF for quantiles?",
+      "url": "https://github.com/cjpatton/vdaf/issues/12",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "With `prio3` it's straightforward to roughly estimate quantiles using a histogram (cf https://docs.rs/prio/0.6.1/prio/vdaf/prio3/type.Prio3Histogram64.html). But what if you wanted to precisely compute, say, the 50th percentile (i.e., the median) or the 95th percentile? Prio isn't well-suited for this (cf [[CGB17], Appendix G]).\r\n\r\nIf your application allows for multiple rounds of interaction with the clients, maybe you could do a kind of binary search to find the quantile you're after. Suppose the client measurements are arbitrary 32-bit integers and you want to compute the median. Suppose there are `N` measurements in all. Let `buckets = [2^31]`. Have the clients shard their measurements using `buckets` as the bucket boundaries. Execute the VDAF over the set of input shares, getting bucket counts `agg` as the aggregate result. `agg[0]` is equal to the number of measurements less than or equal to `2^31`, and `agg[1] <= N/2`, then the median must be less than `2^31`. On the other hand, if `agg[1] > N/2` then you know the median must greater than `2^31`. You then repeat the process, adjusting the bucket boundaries based on the previous result: if the median is less than `2^31`, then let `buckets = [2^31 - 2^30]`; otherwise let `buckets = [2^31 + 2^30]`.\r\n\r\nI'm not sure how many iterations would be needed, or how precisely you could compute quantiles this way. Regardless, ideally there would be a VDAF that allows for computing quantiles without interacting with clients more than once.\r\n\r\n\r\n\r\n\r\n\r\n[CGB17]: https://crypto.stanford.edu/prio/paper.pdf",
+      "createdAt": "2021-11-17T17:58:28Z",
+      "updatedAt": "2021-11-17T17:58:28Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 13,
+      "id": "I_kwDOGKuqOc4_1qX5",
+      "title": "Proposal: use hash to field to generate field elements from a seed",
+      "url": "https://github.com/cjpatton/vdaf/issues/13",
+      "state": "OPEN",
+      "author": "armfazh",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
+      "createdAt": "2021-12-03T22:53:51Z",
+      "updatedAt": "2021-12-04T00:02:21Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "I definitely like the idea of reusing a functionality from an existing draft.",
+          "createdAt": "2021-12-04T00:02:20Z",
+          "updatedAt": "2021-12-04T00:02:20Z"
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "id": "I_kwDOGKuqOc5A-WhR",
+      "title": "prio3: Make joint randomness optional",
+      "url": "https://github.com/cjpatton/vdaf/issues/15",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Not all FLPs take joint randomness as input, in particular those for which `JOINT_RAND_LEN == 0`. For these FLPs we can reduce the bandwidth overhead by removing the `k_blind` and `k_hint` fields from the input share and the `k_joint_rand_share` from the prepare message.",
+      "createdAt": "2021-12-28T19:27:29Z",
+      "updatedAt": "2021-12-28T19:27:29Z",
+      "closedAt": null,
+      "comments": []
+    }
+  ],
+  "pulls": [
+    {
+      "number": 1,
+      "id": "PR_kwDOGKuqOc4tFEy5",
+      "title": "Edits",
+      "url": "https://github.com/cjpatton/vdaf/pull/1",
+      "state": "MERGED",
+      "author": "tgeoghegan",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Some clarifications and changes found while reviewing https://github.com/abetterinternet/libprio-rs/pull/93 and checking it against this document.\r\n\r\n- `vdaf_input` returns a vector of input shares rather than a single blob'o'bytes\r\n- make aggregation parameter more obvious in `vdaf_start`\r\n- remove obsolete references to ready and waiting states in Prio3 `vdaf_start` and `vdaf_finish` definitions",
+      "createdAt": "2021-10-12T15:29:23Z",
+      "updatedAt": "2021-10-12T16:29:27Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "c667b77422eabbe1cf1c8450f396e5ba54d887c8",
+      "headRepository": "tgeoghegan/vdaf",
+      "headRefName": "edits",
+      "headRefOid": "0b2ae6afa5f8a8473cc5aa7baf6f0cfca206aac9",
+      "closedAt": "2021-10-12T16:29:27Z",
+      "mergedAt": "2021-10-12T16:29:26Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "d25be886346f3388b1972e540f5f38209e521401"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 2,
+      "id": "PR_kwDOGKuqOc4tGzIf",
+      "title": "Add an intro",
+      "url": "https://github.com/cjpatton/vdaf/pull/2",
+      "state": "MERGED",
+      "author": "bifurcation",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-12T21:43:32Z",
+      "updatedAt": "2021-10-13T21:54:17Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "810e990a8c6cf03b6b21091d72fd394b6a68a6f9",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "intro",
+      "headRefOid": "12e409b59fcbff030a351de55606c562b8dd215d",
+      "closedAt": "2021-10-13T21:54:17Z",
+      "mergedAt": "2021-10-13T21:54:17Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "9d04d03236a215b29a3e9087159dfa2de1247692"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4uXdKU",
+          "commit": {
+            "abbreviatedOid": "6d91a58"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "This is great! A few comments.",
+          "createdAt": "2021-10-12T21:57:25Z",
+          "updatedAt": "2021-10-12T22:15:37Z",
+          "comments": [
+            {
+              "originalPosition": 61,
+              "body": "```suggestion\r\nThe remainder of this document is structured as follows:\r\n```",
+              "createdAt": "2021-10-12T21:57:25Z",
+              "updatedAt": "2021-10-12T22:15:37Z"
+            },
+            {
+              "originalPosition": 29,
+              "body": "This is a pretty good description of systems like RAPPOR, but I think it would be useful to speak about DP more broadly. Roughly speaking, differentially private data aggregation systems guarantee that the degree to which an individual user influences the aggregate output is small.",
+              "createdAt": "2021-10-12T22:14:50Z",
+              "updatedAt": "2021-10-12T22:15:37Z"
+            },
+            {
+              "originalPosition": 36,
+              "body": "In my view, the greater drawback of DP is the need to enforce a privacy budget. ",
+              "createdAt": "2021-10-12T22:15:13Z",
+              "updatedAt": "2021-10-12T22:15:37Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "id": "PR_kwDOGKuqOc4tG5Ka",
+      "title": "Some comments",
+      "url": "https://github.com/cjpatton/vdaf/pull/3",
+      "state": "CLOSED",
+      "author": "bifurcation",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-12T22:12:05Z",
+      "updatedAt": "2021-10-25T14:54:20Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "b23df123f181528e4b1fedbcc231d81e3a707a72",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "rlb-review",
+      "headRefOid": "be528b0101facbb7d53bdb18edf3a43b98175441",
+      "closedAt": "2021-10-25T14:54:20Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4uXjtC",
+          "commit": {
+            "abbreviatedOid": "be528b0"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-12T22:32:02Z",
+          "updatedAt": "2021-10-12T22:37:46Z",
+          "comments": [
+            {
+              "originalPosition": 52,
+              "body": "DAFs and VDAFs are meant to be distinct primitives. They differ in two important ways: VDAFs require the aggregators to interact; and DAFs don't provide any guarantee about the validity of the output. DAFs and VDAFs aren't necessarily \"compatible\" with one another. It's true that that there may be some overlap between specific constructions, but this isn't necessarily the case.\r\n\r\nTo be clear, VDAFs are the interesting primitive here. The main reason I defined DAFs is because they are conceptually simpler and provide a nice warm up to VDAFs. Perhaps we should just drop DAFs altogether?",
+              "createdAt": "2021-10-12T22:32:02Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            },
+            {
+              "originalPosition": 17,
+              "body": "Validation applies to VDAFs, not DAFs.",
+              "createdAt": "2021-10-12T22:32:47Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            },
+            {
+              "originalPosition": 25,
+              "body": "The aggregation parameter is what maps an input to an output. For heavy hitters for example, the aggregation parameter is the set of candidate prefixes. I'll make this more clear.",
+              "createdAt": "2021-10-12T22:34:25Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "Right, the way aggregability is defined currently is that the set of output shares is an algebraic group, and the output is recovered by adding up the output shares. Would defining an explicit \"unsharding\" algorithm be more clear, in your opinion?",
+              "createdAt": "2021-10-12T22:35:33Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            },
+            {
+              "originalPosition": 62,
+              "body": "This is something that's a bit in-flux right now. I think where we're going to land is that the client gets a \"public key\" (the \"public parameter\") and each aggregator gets its own \"secret key\" (the \"verification parameter\").",
+              "createdAt": "2021-10-12T22:37:02Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            },
+            {
+              "originalPosition": 72,
+              "body": "That's the plan! This is still very much WIP.",
+              "createdAt": "2021-10-12T22:37:35Z",
+              "updatedAt": "2021-10-12T22:37:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4ugW0-",
+          "commit": {
+            "abbreviatedOid": "be528b0"
+          },
+          "author": "ekr",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-14T20:48:19Z",
+          "updatedAt": "2021-10-14T20:48:39Z",
+          "comments": [
+            {
+              "originalPosition": 52,
+              "body": "I think that's the right answer. It would be fine to describe it just in the process of describing a VDAF, but just to motivate the whole thing. The way I usually describe this is to just walk through what it means to be a DAF and then say \"of course you need proofs\" and then talk about the proofs. In this document  I would signal that at the beginning and then just define VDAFs.",
+              "createdAt": "2021-10-14T20:48:19Z",
+              "updatedAt": "2021-10-14T20:48:39Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "id": "PR_kwDOGKuqOc4tcP5z",
+      "title": "WIP: Define VDAF for heavy hitters",
+      "url": "https://github.com/cjpatton/vdaf/pull/4",
+      "state": "MERGED",
+      "author": "schoppmp",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-20T13:54:35Z",
+      "updatedAt": "2021-10-25T09:29:17Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "fee81313bda6dde38d702c48a09bf2c2e8962c32",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "vdaf_hits",
+      "headRefOid": "f319d38c96aea2e7e960fdbf2e9450f68c32c270",
+      "closedAt": "2021-10-22T23:27:51Z",
+      "mergedAt": "2021-10-22T23:27:51Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "97c3ad0df641cd02734908475fb2de1a5f647e1b"
+      },
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "It looks like you merged at some point to deal with conflicts. While trying to rebase I gave up and just force-pushed a commit with your patch.",
+          "createdAt": "2021-10-22T23:27:08Z",
+          "updatedAt": "2021-10-22T23:27:08Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4uxeF_",
+          "commit": {
+            "abbreviatedOid": "ed0fa2d"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "Good start! I left some mostly editorial comments to start. Some high level editorial things: \r\n* `make` fails due to trailing whitespace. Make sure you can run `make` locally and that it builds successfully. (If you've never built an Internet-Draft before, let me know and I can help you get started!)\r\n* Please wrap lines at 80 characters.\r\n\r\nAs for the design:\r\n1. The purpose of the nonce is to allow the aggregators to derive fresh randomness per VDAF evaluation. This randomness could be derived by applying a PRF to the nonce using the key generated for the verification parameters.\r\n2. I'm curious why you allow the caller to specify the group parameters for each level of the tree. I would think it's better if the scheme *prescribed* these parameters. In other words, a concrete IDPF would specify the field parameters of each level of the tree.",
+          "createdAt": "2021-10-20T16:19:25Z",
+          "updatedAt": "2021-10-20T16:34:35Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "* Replace this reference with `[BBCGGI21, Section 4.3]`\r\n* When this gets compiled, the markdown reference won't appear in the text version. The reference should be added to the  list of informative references at the top of this file.",
+              "createdAt": "2021-10-20T16:19:25Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 8,
+              "body": "Add a newline between headings and the first line.",
+              "createdAt": "2021-10-20T16:21:33Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 17,
+              "body": "?\r\n```suggestion\r\nAn IDPF is defined over a domain of size `2**d`. The client can specify an index `alpha` and values `beta`, one for each level `l` in `[d]`. The key generation generates two IDPF keys that individually hide `alpha` and `beta`. When locally evaluated at any point `x` in `2**l` at level `l`, the IDPF returns shares of `beta[l]`, if `x` is the `l`-bit prefix of `alpha`, and shares of zero otherwise.\r\n```",
+              "createdAt": "2021-10-20T16:22:27Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 20,
+              "body": "```suggestion\r\n- `idpf_gen(value_types: Vec[ValueType], alpha: int, beta: Vec[Value]) -> (Bytes, Bytes)`: Takes as input the value types describing the IDPF output domains, as well as the index and values for the IDPF. Returns two serialized DPF keys, one for each aggregator.\r\n```",
+              "createdAt": "2021-10-20T16:23:35Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 21,
+              "body": "Should `x` be unsigned? How about `Unsigned` as the type hint, for consistency with the section above?",
+              "createdAt": "2021-10-20T16:24:28Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "```suggestion\r\n### Malicious sketching for IDPFs\r\n```",
+              "createdAt": "2021-10-20T16:26:36Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            },
+            {
+              "originalPosition": 115,
+              "body": "The nonce should be used to generate a seed for the verification randomness vector `r`. For example, in prio3 we have\r\n```python\r\ndef vdaf_start(k_query_init, _, nonce, r_input_share):  \r\n  ...\r\n  k_query_rand = get_key(k_query_init, byte(255) + nonce)\r\n  ...\r\n```\r\n\r\nwhere `k_query_init` is the verification parameter.",
+              "createdAt": "2021-10-20T16:29:57Z",
+              "updatedAt": "2021-10-20T16:34:35Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u1kkX",
+          "commit": {
+            "abbreviatedOid": "cdd7a84"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-21T14:35:44Z",
+          "updatedAt": "2021-10-21T14:35:44Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "I removed the second reference, since the value type implementation is not really important if we assume that the concrete scheme fixes the types for each level.",
+              "createdAt": "2021-10-21T14:35:44Z",
+              "updatedAt": "2021-10-21T14:35:44Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u1kn7",
+          "commit": {
+            "abbreviatedOid": "cdd7a84"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-21T14:35:55Z",
+          "updatedAt": "2021-10-21T14:35:55Z",
+          "comments": [
+            {
+              "originalPosition": 8,
+              "body": "Done.",
+              "createdAt": "2021-10-21T14:35:55Z",
+              "updatedAt": "2021-10-21T14:35:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u1kr_",
+          "commit": {
+            "abbreviatedOid": "cdd7a84"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-21T14:36:06Z",
+          "updatedAt": "2021-10-21T14:36:07Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "Done.",
+              "createdAt": "2021-10-21T14:36:06Z",
+              "updatedAt": "2021-10-21T14:36:07Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u1lIl",
+          "commit": {
+            "abbreviatedOid": "cdd7a84"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-21T14:37:25Z",
+          "updatedAt": "2021-10-21T14:37:25Z",
+          "comments": [
+            {
+              "originalPosition": 115,
+              "body": "Done.",
+              "createdAt": "2021-10-21T14:37:25Z",
+              "updatedAt": "2021-10-21T14:37:25Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u3TbU",
+          "commit": {
+            "abbreviatedOid": "02a855d"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2021-10-21T22:19:46Z",
+          "updatedAt": "2021-10-21T22:30:19Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "```suggestion\r\ndetails. An instantiation of this VDAF specifies a function `get_value_type(n: Unsigned) -> ValueType` that\r\n```",
+              "createdAt": "2021-10-21T22:19:47Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 19,
+              "body": "```suggestion\r\nof a given group, and `Value` to refer to an actual element of the group.\r\n```",
+              "createdAt": "2021-10-21T22:20:17Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "I know we're supposed to be doing everything in Python, but let's just write this as\r\n```suggestion\r\nAn IDPF is defined over a domain of size `2^d`. The client can specify an\r\n```",
+              "createdAt": "2021-10-21T22:21:01Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 27,
+              "body": "Would it be more accurate to say\r\n```suggestion\r\nWhen locally evaluated at any point `x` in `2**l` at level `l`, the IDPF\r\nkey returns a share of `beta[l]`, if `x` is the `l`-bit prefix of `alpha`, and\r\n```",
+              "createdAt": "2021-10-21T22:22:35Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "I've been naming the output parameters. How about `-> (idpf_key1: Bytes, idpf_key2: Bytes)` or something?",
+              "createdAt": "2021-10-21T22:24:05Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 33,
+              "body": "```suggestion\r\nkeys, one for each aggregator.\r\n```",
+              "createdAt": "2021-10-21T22:24:16Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 34,
+              "body": "```suggestion\r\n- `idpf_eval_next(state: State, idpf_key: Bytes, x: Unsigned) `\r\n```",
+              "createdAt": "2021-10-21T22:25:07Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 44,
+              "body": "Above I use \"joint rand\" to refer to randomness shared by the prover and verifier for PCPs. Can we call this something else, like \"verify_rand\"?",
+              "createdAt": "2021-10-21T22:26:55Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 44,
+              "body": "Here and elsewhere\r\n```suggestion\r\n  r = expand_rand(joint_randomness, len(idpf_output), level)\r\n```",
+              "createdAt": "2021-10-21T22:27:10Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 47,
+              "body": "Here and below\r\n```suggestion\r\n    [value[0] for value in dpf_output,\r\n```",
+              "createdAt": "2021-10-21T22:28:01Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            },
+            {
+              "originalPosition": 133,
+              "body": "I'm having a hard time understanding what's going on here. It seeems like you want the IDPF api to be stateful, but the VDAF api is not. So how does the state of the IPDF get passed through to subsequent VDAF evaluations?\r\n\r\nUnless I'm misunderstanding, I think the answer is that, at least as far as this spec is concerned, the IDPF api needs to be stateless. ",
+              "createdAt": "2021-10-21T22:30:13Z",
+              "updatedAt": "2021-10-21T22:30:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u42C9",
+          "commit": {
+            "abbreviatedOid": "dda25de"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-22T09:56:12Z",
+          "updatedAt": "2021-10-22T09:56:12Z",
+          "comments": [
+            {
+              "originalPosition": 133,
+              "body": "Not sure I understand the statefull / stateless distinction here.\r\nIn the [input evaluation](https://github.com/cjpatton/vdaf/blob/main/draft-patton-cfrg-vdaf.md#input-evaluation) section, it seems like there is an `EvalState` that is kept between the communication rounds between the aggregators. Wouldn't this state also be able to contain the partially evaluated IDPF state? The IDPF-based heavy hitter protocol needs to keep some sort of state between rounds. We could of course emulate that by sending the state back and forth encrypted, but I think that would unnecessarily limit implementations who might want to keep state locally.",
+              "createdAt": "2021-10-22T09:56:12Z",
+              "updatedAt": "2021-10-22T09:56:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u5Rbs",
+          "commit": {
+            "abbreviatedOid": "dda25de"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-22T12:08:41Z",
+          "updatedAt": "2021-10-22T12:08:41Z",
+          "comments": [
+            {
+              "originalPosition": 44,
+              "body": "Done.",
+              "createdAt": "2021-10-22T12:08:41Z",
+              "updatedAt": "2021-10-22T12:08:42Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u5Rn0",
+          "commit": {
+            "abbreviatedOid": "dda25de"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-22T12:09:31Z",
+          "updatedAt": "2021-10-22T12:09:31Z",
+          "comments": [
+            {
+              "originalPosition": 31,
+              "body": "Done.",
+              "createdAt": "2021-10-22T12:09:31Z",
+              "updatedAt": "2021-10-22T12:09:31Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u5SSE",
+          "commit": {
+            "abbreviatedOid": "dda25de"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-22T12:12:40Z",
+          "updatedAt": "2021-10-22T12:12:40Z",
+          "comments": [
+            {
+              "originalPosition": 44,
+              "body": "Done.",
+              "createdAt": "2021-10-22T12:12:40Z",
+              "updatedAt": "2021-10-22T12:12:40Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u5STf",
+          "commit": {
+            "abbreviatedOid": "dda25de"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-22T12:12:47Z",
+          "updatedAt": "2021-10-22T12:12:47Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "Done.",
+              "createdAt": "2021-10-22T12:12:47Z",
+              "updatedAt": "2021-10-22T12:12:47Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u7ah-",
+          "commit": {
+            "abbreviatedOid": "f319d38"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "Merging as-is and will iterate on it over the weekend.",
+          "createdAt": "2021-10-22T23:27:43Z",
+          "updatedAt": "2021-10-22T23:27:43Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "id": "PR_kwDOGKuqOc4tnd68",
+      "title": "Finish `hits` specification",
+      "url": "https://github.com/cjpatton/vdaf/pull/5",
+      "state": "MERGED",
+      "author": "schoppmp",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-25T10:33:46Z",
+      "updatedAt": "2021-10-25T15:56:06Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "a17f7917cbf554c3c50464252c371286561a9040",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "vdaf_hits",
+      "headRefOid": "76f086eddda2feba75558d41c381991d873fe17e",
+      "closedAt": "2021-10-25T15:55:00Z",
+      "mergedAt": "2021-10-25T15:55:00Z",
+      "mergedBy": "schoppmp",
+      "mergeCommit": {
+        "oid": "4ab9d62399dc4b879f592af05cf16c37c0f4eed2"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4u-t8t",
+          "commit": {
+            "abbreviatedOid": "5e545b3"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:21:21Z",
+          "updatedAt": "2021-10-25T14:32:08Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "No, each aggregator is mean to consume all of the messages sent in the previous round.",
+              "createdAt": "2021-10-25T14:21:21Z",
+              "updatedAt": "2021-10-25T14:32:08Z"
+            },
+            {
+              "originalPosition": 38,
+              "body": "Ack, let's delete my comment then.",
+              "createdAt": "2021-10-25T14:22:29Z",
+              "updatedAt": "2021-10-25T14:32:08Z"
+            },
+            {
+              "originalPosition": 49,
+              "body": "The first is used by the first aggregator and the second is used by the second.",
+              "createdAt": "2021-10-25T14:22:57Z",
+              "updatedAt": "2021-10-25T14:32:08Z"
+            },
+            {
+              "originalPosition": 61,
+              "body": "It does. I went back-and-forth on this and ultimately thought that this is simpler. The reason is that this loop in `run_vdaf` \r\n```\r\n# Aggregators recover their output shares.\r\ninbound = []\r\nfor i in range(ROUNDS+1):\r\n  outbound = []\r\n  for j in range(SHARES):\r\n    outbound.append(eval_states[j].next(inbound))\r\n  inbound = outbound\r\n```\r\n\r\nwould have to be something like\r\n```\r\n# Aggregators recover their output shares.\r\ninbound = []\r\nfor i in range(ROUNDS+1):\r\n  outbound = []\r\n  for j in range(SHARES):\r\n    inbound_for_aggregator = []\r\n    for (k, v) in enumerate(inbound):\r\n      if k != j: inbound_for_aggregator.append(v)\r\n    outbound.append(eval_states[j].next(inbound))\r\n  inbound = outbound\r\n```",
+              "createdAt": "2021-10-25T14:30:29Z",
+              "updatedAt": "2021-10-25T14:32:08Z"
+            },
+            {
+              "originalPosition": 76,
+              "body": "I don't think so, and good catch here. What about passing the aggregation parameter into the constructor here and computing the number of prefixes from that? We'd need to make the same change in the VDAF definition section.",
+              "createdAt": "2021-10-25T14:32:00Z",
+              "updatedAt": "2021-10-25T14:32:08Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-46g",
+          "commit": {
+            "abbreviatedOid": "5e545b3"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:53:21Z",
+          "updatedAt": "2021-10-25T14:53:22Z",
+          "comments": [
+            {
+              "originalPosition": 76,
+              "body": "Changed the definition here.",
+              "createdAt": "2021-10-25T14:53:22Z",
+              "updatedAt": "2021-10-25T14:53:22Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-48u",
+          "commit": {
+            "abbreviatedOid": "f9fdc26"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:53:27Z",
+          "updatedAt": "2021-10-25T14:53:28Z",
+          "comments": [
+            {
+              "originalPosition": 61,
+              "body": "Okay, removed my comment.",
+              "createdAt": "2021-10-25T14:53:27Z",
+              "updatedAt": "2021-10-25T14:53:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-4-3",
+          "commit": {
+            "abbreviatedOid": "f9fdc26"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:53:33Z",
+          "updatedAt": "2021-10-25T14:53:33Z",
+          "comments": [
+            {
+              "originalPosition": 49,
+              "body": "Ack. Removed the comment.",
+              "createdAt": "2021-10-25T14:53:33Z",
+              "updatedAt": "2021-10-25T14:53:33Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-5A2",
+          "commit": {
+            "abbreviatedOid": "f9fdc26"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:53:38Z",
+          "updatedAt": "2021-10-25T14:53:39Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "Done.",
+              "createdAt": "2021-10-25T14:53:38Z",
+              "updatedAt": "2021-10-25T14:53:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-5Kx",
+          "commit": {
+            "abbreviatedOid": "f9fdc26"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:54:07Z",
+          "updatedAt": "2021-10-25T14:54:07Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "Ack. Removed comment.",
+              "createdAt": "2021-10-25T14:54:07Z",
+              "updatedAt": "2021-10-25T14:54:07Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-6P9",
+          "commit": {
+            "abbreviatedOid": "962a327"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T14:57:18Z",
+          "updatedAt": "2021-10-25T14:57:41Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "As we (ideally!) make clear in the Overview/Definition sections, this document doesn't tell you how to execute the protocol over a network. This function in particular only tells you how you put the pieces together to execute the VDAF over a set of inputs.\r\n\r\nTo make an analogy: VDAF is, in this sense, like an encryption scheme. It doesn't tell *how* to encrypt packets that you send over the network, it just describes a function and its intended properties. ",
+              "createdAt": "2021-10-25T14:57:18Z",
+              "updatedAt": "2021-10-25T14:57:41Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u-70M",
+          "commit": {
+            "abbreviatedOid": "962a327"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T15:01:52Z",
+          "updatedAt": "2021-10-25T15:11:55Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "I found this necessary when I did my implemnetation. The reason is that the `verifier_share` is supposed to be a 2-way additive share.",
+              "createdAt": "2021-10-25T15:01:52Z",
+              "updatedAt": "2021-10-25T15:11:55Z"
+            },
+            {
+              "originalPosition": 47,
+              "body": "Resolution: have one party add the first term.",
+              "createdAt": "2021-10-25T15:11:52Z",
+              "updatedAt": "2021-10-25T15:11:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u_IWT",
+          "commit": {
+            "abbreviatedOid": "1f0adbf"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T15:41:52Z",
+          "updatedAt": "2021-10-25T15:41:52Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "Okay. Changed the comment to clarify where the network communication would take place.",
+              "createdAt": "2021-10-25T15:41:52Z",
+              "updatedAt": "2021-10-25T15:41:52Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u_IZK",
+          "commit": {
+            "abbreviatedOid": "1f0adbf"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T15:42:01Z",
+          "updatedAt": "2021-10-25T15:42:02Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "Done.",
+              "createdAt": "2021-10-25T15:42:02Z",
+              "updatedAt": "2021-10-25T15:42:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4u_Js9",
+          "commit": {
+            "abbreviatedOid": "1f0adbf"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-10-25T15:46:32Z",
+          "updatedAt": "2021-10-25T15:46:32Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "id": "PR_kwDOGKuqOc4toxx7",
+      "title": "Update authors",
+      "url": "https://github.com/cjpatton/vdaf/pull/6",
+      "state": "MERGED",
+      "author": "schoppmp",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-25T16:57:11Z",
+      "updatedAt": "2021-10-25T17:00:39Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "8d6bc15ea63c534a8398985fbacaf7acc1aad9a9",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "update_authors",
+      "headRefOid": "a3e13b02617094cee91ba6a8ef9e3d13724a6ffe",
+      "closedAt": "2021-10-25T17:00:39Z",
+      "mergedAt": "2021-10-25T17:00:39Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "ee05d18c5cd217354acfa713e0fec79aeec61330"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4u_dkr",
+          "commit": {
+            "abbreviatedOid": "a3e13b0"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-10-25T17:00:29Z",
+          "updatedAt": "2021-10-25T17:00:29Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "id": "PR_kwDOGKuqOc4tpN7W",
+      "title": "RLB refactor of vdaf",
+      "url": "https://github.com/cjpatton/vdaf/pull/7",
+      "state": "MERGED",
+      "author": "bifurcation",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-25T19:35:28Z",
+      "updatedAt": "2021-10-25T22:26:37Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "d8059ea57a2d09fbd21842dd297c735584c35887",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "vdaf-refactor",
+      "headRefOid": "a96d3c3b163c955abeb56671fc8f1c8ca3aa239f",
+      "closedAt": "2021-10-25T20:54:52Z",
+      "mergedAt": "2021-10-25T20:54:52Z",
+      "mergedBy": "bifurcation",
+      "mergeCommit": {
+        "oid": "29a8ff25572bd9fc4ba400100c1e58332b6e32b3"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4vACJz",
+          "commit": {
+            "abbreviatedOid": "94b96e1"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-10-25T19:40:51Z",
+          "updatedAt": "2021-10-25T20:52:38Z",
+          "comments": [
+            {
+              "originalPosition": 65,
+              "body": "Caption needs updating.",
+              "createdAt": "2021-10-25T19:40:51Z",
+              "updatedAt": "2021-10-25T20:52:38Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4vAjVp",
+          "commit": {
+            "abbreviatedOid": "a96d3c3"
+          },
+          "author": "ekr",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-25T22:23:01Z",
+          "updatedAt": "2021-10-25T22:26:37Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "I don't love this term. Maybe \"Decoding\"?",
+              "createdAt": "2021-10-25T22:23:02Z",
+              "updatedAt": "2021-10-25T22:26:37Z"
+            },
+            {
+              "originalPosition": 50,
+              "body": "Do we need to assume it's randomized?",
+              "createdAt": "2021-10-25T22:24:15Z",
+              "updatedAt": "2021-10-25T22:26:37Z"
+            },
+            {
+              "originalPosition": 56,
+              "body": "Is this always true? Suppose we had a VDAF in which the ZKPs of correctness were publicly verifiable?",
+              "createdAt": "2021-10-25T22:25:16Z",
+              "updatedAt": "2021-10-25T22:26:37Z"
+            },
+            {
+              "originalPosition": 90,
+              "body": "This seems like an unnecessary assumption. It might be true, but it might not be.",
+              "createdAt": "2021-10-25T22:26:06Z",
+              "updatedAt": "2021-10-25T22:26:37Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "id": "PR_kwDOGKuqOc4wWGea",
+      "title": "Add public preprocessing of messages",
+      "url": "https://github.com/cjpatton/vdaf/pull/14",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
+      "createdAt": "2021-12-28T18:47:12Z",
+      "updatedAt": "2021-12-31T04:19:36Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "2c85aaa13d93b9105bb4139ce501aa9f6dcbdd1b",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/issue11",
+      "headRefOid": "aa4ebef2033f22ce185165d5c63f4f5d6773ec04",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4yIVrb",
+          "commit": {
+            "abbreviatedOid": "cc28349"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-12-28T18:48:16Z",
+          "updatedAt": "2021-12-28T18:48:16Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "Can we think of a better verb than \"preprocess\"? While accurate, it seems too generic.",
+              "createdAt": "2021-12-28T18:48:16Z",
+              "updatedAt": "2021-12-28T18:48:16Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
