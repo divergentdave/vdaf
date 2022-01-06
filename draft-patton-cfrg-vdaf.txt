@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 8 July 2022                                               Cisco
+Expires: 10 July 2022                                              Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                          4 January 2022
+                                                          6 January 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 July 2022.
+   This Internet-Draft will expire on 10 July 2022.
 
 Copyright Notice
 
@@ -94,7 +94,7 @@ Table of Contents
        6.2.4.  Aggregation
        6.2.5.  Unsharding
        6.2.6.  Helper Functions
-   7.  hits
+   7.  poplar1
      7.1.  Incremental Distributed Point Functions (IDPFs)
      7.2.  Construction
        7.2.1.  Setup
@@ -232,27 +232,27 @@ Table of Contents
       techniques introduced in [BBCGGI19] that result in significant
       performance gains.
 
-   *  More recently, Boneh et al.  [BBCGGI21] described a protocol for
-      solving the t-heavy-hitters problem in a privacy-preserving
-      manner.  Here each client holds a bit-string of length n, and the
-      goal of the aggregation servers is to compute the set of inputs
-      that occur at least t times.  The core primitive used in their
-      protocol is a generalization of a Distributed Point Function (DPF)
-      [GI14] that allows the servers to "query" their DPF shares on any
-      bit-string of length shorter than or equal to n.  As a result of
-      this query, each of the servers has an additive share of a bit
-      indicating whether the string is a prefix of the client's input.
-      The protocol also specifies a multi-party computation for
+   *  More recently, Boneh et al.  [BBCGGI21] described a protocol
+      called Poplar for solving the t-heavy-hitters problem in a
+      privacy-preserving manner.  Here each client holds a bit-string of
+      length n, and the goal of the aggregation servers is to compute
+      the set of inputs that occur at least t times.  The core primitive
+      used in their protocol is a generalization of a Distributed Point
+      Function (DPF) [GI14] that allows the servers to "query" their DPF
+      shares on any bit-string of length shorter than or equal to n.  As
+      a result of this query, each of the servers has an additive share
+      of a bit indicating whether the string is a prefix of the client's
+      input.  The protocol also specifies a multi-party computation for
       verifying that at most one string among a set of candidates is a
       prefix of the client's input.
 
-      In Section 7 we describe a VDAF called hits that implements this
-      functionality.
+      In Section 7 we describe a VDAF called poplar1 that implements
+      this functionality.
 
    The remainder of this document is organized as follows: Section 3
    gives a brief overview of VDAFs; Section 4 defines the syntax for
    VDAFs; Section 5 defines various functionalities that are common to
-   our constructions; Section 7 describes the hits construction;
+   our constructions; Section 7 describes the poplar1 construction;
    Section 6 describes the prio3 construction; and Section 8 enumerates
    the security considerations for VDAFs.
 
@@ -1205,21 +1205,20 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
    *  decode_verifier_share decodes a verifier share.
 
-7.  hits
+7.  poplar1
 
       NOTE An implementation of this VDAF can be found here
       (https://github.com/abetterinternet/libprio-rs/blob/main/src/vdaf/
-      hits.rs).
+      poplar1.rs).
 
-   This section specifies hits, a VDAF for the following task.  Each
+   This section specifies poplar1, a VDAF for the following task.  Each
    Client holds a BITS-bit string and the Aggregators hold a set of
    l-bit strings, where l <= BITS.  We will refer to the latter as the
    set of "candidate prefixes".  The Aggregators' goal is to count how
    many inputs are prefixed by each candidate prefix.
 
-   This functionality is the core component of the privacy-preserving t-
-   heavy-hitters protocol of [BBCGGI21].  At a high level, the protocol
-   works as follows.
+   This functionality is the core component of Poplar [BBCGGI21].  At a
+   high level, the protocol works as follows.
 
    1.  Each Clients runs the input-distribution algorithm on its n-bit
        string and sends an input share to each Aggregator.
@@ -1241,12 +1240,12 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        to the set.  Repeat step 3 with the new set of candidate
        prefixes.
 
-   hits is constructed from an "Incremental Distributed Point Function
-   (IDPF)", a primitive described by [BBCGGI21] that generalizes the
-   notion of a Distributed Point Function (DPF) [GI14].  Briefly, a DPF
-   is used to distribute the computation of a "point function", a
-   function that evaluates to zero on every input except at a
-   programmable "point".  The computation is distributed in such a way
+   poplar1 is constructed from an "Incremental Distributed Point
+   Function (IDPF)", a primitive described by [BBCGGI21] that
+   generalizes the notion of a Distributed Point Function (DPF) [GI14].
+   Briefly, a DPF is used to distribute the computation of a "point
+   function", a function that evaluates to zero on every input except at
+   a programmable "point".  The computation is distributed in such a way
    that no one party knows either the point or what it evaluates to.
 
    An IDPF generalizes this "point" to a path on a full binary tree from
@@ -1263,9 +1262,9 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    "one-hot" vector, i.e., a vector that is zero everywhere except for
    one element, which is equal to one.
 
-   The name hits is an anagram of "hist", which is short for
+   The name poplar1 is an anagram of "hist", which is short for
    "histogram".  It is a nod toward the "subset histogram" problem
-   formulated by [BBCGGI21] and for which the hits is a solution.
+   formulated by [BBCGGI21] and for which the poplar1 is a solution.
 
 7.1.  Incremental Distributed Point Functions (IDPFs)
 
@@ -1341,7 +1340,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      k_verify_init = gen_rand(KEY_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                  Figure 13: The setup algorithm for hits.
+                Figure 13: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1394,7 +1393,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return input_shares
 
-           Figure 14: The input-distribution algorithm for hits.
+          Figure 14: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1470,7 +1469,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
        else: raise ERR_INVALID_STATE
 
-                   Figure 15: Preparation state for hits.
+                 Figure 15: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1485,7 +1484,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg_share)
 
-                 Figure 16: Aggregation algorithm for hits.
+               Figure 16: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1499,7 +1498,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg)
 
-          Figure 17: Computation of the aggregate result for hits.
+        Figure 17: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
