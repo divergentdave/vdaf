@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 3 July 2022                                               Cisco
+Expires: 10 July 2022                                              Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                        30 December 2021
+                                                          6 January 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,11 +51,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 July 2022.
+   This Internet-Draft will expire on 10 July 2022.
 
 Copyright Notice
 
-   Copyright (c) 2021 IETF Trust and the persons identified as the
+   Copyright (c) 2022 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -94,7 +94,7 @@ Table of Contents
        6.2.4.  Aggregation
        6.2.5.  Unsharding
        6.2.6.  Helper Functions
-   7.  hits
+   7.  poplar1
      7.1.  Incremental Distributed Point Functions (IDPFs)
      7.2.  Construction
        7.2.1.  Setup
@@ -232,27 +232,27 @@ Table of Contents
       techniques introduced in [BBCGGI19] that result in significant
       performance gains.
 
-   *  More recently, Boneh et al.  [BBCGGI21] described a protocol for
-      solving the t-heavy-hitters problem in a privacy-preserving
-      manner.  Here each client holds a bit-string of length n, and the
-      goal of the aggregation servers is to compute the set of inputs
-      that occur at least t times.  The core primitive used in their
-      protocol is a generalization of a Distributed Point Function (DPF)
-      [GI14] that allows the servers to "query" their DPF shares on any
-      bit-string of length shorter than or equal to n.  As a result of
-      this query, each of the servers has an additive share of a bit
-      indicating whether the string is a prefix of the client's input.
-      The protocol also specifies a multi-party computation for
+   *  More recently, Boneh et al.  [BBCGGI21] described a protocol
+      called Poplar for solving the t-heavy-hitters problem in a
+      privacy-preserving manner.  Here each client holds a bit-string of
+      length n, and the goal of the aggregation servers is to compute
+      the set of inputs that occur at least t times.  The core primitive
+      used in their protocol is a generalization of a Distributed Point
+      Function (DPF) [GI14] that allows the servers to "query" their DPF
+      shares on any bit-string of length shorter than or equal to n.  As
+      a result of this query, each of the servers has an additive share
+      of a bit indicating whether the string is a prefix of the client's
+      input.  The protocol also specifies a multi-party computation for
       verifying that at most one string among a set of candidates is a
       prefix of the client's input.
 
-      In Section 7 we describe a VDAF called hits that implements this
-      functionality.
+      In Section 7 we describe a VDAF called poplar1 that implements
+      this functionality.
 
    The remainder of this document is organized as follows: Section 3
    gives a brief overview of VDAFs; Section 4 defines the syntax for
    VDAFs; Section 5 defines various functionalities that are common to
-   our constructions; Section 7 describes the hits construction;
+   our constructions; Section 7 describes the poplar1 construction;
    Section 6 describes the prio3 construction; and Section 8 enumerates
    the security considerations for VDAFs.
 
@@ -523,10 +523,9 @@ Table of Contents
       inbound message or, if this is the first round, None.
 
    *  prep_preprocess(agg_param, messages: Vec[Bytes]) ->
-      preprocessed_message is a deterministic procedure used to perform
-      any public preprocessing of the sequence of inbound messages from
-      the previous round.  The output is passed to the preparation-state
-      update algorithm.
+      preprocessed_message is a deterministic procedure used to
+      preprocess the sequence of inbound messages from the previous
+      round into the input for the preparation-state update algorithm.
 
    In effect, each Aggregator moves through a linear state machine with
    ROUNDS+1 states.  The Aggregator enters the first state on using the
@@ -1154,13 +1153,16 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
          )
 
        elif self.step == "waiting" and inbound != None:
-         if inbound != self.k_joint_rand: raise ERR_INVALID
+         (k_joint_rand, verifier) = decode_prep_message(inbound)
+         if k_joint_rand != self.k_joint_rand: raise ERR_INVALID
+         if not flp_decide(verifier): raise ERR_INVALID
          return Field.encode_vec(self.output_share)
 
        else: raise ERR_INVALID_STATE
 
    def prep_preprocess(_, inbound: Vec[Bytes]):
-     if len(inbound) != SHARES: raise ERR_INVALID_SHARE_COUNT
+     if len(inbound) != SHARES:
+       raise ERR_INVALID_INPUT
 
      k_joint_rand = zeros(KEY_SIZE)
      verifier = Field.zeros(VERIFIER_LEN)
@@ -1171,8 +1173,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        k_joint_rand ^= k_joint_rand_share
        verifer += verifier_share
 
-     if not flp_decide(verifier): raise ERR_INVALID
-     return k_joint_rand
+     return encode_prep_message(k_joint_rand, verifier)
 
                   Figure 10: Preparation state for prio3.
 
@@ -1219,21 +1220,20 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
    *  decode_prep_message decodes a key (share) and verifier (share).
 
-7.  hits
+7.  poplar1
 
       NOTE An implementation of this VDAF can be found here
       (https://github.com/abetterinternet/libprio-rs/blob/main/src/vdaf/
-      hits.rs).
+      poplar1.rs).
 
-   This section specifies hits, a VDAF for the following task.  Each
+   This section specifies poplar1, a VDAF for the following task.  Each
    Client holds a BITS-bit string and the Aggregators hold a set of
    l-bit strings, where l <= BITS.  We will refer to the latter as the
    set of "candidate prefixes".  The Aggregators' goal is to count how
    many inputs are prefixed by each candidate prefix.
 
-   This functionality is the core component of the privacy-preserving t-
-   heavy-hitters protocol of [BBCGGI21].  At a high level, the protocol
-   works as follows.
+   This functionality is the core component of Poplar [BBCGGI21].  At a
+   high level, the protocol works as follows.
 
    1.  Each Clients runs the input-distribution algorithm on its n-bit
        string and sends an input share to each Aggregator.
@@ -1255,12 +1255,12 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        to the set.  Repeat step 3 with the new set of candidate
        prefixes.
 
-   hits is constructed from an "Incremental Distributed Point Function
-   (IDPF)", a primitive described by [BBCGGI21] that generalizes the
-   notion of a Distributed Point Function (DPF) [GI14].  Briefly, a DPF
-   is used to distribute the computation of a "point function", a
-   function that evaluates to zero on every input except at a
-   programmable "point".  The computation is distributed in such a way
+   poplar1 is constructed from an "Incremental Distributed Point
+   Function (IDPF)", a primitive described by [BBCGGI21] that
+   generalizes the notion of a Distributed Point Function (DPF) [GI14].
+   Briefly, a DPF is used to distribute the computation of a "point
+   function", a function that evaluates to zero on every input except at
+   a programmable "point".  The computation is distributed in such a way
    that no one party knows either the point or what it evaluates to.
 
    An IDPF generalizes this "point" to a path on a full binary tree from
@@ -1277,9 +1277,9 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    "one-hot" vector, i.e., a vector that is zero everywhere except for
    one element, which is equal to one.
 
-   The name hits is an anagram of "hist", which is short for
+   The name poplar1 is an anagram of "hist", which is short for
    "histogram".  It is a nod toward the "subset histogram" problem
-   formulated by [BBCGGI21] and for which the hits is a solution.
+   formulated by [BBCGGI21] and for which the poplar1 is a solution.
 
 7.1.  Incremental Distributed Point Functions (IDPFs)
 
@@ -1355,7 +1355,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      k_verify_init = gen_rand(KEY_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                  Figure 13: The setup algorithm for hits.
+                Figure 13: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1408,7 +1408,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return input_shares
 
-           Figure 14: The input-distribution algorithm for hits.
+          Figure 14: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1417,7 +1417,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
    The aggregation parameter encodes a sequence of candidate prefixes.
    When an Aggregator receives an input share from the Client, it begins
-   by evaluating its IDPF share on each candidate prefixe, recovering a
+   by evaluating its IDPF share on each candidate prefix, recovering a
    pair of vectors of field elements data_share and auth_share, The
    Aggregators use auth_share and the correlation shares provided by the
    Client to verify that their data_share vectors are additive shares of
@@ -1441,7 +1441,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
         A_share, B_share) = correlation_shares[l-1]
 
        if self.step == "ready" and inbound == None:
-         # Evaluation IPPF on candidate prefixes.
+         # Evaluate IDPF on candidate prefixes.
          data_share, auth_share = [], []
          for x in self.candiate_prefixes:
            value = kdpf_key.eval(l, x)
@@ -1481,7 +1481,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        else: raise ERR_INVALID_STATE
 
    def prep_preprocess(agg_param, inbound: Vec[Bytes]):
-     if len(inbound) != 2: raise ERR_INVALID_SHARE_COUNT
+     if len(inbound) != 2:
+       raise ERR_INVALID_INPUT
 
      (l, _) = decode_indexes(agg_param)
      verifier = Field[l].decode_vec(inbound[0]) + \
@@ -1489,7 +1490,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(verifier)
 
-                   Figure 15: Preparation state for hits.
+                 Figure 15: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1504,7 +1505,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg_share)
 
-                 Figure 16: Aggregation algorithm for hits.
+               Figure 16: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1518,7 +1519,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg)
 
-          Figure 17: Computation of the aggregate result for hits.
+        Figure 17: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
