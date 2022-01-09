@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-06T00:05:06.694959+00:00",
+  "timestamp": "2022-01-09T00:05:13.523277+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -1238,18 +1238,33 @@
       "labels": [],
       "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
       "createdAt": "2021-12-28T18:47:12Z",
-      "updatedAt": "2022-01-05T02:05:32Z",
+      "updatedAt": "2022-01-06T23:20:55Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "2c85aaa13d93b9105bb4139ce501aa9f6dcbdd1b",
+      "baseRefOid": "082a2ed7e5090d2258be98039d51b10f7532900c",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/issue11",
-      "headRefOid": "aa4ebef2033f22ce185165d5c63f4f5d6773ec04",
+      "headRefOid": "5b0720b379415f303c27fcc5aa27202befa3c955",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "tgeoghegan",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> It seems like this PR is just splitting `next` into two steps that both happen inside the same computer. Why is this useful?\r\n> \r\n> In general, I think the design philosophy should be that the inputs and outputs from these abstract functions should be to the network, i.e., the boundaries that matter are the ones that are visible from the outside. How the processing is arranged inside the computer, between network-observable points, is up to the individual implementation.\r\n\r\nThe idea is that the leader can do the `prep_preprocess` step once and broadcast the result to however many helpers there are, whereas previously, every aggregator would have had to broadcast prep messages to every other aggregator (extra network communication) and then every aggregator would have to run the prep message assembly (extra CPU time). The reduction in network communication is a much more significant win than the reduction of redundant work, but the it's hard to see that communication graph in this specification, because it's all abstracted away behind the `inputs = outputs` step, which in a real deployment would be a big, messy graph with `n^2` edges in it.",
+          "createdAt": "2022-01-06T18:40:17Z",
+          "updatedAt": "2022-01-06T18:40:17Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "With the current syntax:  In a Leader/Helper communication model, the Leader would request each Helper's next prepare message in one round, then broadcast the entire round of messages to each Helper in the next round.\r\n\r\nWith the changed syntax: Instead of broadcasting all of the messages, the Leader can perform this precomputation step, which for both `prio3` and `poplar1` reduces the amount of data broadcast by a factor of `SHARES`.",
+          "createdAt": "2022-01-06T22:28:39Z",
+          "updatedAt": "2022-01-06T22:28:39Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOGKuqOc4yIVrb",
@@ -1310,6 +1325,105 @@
               "updatedAt": "2022-01-05T02:05:32Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4yZl0N",
+          "commit": {
+            "abbreviatedOid": "aa4ebef"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T12:16:36Z",
+          "updatedAt": "2022-01-06T12:19:04Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "Can you elaborate a bit what the `prep_preprocess` step does and in what cases it is useful? This doesn't become clear from the description currently.",
+              "createdAt": "2022-01-06T12:16:36Z",
+              "updatedAt": "2022-01-06T12:19:04Z"
+            },
+            {
+              "originalPosition": 29,
+              "body": "I agree, in particular the double `pre` prefix is a bit confusing. Maybe `combine_verifier_shares` or something like that?",
+              "createdAt": "2022-01-06T12:18:49Z",
+              "updatedAt": "2022-01-06T12:19:04Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4ya-93",
+          "commit": {
+            "abbreviatedOid": "aa4ebef"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "It seems like this PR is just splitting `next` into two steps that both happen inside the same computer.  Why is this useful?\r\n\r\nIn general, I think the design philosophy should be that the inputs and outputs from these abstract functions should be to the network, i.e., the boundaries that matter are the ones that are visible from the outside.  How the processing is arranged inside the computer, between network-observable points, is up to the individual implementation.",
+          "createdAt": "2022-01-06T18:33:55Z",
+          "updatedAt": "2022-01-06T18:33:55Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4yb1Kk",
+          "commit": {
+            "abbreviatedOid": "5b0720b"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T23:18:57Z",
+          "updatedAt": "2022-01-06T23:18:58Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "I like the term `verifier_share`, but it's somewhat specific to schemes like `prio3` and `poplar1` where the output share are first recovered and then verified. At this stage I'd like to leave the door open for things like Prio+ that are based instead on oblivious transfer. (Output shares aren't known until the prep phase is complete.)",
+              "createdAt": "2022-01-06T23:18:58Z",
+              "updatedAt": "2022-01-06T23:18:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4yb1Xm",
+          "commit": {
+            "abbreviatedOid": "5b0720b"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T23:20:42Z",
+          "updatedAt": "2022-01-06T23:20:42Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "I went with \"prepare-message share\", which is overly wordy but says what we want. The method is now called `prep_share_to_prep`, which is somewhat consistent with our naming conventions else where. \r\n\r\nOther suggestions for alternatives are welcome! (Naming things is hard.) ",
+              "createdAt": "2022-01-06T23:20:42Z",
+              "updatedAt": "2022-01-06T23:20:42Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4yb1ZF",
+          "commit": {
+            "abbreviatedOid": "5b0720b"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T23:20:55Z",
+          "updatedAt": "2022-01-06T23:20:55Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "I've tacked on a commit that will hopefully make this more clear.",
+              "createdAt": "2022-01-06T23:20:55Z",
+              "updatedAt": "2022-01-06T23:20:55Z"
+            }
+          ]
         }
       ]
     },
@@ -1318,25 +1432,35 @@
       "id": "PR_kwDOGKuqOc4wiAdr",
       "title": "Rename \"Heavy Hitters\" to \"Poplar\"",
       "url": "https://github.com/cjpatton/vdaf/pull/16",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "The authors of [BBCGGI21] have recently amended their paper to give the\r\nprotocol a proper name.",
       "createdAt": "2022-01-04T21:41:01Z",
-      "updatedAt": "2022-01-04T23:07:14Z",
+      "updatedAt": "2022-01-06T18:31:40Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "2c85aaa13d93b9105bb4139ce501aa9f6dcbdd1b",
+      "baseRefOid": "84e7b02d3474c2a6fcf79de1c79abacec4d0303f",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/poplar",
-      "headRefOid": "63015f91ec7ea90104090701f595d1944c9cc3a6",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "headRefOid": "5b961d3a0192626bfc66a2ef97b24bb054283cf9",
+      "closedAt": "2022-01-06T18:31:40Z",
+      "mergedAt": "2022-01-06T18:31:40Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "082a2ed7e5090d2258be98039d51b10f7532900c"
+      },
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "s/pops/poplar1",
+          "createdAt": "2022-01-06T18:31:15Z",
+          "updatedAt": "2022-01-06T18:31:15Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOGKuqOc4yTwIQ",
@@ -1468,6 +1592,46 @@
               "body": "I'd like to give folks a chance to mull on it, so we''ll keep this open for now.",
               "createdAt": "2022-01-04T23:07:14Z",
               "updatedAt": "2022-01-04T23:07:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4yZnxO",
+          "commit": {
+            "abbreviatedOid": "63015f9"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T12:27:42Z",
+          "updatedAt": "2022-01-06T12:28:54Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "I'm not sure about `pops`, at first it looks like it's an acronym, but it isn't. I don't think using `poplar` for both the end-to-end protocol and the VDAF is too much of an issue. Or @cjpatton do you think there will be instantiations of poplar-the-protocol that use a different VDAF? And in that case, couldn't that VDAF be called `poplar2` (the same way the current Prio VDAF is `prio3`?\r\nAlternatively, I think using `poplar-vdaf` (and also changing `prio3` to `prio3-vdaf` or just `prio-vdaf`) is also fine.",
+              "createdAt": "2022-01-06T12:27:42Z",
+              "updatedAt": "2022-01-06T12:28:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4ya-PU",
+          "commit": {
+            "abbreviatedOid": "5b961d3"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-06T18:30:28Z",
+          "updatedAt": "2022-01-06T18:30:28Z",
+          "comments": [
+            {
+              "originalPosition": 29,
+              "body": "Cool, one more point of agreement :) As discussed in https://github.com/abetterinternet/ppm-specification/pull/177#discussion_r778413433 we're going with `poplar1`, for the same reason you point out.",
+              "createdAt": "2022-01-06T18:30:28Z",
+              "updatedAt": "2022-01-06T18:30:28Z"
             }
           ]
         }
