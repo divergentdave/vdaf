@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 10 July 2022                                              Cisco
+Expires: 16 July 2022                                              Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                          6 January 2022
+                                                         12 January 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 July 2022.
+   This Internet-Draft will expire on 16 July 2022.
 
 Copyright Notice
 
@@ -524,7 +524,7 @@ Table of Contents
       deterministic preparation-state update algorithm run by each
       Aggregator.  It updates the Aggregator's preparation state (an
       instance of PrepState) and returns either its preparation-message
-      sahre for the current round or, if this is the last round, its
+      share for the current round or, if this is the last round, its
       output share.  An exception is raised if a valid output share
       could not be recovered.  The input of this algorithm is the
       inbound preparation message or, if this is the first round, None.
@@ -1218,7 +1218,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
       Vec[Field], blind, hint) -> encoded: Bytes encodes a leader share
       as a byte string.
 
-   *  encode_helper_share(input_share, proof_sahre, blind, hint) ->
+   *  encode_helper_share(input_share, proof_share, blind, hint) ->
       encoded: Bytes encodes a helper share as a byte string.
 
    *  decode_leader_share and decode_helper_share decode a leader and
