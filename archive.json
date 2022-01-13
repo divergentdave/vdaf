@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-09T00:05:13.523277+00:00",
+  "timestamp": "2022-01-13T00:04:57.917374+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -1238,13 +1238,13 @@
       "labels": [],
       "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
       "createdAt": "2021-12-28T18:47:12Z",
-      "updatedAt": "2022-01-06T23:20:55Z",
+      "updatedAt": "2022-01-12T01:44:44Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "082a2ed7e5090d2258be98039d51b10f7532900c",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/issue11",
-      "headRefOid": "5b0720b379415f303c27fcc5aa27202befa3c955",
+      "headRefOid": "176ab2424e760f461bdaa126550fdf5e1df6b4e7",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
