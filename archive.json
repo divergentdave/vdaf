@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-13T00:04:57.917374+00:00",
+  "timestamp": "2022-01-16T00:05:13.949844+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -1238,7 +1238,7 @@
       "labels": [],
       "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
       "createdAt": "2021-12-28T18:47:12Z",
-      "updatedAt": "2022-01-12T01:44:44Z",
+      "updatedAt": "2022-01-15T00:27:00Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "082a2ed7e5090d2258be98039d51b10f7532900c",
@@ -1263,6 +1263,13 @@
           "body": "With the current syntax:  In a Leader/Helper communication model, the Leader would request each Helper's next prepare message in one round, then broadcast the entire round of messages to each Helper in the next round.\r\n\r\nWith the changed syntax: Instead of broadcasting all of the messages, the Leader can perform this precomputation step, which for both `prio3` and `poplar1` reduces the amount of data broadcast by a factor of `SHARES`.",
           "createdAt": "2022-01-06T22:28:39Z",
           "updatedAt": "2022-01-06T22:28:39Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "I'm going to make an executive decision and merge this by Wednesday, 2022/01/19 unless anyone flags objections to this change. ",
+          "createdAt": "2022-01-15T00:27:00Z",
+          "updatedAt": "2022-01-15T00:27:00Z"
         }
       ],
       "reviews": [
