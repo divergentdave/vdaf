@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 16 July 2022                                              Cisco
+Expires: 22 July 2022                                              Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         12 January 2022
+                                                         18 January 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 July 2022.
+   This Internet-Draft will expire on 22 July 2022.
 
 Copyright Notice
 
@@ -556,7 +556,7 @@ Table of Contents
    the Aggregators recover output shares first, then verify that they
    are valid.  However, this would allow the possibility of misusing the
    API by, say, aggregating an invalid output share.  Moreover, in
-   protocols like Prio+ [AGJOP21] based on oblivious transffer, it is
+   protocols like Prio+ [AGJOP21] based on oblivious transfer, it is
    necessary for the Aggregators to interact in order to recover output
    shares at all.
 
