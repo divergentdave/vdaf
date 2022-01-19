@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 18 July 2022                                              Cisco
+Expires: 23 July 2022                                              Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         14 January 2022
+                                                         19 January 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 July 2022.
+   This Internet-Draft will expire on 23 July 2022.
 
 Copyright Notice
 
@@ -463,12 +463,19 @@ Table of Contents
 4.3.  Preparation
 
    To recover and verify the validity of output shares, the Aggregators
-   interact with one another over ROUND rounds.  In the first round,
-   each aggregator produces a single output based on its input share.
-   In subsequent rounds, each aggregator is given the outputs from all
-   aggregators in the previous round.  After the final round, either all
-   aggregators hold an output share (if the output shares are valid) or
-   all aggregators report an error (if they are not).
+   interact with one another over ROUND rounds.  Prior to each round,
+   each Aggregator constructs an outbound message.  Next, the sequence
+   of outbound messages produced by the Aggregators is combined into a
+   single message, called a "preparation message".  (Each of the
+   outbound messages are called "preparation-message shares".)  Finally,
+   the preparation message is distributed to the Aggregators to begin
+   the next round.
+
+   An aggregator begins the first round with its input share and it
+   begins each subsequent round with the previous preparation message.
+   The aggregator's output in the last round is its output share and its
+   output in each of the preceding rounds is a preparation-message
+   share.
 
    This process involves a value called the "aggregation parameter" used
    to map the input shares to output shares.  The Aggregators need to
@@ -484,15 +491,20 @@ Table of Contents
        +-----------+  +-----------+       +-----------+
        | prep init |  | prep init |       | prep init |
        +-----------+  +------------+      +-----------+
-         |              |              ...  |
-         V              V                   V
-       +-----------+  +-----------+       +-----------+
-       | prep next |  | prep next |       | prep next |
-       +-----------+  +-----------+       +-----------+
-         |              |              ...  |
-         ====================================
-         |              |                   |
-         V              V                   V
+         |              |              ...  |             \
+         V              V                   V             |
+       +-----------+  +-----------+       +-----------+   |
+       | prep next |  | prep next |       | prep next |   |
+       +-----------+  +-----------+       +-----------+   |
+         |              |              ...  |             |
+         V              V                   V             | x ROUNDS
+       +----------------------------------------------+   |
+       | prep_shares_to_prep                          |   |
+       +----------------------------------------------+   |
+                        |                                 |
+         +--------------+-------------------+             |
+         |              |              ...  |             |
+         V              V                   V             /
         ...            ...                 ...
          |              |                   |
          V              V                   V
@@ -503,10 +515,9 @@ Table of Contents
          V              V                   V
        out_share_0    out_share_1         out_share_[SHARES-1]
 
-        Figure 3: VDAF preparation process on the input shares for a
-      single input.  The === lines indicate the sharing of one round's
-        outputs as the inputs to the next round.  At the end of the
-        protocol, each aggregator holds an output share or an error.
+    Figure 3: VDAF preparation process on the input shares for a single
+   measurement.  At the end of the computation, each Aggregator holds an
+                         output share or an error.
 
    *  PrepState(verify_param, agg_param, nonce, input_share) is the
       deterministic preparation-state initialization algorithm run by
@@ -514,25 +525,30 @@ Table of Contents
       share.  Its inputs are the aggregator's verification parameter
       (verify_param), the aggregation parameter (agg_param), the nonce
       provided by the environment (nonce, see Figure 6), and one of the
-      input shares generated by the client (input_share).  Its outputs
-      is the Aggregator's initial preparation state.
+      input shares generated by the client (input_share).  Its output is
+      the Aggregator's initial preparation state.
 
-   *  PrepState.next(inbound: Vec[Bytes]) -> outbound is the
+   *  PrepState.next(inbound: Optional[Bytes]) -> outbound is the
       deterministic preparation-state update algorithm run by each
       Aggregator.  It updates the Aggregator's preparation state (an
-      instance of PrepState) and returns either its outbound message for
-      the current round or, if this is the last round, its output share.
-      An exception is raised if a valid output share could not be
-      recovered.  The input of this algorithm is the sequence of inbound
-      messages from the previous round or, if this is the first round,
-      an empty vector.
+      instance of PrepState) and returns either its preparation-message
+      share for the current round or, if this is the last round, its
+      output share.  An exception is raised if a valid output share
+      could not be recovered.  The input of this algorithm is the
+      inbound preparation message or, if this is the first round, None.
+
+   *  prep_shares_to_prep(agg_param, prep_shares: Vec[Bytes]) -> prep is
+      the deterministc preparation-message preprocessing algorithm.  It
+      combines the preperation-message shares generated by the
+      Aggregators in the previous round into the pepration message
+      consumed by each in the next round.
 
    In effect, each Aggregator moves through a linear state machine with
    ROUNDS+1 states.  The Aggregator enters the first state on using the
    initialization algorithm, and the update algorithm advances the
    Aggregator to the next state.  Thus, in addition to defining the
    number of rounds (ROUNDS), a VDAF instance defines the state of the
-   aggregator after each round.
+   Aggregator after each round.
 
       TODO Consider how to bake this "linear state machine" condition
       into the syntax.  Given that Python 3 is used as our pseudocode,
@@ -544,12 +560,13 @@ Table of Contents
    to ensure that their output shares are valid.  The VDAF abstraction
    boundary is drawn so that an Aggregator only recovers an output share
    if it is deemed valid (at least, based on the Aggregator's view of
-   the protocol).  Another way to draw this boundary woulds be to have
+   the protocol).  Another way to draw this boundary would be to have
    the Aggregators recover output shares first, then verify that they
    are valid.  However, this would allow the possibility of misusing the
-   API by, say, aggregating an invalid output share.  Moreover, in some
-   protocols, like Prio+ [AGJOP21] it is necessary for the Aggregators
-   to interact in order to recover output shares at all.
+   API by, say, aggregating an invalid output share.  Moreover, in
+   protocols like Prio+ [AGJOP21] based on oblivious transfer, it is
+   necessary for the Aggregators to interact in order to recover output
+   shares at all.
 
    Note that it is possible for a VDAF to specify ROUNDS == 0, in which
    case each Aggregator runs the preparation-state update algorithm once
@@ -654,14 +671,14 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
           verify_params[j], agg_param, nonce, input_shares[j]))
 
     # Aggregators recover their output shares.
-    inbound = []
+    inbound = None
     for i in range(ROUNDS+1):
       outbound = []
       for j in range(SHARES):
         outbound.append(prep_states[j].next(inbound))
       # This is where we would send messages over the network
       # in a distributed VDAF computation.
-      inbound = outbound
+      inbound = prep_shares_to_prep(agg_param, outbound)
 
     # The final outputs of validation are the output shares
     # for this input.
@@ -1116,8 +1133,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
       security.
 
    The preparation state is defined as follows.  It involves two
-   additional helper functions, encode_verifer_share and
-   decode_verifier_share, both of which are defined in Section 6.2.6.
+   additional helper functions, encode_prep_message and
+   decode_prep_message, both of which are defined in Section 6.2.6.
 
    class PrepState:
      def __init__(verify_param, _, nonce, r_input_share):
@@ -1138,8 +1155,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        self.k_query_rand = get_key(k_query_init, byte(255) + nonce)
        self.step = "ready"
 
-     def next(self, inbound: Vec[Bytes]):
-       if self.step == "ready" and len(inbound) == 0:
+     def next(self, inbound: Optional[Bytes]):
+       if self.step == "ready" and inbound == None:
          joint_rand = expand(Field, self.k_joint_rand, JOINT_RAND_LEN)
          query_rand = expand(Field, self.k_query_rand, QUERY_RAND_LEN)
          verifier_share = flp_query(
@@ -1147,26 +1164,33 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
          self.output_share = flp_truncate(input_share)
          self.step = "waiting"
-         return encode_verifier_share(
+         return encode_prep_message(
            self.k_joint_rand_share,
            self.verifier_share,
          )
 
-       elif self.step == "waiting" and len(inbound) == SHARES:
-         k_joint_rand = zeros(KEY_SIZE)
-         verifier = vec_zeros(VERIFIER_LEN)
-         for r_share in inbound:
-           (k_joint_rand_share,
-            verifier_share) = decode_verifier_share(r_share)
-
-           k_joint_rand ^= k_joint_rand_share
-           verifer += verifier_share
-
+       elif self.step == "waiting" and inbound != None:
+         (k_joint_rand, verifier) = decode_prep_message(inbound)
          if k_joint_rand != self.k_joint_rand: raise ERR_INVALID
          if not flp_decide(verifier): raise ERR_INVALID
          return Field.encode_vec(self.output_share)
 
        else: raise ERR_INVALID_STATE
+
+   def prep_shares_to_prep(_, inbound: Vec[Bytes]):
+     if len(inbound) != SHARES:
+       raise ERR_INVALID_INPUT
+
+     k_joint_rand = zeros(KEY_SIZE)
+     verifier = Field.zeros(VERIFIER_LEN)
+     for r_share in inbound:
+       (k_joint_rand_share,
+        verifier_share) = decode_prep_message(r_share)
+
+       k_joint_rand ^= k_joint_rand_share
+       verifer += verifier_share
+
+     return encode_prep_message(k_joint_rand, verifier)
 
                   Figure 10: Preparation state for prio3.
 
@@ -1177,7 +1201,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 6.2.4.  Aggregation
 
    def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
-     agg_share = vec_zeros(OUTPUT_LEN)
+     agg_share = Field.zeros(OUTPUT_LEN)
      for output_share in output_shares:
        agg_share += Field.decode_vec(output_share)
      return Field.encode_vec(agg_share)
@@ -1187,7 +1211,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 6.2.5.  Unsharding
 
    def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
-     agg = vec_zeros(OUTPUT_LEN)
+     agg = Field.zeros(OUTPUT_LEN)
      for agg_share in agg_shares:
        agg += Field.decode_vec(agg_share)
      return Field.encode_vec(agg)
@@ -1202,16 +1226,16 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
       Vec[Field], blind, hint) -> encoded: Bytes encodes a leader share
       as a byte string.
 
-   *  encode_helper_share(input_share, proof_sahre, blind, hint) ->
+   *  encode_helper_share(input_share, proof_share, blind, hint) ->
       encoded: Bytes encodes a helper share as a byte string.
 
    *  decode_leader_share and decode_helper_share decode a leader and
       helper share respectively.
 
-   *  encode_verifier_share(hint, verifier_share: Vec[Field]) -> encoded
-      encodes a hint and verifier share as a byte string.
+   *  encode_prep_message(key, verifier: Vec[Field]) -> encoded encodes
+      a key (share) and verifier (share) as a byte string.
 
-   *  decode_verifier_share decodes a verifier share.
+   *  decode_prep_message decodes a key (share) and verifier (share).
 
 7.  poplar1
 
@@ -1428,12 +1452,12 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        self.k_verify_rand = get_key(k_verify_init, nonce)
        self.step = "ready"
 
-     def next(self, inbound: Vec[Bytes]):
+     def next(self, inbound: Optional[Bytes]):
        l = self.l
        (a_share, b_share, c_share,
         A_share, B_share) = correlation_shares[l-1]
 
-       if self.step == "ready" and len(inbound) == 0:
+       if self.step == "ready" and inbound == None:
          # Evaluate IDPF on candidate prefixes.
          data_share, auth_share = [], []
          for x in self.candiate_prefixes:
@@ -1453,10 +1477,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
          self.step = "sketch round 1"
          return verifier_share_1
 
-       elif self.step == "sketch round 1" and len(inbound) == 2:
-         verifier_1 = Field[l].deocde_vec(inbound[0]) + \
-                      Field[l].deocde_vec(inbound[1])
-
+       elif self.step == "sketch round 1" and inbound != None:
+         verifier_1 = Field[l].decode_vec(inbound)
          verifier_share_2 = [
            (verifier_1[0] * verifier_1[0] \
             - verifier_1[1] \
@@ -1468,14 +1490,22 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
          self.step = "sketch round 2"
          return Field[l].encode_vec(verifier_share_2)
 
-       elif self.step == "sketch round 2" and len(inbound) == 2:
-         verifier_2 = Field[l].decode_vec(inbound[0]) + \
-                      Field[l].decode_vec(inbound[1])
-
+       elif self.step == "sketch round 2" and inbound != None:
+         verifier_2 = Field[l].decode_vec(inbound)
          if verifier_2 != 0: raise ERR_INVALID
          return Field[l].encode_vec(self.output_share)
 
        else: raise ERR_INVALID_STATE
+
+   def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
+     if len(inbound) != 2:
+       raise ERR_INVALID_INPUT
+
+     (l, _) = decode_indexes(agg_param)
+     verifier = Field[l].decode_vec(inbound[0]) + \
+                Field[l].decode_vec(inbound[1])
+
+     return Field[l].encode_vec(verifier)
 
                  Figure 15: Preparation state for poplar1.
 
@@ -1486,7 +1516,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      if len(output_shares) != len(candidate_prefixes):
        raise ERR_INVALID_INPUT
 
-     agg_share = Field[l].vec_zeros(len(candidate_prefixes))
+     agg_share = Field[l].zeros(len(candidate_prefixes))
      for output_share in output_shares:
        agg_share += Field[l].decode_vec(output_share)
 

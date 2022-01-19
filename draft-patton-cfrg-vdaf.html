@@ -1024,7 +1024,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Patton, et al.</td>
-<td class="center">Expires 18 July 2022</td>
+<td class="center">Expires 23 July 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1037,12 +1037,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-patton-cfrg-vdaf-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-01-14" class="published">14 January 2022</time>
+<time datetime="2022-01-19" class="published">19 January 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-07-18">18 July 2022</time></dd>
+<dd class="expires"><time datetime="2022-07-23">23 July 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1101,7 +1101,7 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 18 July 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 23 July 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1645,17 +1645,22 @@ clients. We should consider dropping this at some point.<a href="#section-4.2-4.
 <a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-preparation" class="section-name selfRef">Preparation</a>
         </h3>
 <p id="section-4.3-1">To recover and verify the validity of output shares, the Aggregators interact
-with one another over <code>ROUND</code> rounds.  In the first round, each aggregator
-produces a single output based on its input share.  In subsequent rounds, each
-aggregator is given the outputs from all aggregators in the previous round.
-After the final round, either all aggregators hold an output share (if the
-output shares are valid) or all aggregators report an error (if they are not).<a href="#section-4.3-1" class="pilcrow">¶</a></p>
-<p id="section-4.3-2">This process involves a value called the "aggregation parameter" used to map the
+with one another over <code>ROUND</code> rounds. Prior to each round, each Aggregator
+constructs an outbound message. Next, the sequence of outbound messages produced
+by the Aggregators is combined into a single message, called a "preparation
+message". (Each of the outbound messages are called "preparation-message
+shares".) Finally, the preparation message is distributed to the Aggregators to
+begin the next round.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-2">An aggregator begins the first round with its input share and it begins each
+subsequent round with the previous preparation message. The aggregator's output
+in the last round is its output share and its output in each of the preceding
+rounds is a preparation-message share.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+<p id="section-4.3-3">This process involves a value called the "aggregation parameter" used to map the
 input shares to output shares. The Aggregators need to agree on this parameter
-before they can begin preparing inputs for aggregation.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+before they can begin preparing inputs for aggregation.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
 <span id="name-vdaf-preparation-process-on"></span><div id="prep-flow">
 <figure id="figure-3">
-          <div class="alignLeft art-text artwork" id="section-4.3-3.1">
+          <div class="alignLeft art-text artwork" id="section-4.3-4.1">
 <pre>
     Aggregator 0   Aggregator 1        Aggregator SHARES-1
     ============   ============        ===================
@@ -1666,15 +1671,20 @@ before they can begin preparing inputs for aggregation.<a href="#section-4.3-2" 
     +-----------+  +-----------+       +-----------+
     | prep init |  | prep init |       | prep init |
     +-----------+  +------------+      +-----------+
-      |              |              ...  |
-      V              V                   V
-    +-----------+  +-----------+       +-----------+
-    | prep next |  | prep next |       | prep next |
-    +-----------+  +-----------+       +-----------+
-      |              |              ...  |
-      ====================================
-      |              |                   |
-      V              V                   V
+      |              |              ...  |             \
+      V              V                   V             |
+    +-----------+  +-----------+       +-----------+   |
+    | prep next |  | prep next |       | prep next |   |
+    +-----------+  +-----------+       +-----------+   |
+      |              |              ...  |             |
+      V              V                   V             | x ROUNDS
+    +----------------------------------------------+   |
+    | prep_shares_to_prep                          |   |
+    +----------------------------------------------+   |
+                     |                                 |
+      +--------------+-------------------+             |
+      |              |              ...  |             |
+      V              V                   V             /
      ...            ...                 ...
       |              |                   |
       V              V                   V
@@ -1687,58 +1697,64 @@ before they can begin preparing inputs for aggregation.<a href="#section-4.3-2" 
 </pre>
 </div>
 <figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
-<a href="#name-vdaf-preparation-process-on" class="selfRef">VDAF preparation process on the input shares for a single input. The === lines indicate the sharing of one round's outputs as the inputs to the next round. At the end of the protocol, each aggregator holds an output share or an error.</a>
+<a href="#name-vdaf-preparation-process-on" class="selfRef">VDAF preparation process on the input shares for a single measurement. At the end of the computation, each Aggregator holds an output share or an error.</a>
           </figcaption></figure>
 </div>
 <ul class="normal">
-<li class="normal" id="section-4.3-4.1">
+<li class="normal" id="section-4.3-5.1">
             <code>PrepState(verify_param, agg_param, nonce, input_share)</code> is the deterministic
 preparation-state initialization algorithm run by each Aggregator to begin
 processing its input share into an output share. Its inputs are the
 aggregator's verification parameter (<code>verify_param</code>), the aggregation
 parameter (<code>agg_param</code>), the nonce provided by the environment (<code>nonce</code>, see
 <a href="#run-vdaf" class="xref">Figure 6</a>), and one of the input shares generated by the client
-(<code>input_share</code>). Its outputs is the Aggregator's initial preparation state.<a href="#section-4.3-4.1" class="pilcrow">¶</a>
+(<code>input_share</code>). Its output is the Aggregator's initial preparation state.<a href="#section-4.3-5.1" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-4.3-4.2">
-            <code>PrepState.next(inbound: Vec[Bytes]) -&gt; outbound</code> is the deterministic
+          <li class="normal" id="section-4.3-5.2">
+            <code>PrepState.next(inbound: Optional[Bytes]) -&gt; outbound</code> is the deterministic
 preparation-state update algorithm run by each Aggregator. It updates the
 Aggregator's preparation state (an instance of <code>PrepState</code>) and returns either
-its outbound message for the current round or, if this is the last round, its
-output share. An exception is raised if a valid output share could not be
-recovered. The input of this algorithm is the sequence of inbound messages
-from the previous round or, if this is the first round, an empty vector.<a href="#section-4.3-4.2" class="pilcrow">¶</a>
+its preparation-message share for the current round or, if this is the last
+round, its output share. An exception is raised if a valid output share could
+not be recovered. The input of this algorithm is the inbound preparation
+message or, if this is the first round, <code>None</code>.<a href="#section-4.3-5.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-4.3-5.3">
+            <code>prep_shares_to_prep(agg_param, prep_shares: Vec[Bytes]) -&gt; prep</code>
+is the deterministc preparation-message preprocessing algorithm. It combines
+the preperation-message shares generated by the Aggregators in the previous
+round into the pepration message consumed by each in the next round.<a href="#section-4.3-5.3" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-4.3-5">In effect, each Aggregator moves through a linear state machine with <code>ROUNDS+1</code>
+<p id="section-4.3-6">In effect, each Aggregator moves through a linear state machine with <code>ROUNDS+1</code>
 states.  The Aggregator enters the first state on using the initialization
 algorithm, and the update algorithm advances the Aggregator to the next state.
 Thus, in addition to defining the number of rounds (<code>ROUNDS</code>), a VDAF instance
-defines the state of the aggregator after each round.<a href="#section-4.3-5" class="pilcrow">¶</a></p>
+defines the state of the Aggregator after each round.<a href="#section-4.3-6" class="pilcrow">¶</a></p>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-4.3-6.1">
-            <p id="section-4.3-6.1.1">TODO Consider how to bake this "linear state machine" condition into the
+<li class="normal ulEmpty" id="section-4.3-7.1">
+            <p id="section-4.3-7.1.1">TODO Consider how to bake this "linear state machine" condition into the
 syntax. Given that Python 3 is used as our pseudocode, it's easier to specify
-the preparation state using a class.<a href="#section-4.3-6.1.1" class="pilcrow">¶</a></p>
+the preparation state using a class.<a href="#section-4.3-7.1.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-4.3-7">The preparation-state update accomplishes two tasks that are essential to most
+<p id="section-4.3-8">The preparation-state update accomplishes two tasks that are essential to most
 schemes: recovery of output shares from the input shares, and a multi-party
 computation carried out by the Aggregators to ensure that their output shares
 are valid. The VDAF abstraction boundary is drawn so that an Aggregator only
 recovers an output share if it is deemed valid (at least, based on the
-Aggregator's view of the protocol). Another way to draw this boundary woulds be
+Aggregator's view of the protocol). Another way to draw this boundary would be
 to have the Aggregators recover output shares first, then verify that they are
 valid. However, this would allow the possibility of misusing the API by, say,
-aggregating an invalid output share. Moreover, in some protocols, like Prio+
-<span>[<a href="#AGJOP21" class="xref">AGJOP21</a>]</span> it is necessary for the Aggregators to interact in order to recover
-output shares at all.<a href="#section-4.3-7" class="pilcrow">¶</a></p>
-<p id="section-4.3-8">Note that it is possible for a VDAF to specify <code>ROUNDS == 0</code>, in which case
+aggregating an invalid output share. Moreover, in protocols like Prio+ <span>[<a href="#AGJOP21" class="xref">AGJOP21</a>]</span>
+based on oblivious transfer, it is necessary for the Aggregators to interact in
+order to recover output shares at all.<a href="#section-4.3-8" class="pilcrow">¶</a></p>
+<p id="section-4.3-9">Note that it is possible for a VDAF to specify <code>ROUNDS == 0</code>, in which case
 each Aggregator runs the preparation-state update algorithm once and immediately
 recovers its output share without interacting with the other Aggregators.
 However, most, if not all, constructions will require some amount of interaction
 in order to ensure validity of the output shares (while also maintaining
-privacy).<a href="#section-4.3-8" class="pilcrow">¶</a></p>
+privacy).<a href="#section-4.3-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="aggregation">
@@ -1868,14 +1884,14 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
           verify_params[j], agg_param, nonce, input_shares[j]))
 
     # Aggregators recover their output shares.
-    inbound = []
+    inbound = None
     for i in range(ROUNDS+1):
       outbound = []
       for j in range(SHARES):
         outbound.append(prep_states[j].next(inbound))
       # This is where we would send messages over the network
       # in a distributed VDAF computation.
-      inbound = outbound
+      inbound = prep_shares_to_prep(agg_param, outbound)
 
     # The final outputs of validation are the output shares
     # for this input.
@@ -2417,8 +2433,8 @@ We'll need to understand better how this impacts security.<a href="#section-6.2.
 </li>
           </ul>
 <p id="section-6.2.3-5">The preparation state is defined as follows. It involves two additional helper
-functions, <code>encode_verifer_share</code> and <code>decode_verifier_share</code>, both of which are
-defined in <a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.3-5" class="pilcrow">¶</a></p>
+functions, <code>encode_prep_message</code> and <code>decode_prep_message</code>, both of which are defined in
+<a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.3-5" class="pilcrow">¶</a></p>
 <span id="name-preparation-state-for-prio3"></span><div id="prio3-prep-state">
 <figure id="figure-10">
             <div class="alignLeft art-text artwork" id="section-6.2.3-6.1">
@@ -2442,8 +2458,8 @@ class PrepState:
     self.k_query_rand = get_key(k_query_init, byte(255) + nonce)
     self.step = "ready"
 
-  def next(self, inbound: Vec[Bytes]):
-    if self.step == "ready" and len(inbound) == 0:
+  def next(self, inbound: Optional[Bytes]):
+    if self.step == "ready" and inbound == None:
       joint_rand = expand(Field, self.k_joint_rand, JOINT_RAND_LEN)
       query_rand = expand(Field, self.k_query_rand, QUERY_RAND_LEN)
       verifier_share = flp_query(
@@ -2451,26 +2467,33 @@ class PrepState:
 
       self.output_share = flp_truncate(input_share)
       self.step = "waiting"
-      return encode_verifier_share(
+      return encode_prep_message(
         self.k_joint_rand_share,
         self.verifier_share,
       )
 
-    elif self.step == "waiting" and len(inbound) == SHARES:
-      k_joint_rand = zeros(KEY_SIZE)
-      verifier = vec_zeros(VERIFIER_LEN)
-      for r_share in inbound:
-        (k_joint_rand_share,
-         verifier_share) = decode_verifier_share(r_share)
-
-        k_joint_rand ^= k_joint_rand_share
-        verifer += verifier_share
-
+    elif self.step == "waiting" and inbound != None:
+      (k_joint_rand, verifier) = decode_prep_message(inbound)
       if k_joint_rand != self.k_joint_rand: raise ERR_INVALID
       if not flp_decide(verifier): raise ERR_INVALID
       return Field.encode_vec(self.output_share)
 
     else: raise ERR_INVALID_STATE
+
+def prep_shares_to_prep(_, inbound: Vec[Bytes]):
+  if len(inbound) != SHARES:
+    raise ERR_INVALID_INPUT
+
+  k_joint_rand = zeros(KEY_SIZE)
+  verifier = Field.zeros(VERIFIER_LEN)
+  for r_share in inbound:
+    (k_joint_rand_share,
+     verifier_share) = decode_prep_message(r_share)
+
+    k_joint_rand ^= k_joint_rand_share
+    verifer += verifier_share
+
+  return encode_prep_message(k_joint_rand, verifier)
 </pre>
 </div>
 <figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
@@ -2495,7 +2518,7 @@ computation is not necessary. Should we bake this option into the spec?<a href="
             <div class="alignLeft art-text artwork" id="section-6.2.4-1.1">
 <pre>
 def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
-  agg_share = vec_zeros(OUTPUT_LEN)
+  agg_share = Field.zeros(OUTPUT_LEN)
   for output_share in output_shares:
     agg_share += Field.decode_vec(output_share)
   return Field.encode_vec(agg_share)
@@ -2517,7 +2540,7 @@ def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
             <div class="alignLeft art-text artwork" id="section-6.2.5-1.1">
 <pre>
 def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
-  agg = vec_zeros(OUTPUT_LEN)
+  agg = Field.zeros(OUTPUT_LEN)
   for agg_share in agg_shares:
     agg += Field.decode_vec(agg_share)
   return Field.encode_vec(agg)
@@ -2545,7 +2568,7 @@ def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
 hint) -&gt; encoded: Bytes</code> encodes a leader share as a byte string.<a href="#section-6.2.6-2.1" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-6.2.6-2.2">
-              <code>encode_helper_share(input_share, proof_sahre, blind, hint) -&gt; encoded: Bytes</code>
+              <code>encode_helper_share(input_share, proof_share, blind, hint) -&gt; encoded: Bytes</code>
 encodes a helper share as a byte string.<a href="#section-6.2.6-2.2" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-6.2.6-2.3">
@@ -2553,11 +2576,11 @@ encodes a helper share as a byte string.<a href="#section-6.2.6-2.2" class="pilc
 share respectively.<a href="#section-6.2.6-2.3" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-6.2.6-2.4">
-              <code>encode_verifier_share(hint, verifier_share: Vec[Field]) -&gt; encoded</code> encodes a
-hint and verifier share as a byte string.<a href="#section-6.2.6-2.4" class="pilcrow">¶</a>
+              <code>encode_prep_message(key, verifier: Vec[Field]) -&gt; encoded</code> encodes a
+key (share) and verifier (share) as a byte string.<a href="#section-6.2.6-2.4" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-6.2.6-2.5">
-              <code>decode_verifier_share</code> decodes a verifier share.<a href="#section-6.2.6-2.5" class="pilcrow">¶</a>
+              <code>decode_prep_message</code> decodes a key (share) and verifier (share).<a href="#section-6.2.6-2.5" class="pilcrow">¶</a>
 </li>
           </ul>
 </section>
@@ -2826,12 +2849,12 @@ class PrepState:
     self.k_verify_rand = get_key(k_verify_init, nonce)
     self.step = "ready"
 
-  def next(self, inbound: Vec[Bytes]):
+  def next(self, inbound: Optional[Bytes]):
     l = self.l
     (a_share, b_share, c_share,
      A_share, B_share) = correlation_shares[l-1]
 
-    if self.step == "ready" and len(inbound) == 0:
+    if self.step == "ready" and inbound == None:
       # Evaluate IDPF on candidate prefixes.
       data_share, auth_share = [], []
       for x in self.candiate_prefixes:
@@ -2851,10 +2874,8 @@ class PrepState:
       self.step = "sketch round 1"
       return verifier_share_1
 
-    elif self.step == "sketch round 1" and len(inbound) == 2:
-      verifier_1 = Field[l].deocde_vec(inbound[0]) + \
-                   Field[l].deocde_vec(inbound[1])
-
+    elif self.step == "sketch round 1" and inbound != None:
+      verifier_1 = Field[l].decode_vec(inbound)
       verifier_share_2 = [
         (verifier_1[0] * verifier_1[0] \
          - verifier_1[1] \
@@ -2866,14 +2887,22 @@ class PrepState:
       self.step = "sketch round 2"
       return Field[l].encode_vec(verifier_share_2)
 
-    elif self.step == "sketch round 2" and len(inbound) == 2:
-      verifier_2 = Field[l].decode_vec(inbound[0]) + \
-                   Field[l].decode_vec(inbound[1])
-
+    elif self.step == "sketch round 2" and inbound != None:
+      verifier_2 = Field[l].decode_vec(inbound)
       if verifier_2 != 0: raise ERR_INVALID
       return Field[l].encode_vec(self.output_share)
 
     else: raise ERR_INVALID_STATE
+
+def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
+  if len(inbound) != 2:
+    raise ERR_INVALID_INPUT
+
+  (l, _) = decode_indexes(agg_param)
+  verifier = Field[l].decode_vec(inbound[0]) + \
+             Field[l].decode_vec(inbound[1])
+
+  return Field[l].encode_vec(verifier)
 </pre>
 </div>
 <figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
@@ -2896,7 +2925,7 @@ def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
   if len(output_shares) != len(candidate_prefixes):
     raise ERR_INVALID_INPUT
 
-  agg_share = Field[l].vec_zeros(len(candidate_prefixes))
+  agg_share = Field[l].zeros(len(candidate_prefixes))
   for output_share in output_shares:
     agg_share += Field[l].decode_vec(output_share)
 
