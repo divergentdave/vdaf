@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-18T00:04:50.911123+00:00",
+  "timestamp": "2022-01-20T00:04:37.906945+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -168,15 +168,15 @@
       "id": "I_kwDOGKuqOc4-5xna",
       "title": "Syntax: Public preprocessing during the preparation phase",
       "url": "https://github.com/cjpatton/vdaf/issues/11",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "For both prio3 and hits, each round of the preparation phase consists of a step of \"preprocessing\" of the previous round's messages. This preprocessing step is identical for all of the aggregators. In hits, for example, each aggregator begins each round by summing up the messages from the previous round. From Figure 15 in https://cjpatton.github.io/vdaf/draft-patton-cfrg-vdaf.html#name-preparation-3:\r\n```\r\n    ...\r\n    elif self.step == \"sketch round 1\" and len(inbound) == 2:\r\n      verifier_1 = Field[l].deocde_vec(inbound[0]) + \\             # ADD UP INPUT MESSAGES\r\n                   Field[l].deocde_vec(inbound[1])\r\n\r\n      verifier_share_2 = [\r\n        (verifier_1[0] * verifier_1[0] \\\r\n         - verifier_1[1] \\\r\n         - verifier_1[2]) * self.party_id \\\r\n        + A_share * verifer_1[0] \\\r\n        + B_share\r\n      ]\r\n\r\n      self.step = \"sketch round 2\"\r\n      return Field[l].encode_vec(verifier_share_2)\r\n\r\n    elif self.step == \"sketch round 2\" and len(inbound) == 2:\r\n      verifier_2 = Field[l].decode_vec(inbound[0]) + \\             # ADD UP INPUT MESSAGES\r\n                   Field[l].decode_vec(inbound[1])\r\n\r\n      if verifier_2 != 0: raise ERR_INVALID\r\n      return Field[l].encode_vec(self.output_share)\r\n   ...\r\n```\r\nThe essence of what's happening here is that, in each round, the aggregators are exchanging additive shares of a single message. prio3 is similar, although each message consists of an XOR-share of as byte string and an additive share of the FLP verifier. From Figure 10:\r\n```\r\n   ...\r\n   elif self.step == \"waiting\" and len(inbound) == SHARES:\r\n      k_joint_rand = zeros(KEY_SIZE)\r\n      verifier = vec_zeros(VERIFIER_LEN)\r\n      for r_share in inbound:\r\n        (k_joint_rand_share,\r\n         verifier_share) = decode_verifier_share(r_share)\r\n\r\n        k_joint_rand ^= k_joint_rand_share                           # ADD UP xor SHARES\r\n        verifer += verifier_share                                    # ADD UP ADDITIVE SHARES\r\n\r\n      if k_joint_rand != self.k_joint_rand: raise ERR_INVALID\r\n      if not flp_decide(verifier): raise ERR_INVALID\r\n      return Field.encode_vec(self.output_share)\r\n   ...\r\n```\r\nWhat we're likely to do in the PPM protocol is have one aggregator -- the Leader -- collect the verifier messages at each round and relay them to the other aggregators. We could save on communication cost if we have the Leader perform this public preprocessing step itself and disseminate the result.\r\n\r\nTo make this optimization generic, I'd like to propose that we lift the public processing step to an explicit part of the syntax. In particular, we'd change the preparation phase as follows (from Figure 6):\r\n```\r\n   # Each aggregator initializes its preparation state.\r\n    prep_states = []\r\n    for j in range(SHARES):\r\n      prep_states.append(PrepState(\r\n          verify_params[j], agg_param, nonce, input_shares[j]))\r\n\r\n    # Aggregators recover their output shares.\r\n-   inbound = []\r\n+   inbound = \"\"\r\n    for i in range(ROUNDS+1):\r\n      outbound = []\r\n      for j in range(SHARES):\r\n        outbound.append(prep_states[j].next(inbound))\r\n      # This is where we would send messages over the network\r\n      # in a distributed VDAF computation.\r\n-     inbound = outbound\r\n+     inbound = prep_preprocess(j, outbound)\r\n\r\n    # The final outputs of validation are the output shares\r\n    # for this input.\r\n    output_shares.append(outbound)\r\n```\r\n\r\nI don't think this syntactic change would decrease generality, but I also don't want it to be a nuisance. Maybe it makes sense to not call this out explicitly?",
       "createdAt": "2021-11-16T21:12:25Z",
-      "updatedAt": "2022-01-05T01:47:38Z",
-      "closedAt": null,
+      "updatedAt": "2022-01-19T17:44:43Z",
+      "closedAt": "2022-01-19T17:44:43Z",
       "comments": [
         {
           "author": "bifurcation",
@@ -1231,24 +1231,26 @@
       "id": "PR_kwDOGKuqOc4wWGea",
       "title": "Add public preprocessing of messages",
       "url": "https://github.com/cjpatton/vdaf/pull/14",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
       "createdAt": "2021-12-28T18:47:12Z",
-      "updatedAt": "2022-01-17T13:09:35Z",
+      "updatedAt": "2022-01-19T17:44:44Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "082a2ed7e5090d2258be98039d51b10f7532900c",
+      "baseRefOid": "71f9481b446f191da17118fd4b82b1a8cf9aa6fd",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/issue11",
-      "headRefOid": "176ab2424e760f461bdaa126550fdf5e1df6b4e7",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "bd8b7a4a80336d15980164b1afe731c17bc1f3a2",
+      "closedAt": "2022-01-19T17:44:44Z",
+      "mergedAt": "2022-01-19T17:44:43Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "6b856956b14b89d70e22ed8fd3655f9521720b14"
+      },
       "comments": [
         {
           "author": "tgeoghegan",
@@ -1270,6 +1272,27 @@
           "body": "I'm going to make an executive decision and merge this by Wednesday, 2022/01/19 unless anyone flags objections to this change. ",
           "createdAt": "2022-01-15T00:27:00Z",
           "updatedAt": "2022-01-15T00:27:00Z"
+        },
+        {
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I'm OK with this, as long as we agree that the degenerate case where `prep_shares_to_prep` just concatenates the shares is in-bounds (which puts us back in the broadcast posture).",
+          "createdAt": "2022-01-18T22:03:51Z",
+          "updatedAt": "2022-01-18T22:04:18Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "> I'm OK with this, as long as we agree that the degenerate case where `prep_shares_to_prep` just concatenates the shares is in-bounds (which puts us back in the broadcast posture).\r\n\r\nYeah I agree. It would be premature to rule this out.",
+          "createdAt": "2022-01-19T00:29:16Z",
+          "updatedAt": "2022-01-19T00:29:16Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Squashed. Thanks all for your feedback!",
+          "createdAt": "2022-01-19T17:44:29Z",
+          "updatedAt": "2022-01-19T17:44:29Z"
         }
       ],
       "reviews": [
@@ -1449,6 +1472,26 @@
               "body": "`transffer` -> `transfer`",
               "createdAt": "2022-01-17T13:05:34Z",
               "updatedAt": "2022-01-17T13:09:35Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4zAkR7",
+          "commit": {
+            "abbreviatedOid": "6de0c44"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-18T17:57:39Z",
+          "updatedAt": "2022-01-18T17:57:39Z",
+          "comments": [
+            {
+              "originalPosition": 109,
+              "body": "Done",
+              "createdAt": "2022-01-18T17:57:39Z",
+              "updatedAt": "2022-01-18T17:57:39Z"
             }
           ]
         }
