@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-20T00:04:37.906945+00:00",
+  "timestamp": "2022-01-27T00:04:59.606059+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -270,6 +270,112 @@
       "updatedAt": "2021-12-28T19:27:29Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 18,
+      "id": "I_kwDOGKuqOc5CXBsP",
+      "title": "Threat model and protocol for distributed setup",
+      "url": "https://github.com/cjpatton/vdaf/issues/18",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "The \"setup\" algorithm defined in the spec specifies the generation of the public parameter used by the clients and verification parameter of each of the aggregators. This algorithm is said to run \"out-of-band\", effectively punting this consideration to applications. In particular, this is a problem that PPM will have to solve: see https://github.com/abetterinternet/ppm-specification/issues/161.\r\n\r\nWe know that the setup algorithm being run securely is crucial correctness, however it's not clear how important it is for privacy. As a strawman, suppose that we have one aggregator run the setup algorithm and distribute the output among the parties such that the clients never learn or control the value of the verification parameters. This ought to be good enough for correctness. What's less clear (to me, at least) is whether the aggregator, by choosing the verification parameters maliciously, can force an honest aggregator into revealing something that leads to a privacy violation.\r\n\r\nIf this strawman is not sufficient and we end up needing to do something fancier, then it may prudent to revisit the \"setup algorithm\" abstraction. What we woiuld want for prio3 and poplar1 is a protocol for exchanging a shared secret. (The properties we need from this key exchange are TBD, but note that something like a DH key exchange might not suffice. See https://github.com/abetterinternet/ppm-specification/issues/161 for discussion.)",
+      "createdAt": "2022-01-25T01:53:41Z",
+      "updatedAt": "2022-01-26T17:02:26Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "One thing to keep in mind is that the randomness used in the verification protocol (at least for Poplar) must be independent of the client keys. If a (semi-honest) helper server colludes with a (malicious) client, the client could use the randomness known to the helper server to generate an invalid share that still passes the verification. So I would propose running the setup phase only after all client shares have been collected and agreed on by the helper servers.\r\n\r\nRegarding maliciously generated randomness, are we considering malicious security for the helpers at all? If so, what exact formalization? For example, Poplar only provides malicious security with respect to privacy (but not correctness). Not sure we want to hard-code this threat model or instead leave it up to implementations.",
+          "createdAt": "2022-01-25T10:32:56Z",
+          "updatedAt": "2022-01-25T10:33:57Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "> One thing to keep in mind is that the randomness used in the verification protocol (at least for Poplar) must be independent of the client keys. If a (semi-honest) helper server colludes with a (malicious) client, the client could use the randomness known to the helper server to generate an invalid share that still passes the verification.\r\n\r\nMost definitely. In fact, this is likely going to be true for most, if not all, VDAFs. \r\n\r\n> So I would propose running the setup phase only after all client shares have been collected and agreed on by the helper servers.\r\n\r\nThis isn't going to feasible for all deployments for PPM. In particular, a deployment of prio3 might throw report shares away as soon as they're aggregated, in order to limit storage overhead. Regardless, I think the main requirement is that the randomness is kept secret from the clients, which is definitely feasible.\r\n\r\n> Regarding maliciously generated randomness, are we considering malicious security for the helpers at all? If so, what exact formalization? For example, Poplar only provides malicious security with respect to privacy (but not correctness). Not sure we want to hard-code this threat model or instead leave it up to implementations.\r\n\r\nYes, as stated in our security considerations: for privacy we're concerned with malicious aggregators, but for correctness we assume the aggregators are honest. This amounts to the clients only needing to trust at least one aggregator for privacy, however the collector needs to trust that the aggregators compute the protocol correctly.\r\n\r\nThe main point raised in https://github.com/abetterinternet/ppm-specification/issues/161 is that there is a gap in the thread model not addressed by [BBCGGI19] or [BBCGGI21] (Poplar): The shared randomness used for verification may be controlled by the attacker. [BBCGGI19] and [BBCGGI21] side-step this by assuming an ideal \"coin-flipping\" functionality in the protocol. In practice, this coin-flipping functionality needs to be realized by some interaction among the aggregators.\r\n\r\nThus the main question I'm asking here is what properties do we actually need from the coin-flipping protocol. In particular: If we allow the attacker to control the honest aggregators' long lived randomness, are `poplar1` and `prio3` still private? This was discussed a bit in https://github.com/abetterinternet/ppm-specification/issues/161, but I'm not sure we have a definitive answer (at least for prio3).\r\n   * If yes, then the strawman setup procedure described above will suffice and we're done.\r\n   * If no, then we'll have to decide whether to consider an alternative here or leave this to applications like PPM.",
+          "createdAt": "2022-01-25T15:57:21Z",
+          "updatedAt": "2022-01-25T15:57:21Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think there are two questions here:\r\n1. How do we handle collusions between one of the servers and a subset of clients with respect to correctness? \r\n2. (Your question) Does a maliciously chosen randomness affect the privacy of the protocols?\r\n\r\nRegarding (1): Even though we don't care about correctness for malicious server behavior, a semi-honest server colluding with malicious clients might still be a problem. For example, in reality, we could enforce semi-honest helper servers using some form of binary attestation. But that wouldn't stop a malicious admin from reading out the verification randomness and then running a client with an invalid input that still passes verification with that randomness.\r\n> Regardless, I think the main requirement is that the randomness is kept secret from the clients, which is definitely feasible.\r\n\r\nGiven the example above, I'm not sure it is always realistic to assume that the randomness is kept secret from all clients. So I would like to at least keep the option to only generate the randomness once the client shares are agreed on. If we want to allow Fiat-Shamir as discussed in abetterinternet/ppm-specification#161, this would be required anyway.\r\n\r\nRegarding (2): I had a brief look at Poplar, and it doesn't seem like adversary-chosen randomness can break privacy. In particular, Proposition 2 in [Appendix C.4.1](https://eprint.iacr.org/2021/017.pdf#page=19&zoom=100,417,856) still holds (the simulator does not require r to be random). Maybe @henrycg has some insights for Prio?",
+          "createdAt": "2022-01-26T14:05:00Z",
+          "updatedAt": "2022-01-26T14:05:00Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "> But that wouldn't stop a malicious admin from reading out the verification randomness and then running a client with an invalid input that still passes verification with that randomness.\r\n\r\nSince this involves sharing information with the client -- or, equivalently, acting as a client itself -- I would consider this malicious (i.e., active) behavior on the part of the server and, therefore, out of scope.\r\n\r\n>  So I would like to at least keep the option to only generate the randomness once the client shares are agreed on.\r\n\r\nI think keeping this option is reasonable. One question though: Is this a matter to be considered by the VDAF spec or by applications? We could discuss the attack you described above in security considerations and recommend setting up the verification parameters only after the input shares have been ingested.\r\n\r\n> If we want to allow Fiat-Shamir as discussed in abetterinternet/ppm-specification#161, this would be required anyway.\r\n\r\nCan you provide more detail here? We use Fiat-Shamir in prio3 for the \"joint randomness\", but not the \"query randomness\". I agree that there's an attack if the client knows the shared secret used to derive query randomness, but I don't see an attack if the shared secret is generated before the client generates its input shares (as long as it doesn't see it). Am I missing something?",
+          "createdAt": "2022-01-26T15:38:19Z",
+          "updatedAt": "2022-01-26T16:43:24Z"
+        },
+        {
+          "author": "henrycg",
+          "authorAssociation": "NONE",
+          "body": "> Regarding (2): I had a brief look at Poplar, and it doesn't seem like adversary-chosen randomness can break privacy. In particular, Proposition 2 in [Appendix C.4.1](https://eprint.iacr.org/2021/017.pdf#page=19&zoom=100,417,856) still holds (the simulator does not require r to be random). Maybe @henrycg has some insights for Prio?\r\n\r\nYes, the same should be true for Prio, provided that the servers' random challenge is chosen, as in the Crypto'19 paper, to avoid the certain set of \"bad\" challenge points.",
+          "createdAt": "2022-01-26T16:02:41Z",
+          "updatedAt": "2022-01-26T16:02:41Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Can you provide more detail here? We use Fiat-Shamir in prio3 for the \"joint randomness\", but not the \"query randomness\". I agree that there's an attack if the client knows the shared secret used to derive query randomness, but I don't see an attack if the shared secret is generated before the client generates its input shares (as long as it doesn't see it). Am I missing something?\r\n\r\nOkay, so this means that you use fiat-shamir to derive the randomness used in each client's proof share, but not the randomness that is sampled independently by the servers using coin-flipping? In that case you are right, we don't need to wait until we know all client shares.\r\n\r\nStill, the issue regarding a server colluding with a malicious client stands. I'm not sure we can simply discount it for being \"out of scope\", given the example attack scenario I gave above. Or, to put it in more formal terms, I don't see why we should require the adversary to corrupt all parties in the same way, given that some (clients) are more easy to corrupt maliciously than others (helper servers).",
+          "createdAt": "2022-01-26T16:59:20Z",
+          "updatedAt": "2022-01-26T16:59:28Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Is this a matter to be considered by the VDAF spec or by applications? We could discuss the attack you described above in security considerations and recommend setting up the verification parameters only after the input shares have been ingested.\r\n\r\nDo you think we should discuss this in the PPM spec as well (e.g. in abetterinternet/ppm-specification#161)?",
+          "createdAt": "2022-01-26T17:02:26Z",
+          "updatedAt": "2022-01-26T17:02:26Z"
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "id": "I_kwDOGKuqOc5CXDUr",
+      "title": "VDAFs that use the public parameter?",
+      "url": "https://github.com/cjpatton/vdaf/issues/19",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "The \"setup\" algorithm outputs a public parameter used by the clients to shard their measurement into input shares. This was added to the syntax in anticipation of VDAFs that might make use of public-key cryptography in some way. For example, in the appendix, [BBCGGI19] describes alternative applications for FLPs, e.g., using homomorphic encryption. One can imagine a VDAF that uses homomorphic encryption in order to save a round trip for input validation. (This is basically what [AdScale](https://isi.jhu.edu/~mgreen/advertising.pdf) does, as I understand.)\r\n\r\nThis is a bit of a pain for PPM, since it means that rotating the verification parameter also requires re-configuring the clients with the new public parameter. (See https://github.com/abetterinternet/ppm-specification/issues/161.) Since we don't yet have a VDAF that makes use of the public parameter, it might be preferable to drop it from the syntax.",
+      "createdAt": "2022-01-25T02:06:43Z",
+      "updatedAt": "2022-01-25T02:06:43Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 20,
+      "id": "I_kwDOGKuqOc5CbTK5",
+      "title": "What to do about DAFs (VDAFs w/o verifiability)",
+      "url": "https://github.com/cjpatton/vdaf/issues/20",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "The syntax is compatible with schemes that forego verifiability altogether, but calling such a scheme a \"VDAF\" would be misleading. It's probably a good idea to make this distinction explicit, i.e., define \"DAFs\" as 0-round VDAFs that provide no verifiability. Should we make room for this in this document, or does it make sense to kick this to a different document?\r\n\r\nNote that this question came up previously in the context of PPM: https://github.com/abetterinternet/ppm-specification/issues/45.",
+      "createdAt": "2022-01-25T23:10:00Z",
+      "updatedAt": "2022-01-25T23:52:10Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "body": "In case it helps, the [VOPRF document](https://cfrg.github.io/draft-irtf-cfrg-voprf/draft-irtf-cfrg-voprf.html) includes OPRFs with and without verifiability. I think it makes sense to include DAFs in this document, especially for deployments that don't need verifiability.",
+          "createdAt": "2022-01-25T23:52:10Z",
+          "updatedAt": "2022-01-25T23:52:10Z"
+        }
+      ]
     }
   ],
   "pulls": [
