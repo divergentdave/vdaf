@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-27T00:04:59.606059+00:00",
+  "timestamp": "2022-01-30T00:04:37.662929+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -283,7 +283,7 @@
       "labels": [],
       "body": "The \"setup\" algorithm defined in the spec specifies the generation of the public parameter used by the clients and verification parameter of each of the aggregators. This algorithm is said to run \"out-of-band\", effectively punting this consideration to applications. In particular, this is a problem that PPM will have to solve: see https://github.com/abetterinternet/ppm-specification/issues/161.\r\n\r\nWe know that the setup algorithm being run securely is crucial correctness, however it's not clear how important it is for privacy. As a strawman, suppose that we have one aggregator run the setup algorithm and distribute the output among the parties such that the clients never learn or control the value of the verification parameters. This ought to be good enough for correctness. What's less clear (to me, at least) is whether the aggregator, by choosing the verification parameters maliciously, can force an honest aggregator into revealing something that leads to a privacy violation.\r\n\r\nIf this strawman is not sufficient and we end up needing to do something fancier, then it may prudent to revisit the \"setup algorithm\" abstraction. What we woiuld want for prio3 and poplar1 is a protocol for exchanging a shared secret. (The properties we need from this key exchange are TBD, but note that something like a DH key exchange might not suffice. See https://github.com/abetterinternet/ppm-specification/issues/161 for discussion.)",
       "createdAt": "2022-01-25T01:53:41Z",
-      "updatedAt": "2022-01-26T17:02:26Z",
+      "updatedAt": "2022-01-28T16:05:45Z",
       "closedAt": null,
       "comments": [
         {
@@ -334,6 +334,27 @@
           "body": "> Is this a matter to be considered by the VDAF spec or by applications? We could discuss the attack you described above in security considerations and recommend setting up the verification parameters only after the input shares have been ingested.\r\n\r\nDo you think we should discuss this in the PPM spec as well (e.g. in abetterinternet/ppm-specification#161)?",
           "createdAt": "2022-01-26T17:02:26Z",
           "updatedAt": "2022-01-26T17:02:26Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "That's an interesting point, and I agree that there's no reason to think of all parties as being corrupted in the same way. Definitely worth thinking about.\r\n\r\nI'll just add this thought: If a malicious aggregator wants to break correctness, there's a much simpler attack than corrupting or acting as a client: all it has to do is make up a bogus aggregate share. The collector would have no way to detect this, at least for prio3 or poplar1.",
+          "createdAt": "2022-01-28T03:15:28Z",
+          "updatedAt": "2022-01-28T03:15:28Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I'll just add this thought: If a malicious aggregator wants to break correctness, there's a much simpler attack than corrupting or acting as a client: all it has to do is make up a bogus aggregate share. The collector would have no way to detect this, at least for prio3 or poplar1.\r\n\r\nI assume you mean a malicious admin or similar insider would run this simpler attack at the aggregator service? Then it wouldn't work any more if there are additional measurements (e.g., binary attestation) to enforce semi-honest behavior of the aggregator process, whereas reading out the verification randomness and then uwing it with a maliciously crafted client message would still work. \r\n\r\nOverall, even if we only consider outside attackers, I believe leaking some secret value from one of the aggregator servers is easier (requires less severe vulnerabilities or exploits) than triggering a remote code execution to cheat during the aggregation protocol.",
+          "createdAt": "2022-01-28T11:38:51Z",
+          "updatedAt": "2022-01-28T11:38:51Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "\r\n> I assume you mean a malicious admin or similar insider would run this simpler attack at the aggregator service? Then it wouldn't work any more if there are additional measurements (e.g., binary attestation) to enforce semi-honest behavior of the aggregator process, whereas reading out the verification randomness and then uwing it with a maliciously crafted client message would still work.\r\n\r\nBinary attestation would be super useful, but I don't think it will be used in all applications of VDAFs.\r\n\r\nRegardless, I think the threat you're describing is worth discussing in security considerations, and we could even RECOMMEND that, where feasible, the setup algorithm be run only after the batch of input shares has arrived. However I would not go so far as to say deployments MUST or even SHOULD do this. Do you think this would be a reasonable outcome?",
+          "createdAt": "2022-01-28T16:05:45Z",
+          "updatedAt": "2022-01-28T16:05:45Z"
         }
       ]
     },
