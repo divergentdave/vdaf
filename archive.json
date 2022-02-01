@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-30T00:04:37.662929+00:00",
+  "timestamp": "2022-02-01T00:04:56.172913+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -283,7 +283,7 @@
       "labels": [],
       "body": "The \"setup\" algorithm defined in the spec specifies the generation of the public parameter used by the clients and verification parameter of each of the aggregators. This algorithm is said to run \"out-of-band\", effectively punting this consideration to applications. In particular, this is a problem that PPM will have to solve: see https://github.com/abetterinternet/ppm-specification/issues/161.\r\n\r\nWe know that the setup algorithm being run securely is crucial correctness, however it's not clear how important it is for privacy. As a strawman, suppose that we have one aggregator run the setup algorithm and distribute the output among the parties such that the clients never learn or control the value of the verification parameters. This ought to be good enough for correctness. What's less clear (to me, at least) is whether the aggregator, by choosing the verification parameters maliciously, can force an honest aggregator into revealing something that leads to a privacy violation.\r\n\r\nIf this strawman is not sufficient and we end up needing to do something fancier, then it may prudent to revisit the \"setup algorithm\" abstraction. What we woiuld want for prio3 and poplar1 is a protocol for exchanging a shared secret. (The properties we need from this key exchange are TBD, but note that something like a DH key exchange might not suffice. See https://github.com/abetterinternet/ppm-specification/issues/161 for discussion.)",
       "createdAt": "2022-01-25T01:53:41Z",
-      "updatedAt": "2022-01-28T16:05:45Z",
+      "updatedAt": "2022-01-31T11:28:59Z",
       "closedAt": null,
       "comments": [
         {
@@ -355,6 +355,13 @@
           "body": "\r\n> I assume you mean a malicious admin or similar insider would run this simpler attack at the aggregator service? Then it wouldn't work any more if there are additional measurements (e.g., binary attestation) to enforce semi-honest behavior of the aggregator process, whereas reading out the verification randomness and then uwing it with a maliciously crafted client message would still work.\r\n\r\nBinary attestation would be super useful, but I don't think it will be used in all applications of VDAFs.\r\n\r\nRegardless, I think the threat you're describing is worth discussing in security considerations, and we could even RECOMMEND that, where feasible, the setup algorithm be run only after the batch of input shares has arrived. However I would not go so far as to say deployments MUST or even SHOULD do this. Do you think this would be a reasonable outcome?",
           "createdAt": "2022-01-28T16:05:45Z",
           "updatedAt": "2022-01-28T16:05:45Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "That sounds good to me. I opened #21 for that, PTAL.",
+          "createdAt": "2022-01-31T11:28:59Z",
+          "updatedAt": "2022-01-31T11:28:59Z"
         }
       ]
     },
@@ -1873,6 +1880,53 @@
           "createdAt": "2022-01-04T23:03:16Z",
           "updatedAt": "2022-01-04T23:03:16Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "id": "PR_kwDOGKuqOc4x1Ntz",
+      "title": "Make re-generation of `verify_params` RECOMMENDED",
+      "url": "https://github.com/cjpatton/vdaf/pull/21",
+      "state": "OPEN",
+      "author": "schoppmp",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As discussed in #18, generating `verify_params` in advance may allow an adversary to break correctness if they can corrupt an aggregation server (passively) and a client (actively). This change recommends generating `verify_params` only after a set of client shares has been fixed.",
+      "createdAt": "2022-01-31T11:28:30Z",
+      "updatedAt": "2022-01-31T18:32:37Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "6b856956b14b89d70e22ed8fd3655f9521720b14",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "regenerate_verify_params",
+      "headRefOid": "d29f39c487df93881278b8e2cb74a3c6dd02b13e",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc4zwKNl",
+          "commit": {
+            "abbreviatedOid": "d29f39c"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-31T18:32:32Z",
+          "updatedAt": "2022-01-31T18:32:37Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "I'd prefer this text to be in security considerations, along with a short explanation of the threat model being considered.",
+              "createdAt": "2022-01-31T18:32:33Z",
+              "updatedAt": "2022-01-31T18:32:37Z"
+            }
+          ]
         }
       ]
     }
