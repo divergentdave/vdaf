@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 23 July 2022                                              Cisco
+Expires: 8 August 2022                                             Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         19 January 2022
+                                                         4 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 July 2022.
+   This Internet-Draft will expire on 8 August 2022.
 
 Copyright Notice
 
@@ -415,10 +415,12 @@ Table of Contents
       randomized setup algorithm used to generate the public parameter
       used by the Clients (public_param) and the verification parameters
       used by the Aggregators (verify_params).  The length of the latter
-      MUST be SHARES.  The parameters are generated once and reused
-      across multiple VDAF evaluations.  In general, an Aggregator's
-      verification parameter is considered secret and MUST NOT be
-      revealed to the Clients, Collector or other Aggregators.
+      MUST be SHARES.  In general, an Aggregator's verification
+      parameter is considered secret and MUST NOT be revealed to the
+      Clients, Collector or other Aggregators.  The parameters MAY be
+      reused across multiple VDAF evaluations.  See Section 8 for a
+      discussion of the security implications this has depending on the
+      threat model.
 
 4.2.  Sharding
 
@@ -1571,10 +1573,18 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        Clients cannot cause the Collector to compute anything other than
        the aggregate of the measurements of honest Clients.
 
-   (Note that it is also possible to consider a stronger form of
-   robustness, where the attacker also controls a subset of Aggregators.
-   See [BBCGGI19], Section 6.3.)  A VDAF is the core cryptographic
-   primitive of a protocol that achieves these goals.  It is not
+   Note that it is also possible to consider a stronger form of
+   robustness, where the attacker also controls a subset of Aggregators
+   (see [BBCGGI19], Section 6.3).  In that case, it is important to
+   ensure that the verifier randomness shared between aggregators
+   (verify_params, see Section 4.1) is never revealed to Clients.  To
+   satisfy this stronger notion of robustness, it is RECOMMENDED that
+   the Aggregators generate verify_params only after a set of Client
+   inputs has been collected for verification, and re-generate them for
+   each such set of inputs.
+
+   A VDAF is the core cryptographic primitive of a protocol that
+   achieves the above privacy and robustness goals.  It is not
    sufficient on its own, however.  The application will need to assure
    a few security properties, for example:
 
