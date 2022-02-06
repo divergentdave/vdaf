@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-03T00:04:32.312911+00:00",
+  "timestamp": "2022-02-06T00:07:09.897090+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -243,7 +243,7 @@
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-02T00:28:54Z",
+      "updatedAt": "2022-02-04T17:05:55Z",
       "closedAt": null,
       "comments": [
         {
@@ -259,6 +259,27 @@
           "body": "Update based on discussion I had with @armfazh offline: We currently use rejection sampling for mapping bit strings to field elements. This has the advantage of inducing no bias, but it has the distinct disadvantage of making the runtime very slow for some fraction of the time. We hope that a constant-time algorithm will have better worst-case, or even average-case, performance. @armfazh is working on a performance evaluation.\r\n\r\nhash-to-field is quite simple: just take a hash function `H: \\bits^* \\to \\bits^n`, interpret the output as a `2^n`-bit integer, and reduce the integer mod `p`. The question is how much bias this modular reduction induces.\r\n\r\nOr more precisely: What's the statistical distance between a random variable chosen uniformly from `[0, p)` and a random variable chosen by sampling `[0, 2^n)` for some `2^n > p` and reducing the sampled number mod `p`? Intuitively, this depends on how large is `b = 2^n % p`: the smaller the `b`, the fewer outputs there are due to the modular reduction. In fact, it's not hard to show that the statistical distance can be bounded, fairly tightly, by `O(2^(log2(p) - n)`. This suggests that for `n \\approx 2*log(p)` the statistical distance is about `O(1/2^log(p))`.\r\n\r\nWhat does this mean for security? In our analysis of prio3 it'll be helpful to model the function that maps a seed to a sequence of field elements as a random oracle. Our hope would be that hash-to-field is indifferentiable from such an RO when the underlying hash function `H` is modeled as an RO. This ought to be the case for sufficiently large `n`.\r\n\r\nWe also observed that there are primes `p` for which there is an optimal `n`. For example, libprio uses `p = 18446744069414584321` for its 64-bit prime. It turns out that `2^192 % p == 1`, so picking `n=192` would make the distributions very close indeed. Ideally we could find a 128-bit prime with this property, too.",
           "createdAt": "2022-02-02T00:28:54Z",
           "updatedAt": "2022-02-02T00:28:54Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "@schoppmp made an excellent point, which we ought to take into account: hash_to_field appears to be designed for entropy extraction. (@armfazh can you confirm?). However for our application we don't need an entropy extractor because we're starting with a (pseuo)random seed. Thus using SHA-2 or SHAKE for instantiating hash_to_field would be overkill: AES in CTR-mode would suite our needs perfectly fine.",
+          "createdAt": "2022-02-03T18:43:38Z",
+          "updatedAt": "2022-02-03T18:43:38Z"
+        },
+        {
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "body": "Certainly, any SHA or SHAKE will be slower than AES (provided machine has hardware support for it). \r\nHash to field just receives seeds as input, and is not used for key expansion.",
+          "createdAt": "2022-02-03T21:36:38Z",
+          "updatedAt": "2022-02-03T21:36:38Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Right, and given how much randomness we consume in our applications, I think it would be worthwhile providing a mapping a seed-to-field-vector expansion function that is based purely on AES. I'll put together a PR with a proposal.",
+          "createdAt": "2022-02-04T17:05:54Z",
+          "updatedAt": "2022-02-04T17:05:54Z"
         }
       ]
     },
@@ -1919,24 +1940,26 @@
       "id": "PR_kwDOGKuqOc4x1Ntz",
       "title": "Make re-generation of `verify_params` RECOMMENDED",
       "url": "https://github.com/cjpatton/vdaf/pull/21",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "schoppmp",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "As discussed in #18, generating `verify_params` in advance may allow an adversary to break correctness if they can corrupt an aggregation server (passively) and a client (actively). This change recommends generating `verify_params` only after a set of client shares has been fixed.",
       "createdAt": "2022-01-31T11:28:30Z",
-      "updatedAt": "2022-02-02T18:42:35Z",
+      "updatedAt": "2022-02-04T15:22:50Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "6b856956b14b89d70e22ed8fd3655f9521720b14",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "regenerate_verify_params",
       "headRefOid": "1f0e87e6161fe5aa02f7945627ae06affc2982f8",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-02-04T15:22:50Z",
+      "mergedAt": "2022-02-04T15:22:49Z",
+      "mergedBy": "schoppmp",
+      "mergeCommit": {
+        "oid": "0412bc0b85f6f35bc510543840ba1a54aa9bfb35"
+      },
       "comments": [],
       "reviews": [
         {
@@ -1978,6 +2001,19 @@
               "updatedAt": "2022-02-02T18:42:35Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc4z_lBN",
+          "commit": {
+            "abbreviatedOid": "1f0e87e"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "Perfect, thanks!",
+          "createdAt": "2022-02-03T19:17:14Z",
+          "updatedAt": "2022-02-03T19:17:14Z",
+          "comments": []
         }
       ]
     },
@@ -1986,20 +2022,46 @@
       "id": "PR_kwDOGKuqOc4x_qJm",
       "title": "prio3 reference implementation (part 1)",
       "url": "https://github.com/cjpatton/vdaf/pull/23",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2022-02-02T22:54:17Z",
-      "updatedAt": "2022-02-02T22:54:17Z",
+      "updatedAt": "2022-02-03T02:30:38Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "6b856956b14b89d70e22ed8fd3655f9521720b14",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prio3-wrapper",
-      "headRefOid": "2409e5f739589f4e64fec2c7fe74c75fd5363ade",
+      "headRefOid": "1bc6e937680767f7aa7075ac389c624c1899ecd5",
+      "closedAt": "2022-02-03T02:30:38Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 24,
+      "id": "PR_kwDOGKuqOc4yAQaA",
+      "title": "poc: Define the base class for VDAFs",
+      "url": "https://github.com/cjpatton/vdaf/pull/24",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Adds a base class for implementing VDAFs in sage. The code also includes a framework for basic functionality testing, modeled on {{run-vdaf}} from the draft. \r\n\r\nThis change also adds implementations of the finite field currently used in libprio.\r\n\r\nPing @chris-wood for feedback on alignment of the code structure with the VOPRF draft, hash-to-curve draft, and so on.\r\nCC @schoppmp and @bifurcation in case you have an opinion about how the shape of reference implementations.",
+      "createdAt": "2022-02-03T04:55:32Z",
+      "updatedAt": "2022-02-06T00:05:47Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "0412bc0b85f6f35bc510543840ba1a54aa9bfb35",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/prio3-wrapper",
+      "headRefOid": "37c852f93502ab7252e739ce351bfd51b14a4d4b",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
