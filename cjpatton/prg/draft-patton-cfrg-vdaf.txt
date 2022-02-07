@@ -80,10 +80,11 @@ Table of Contents
      4.5.  Unsharding
      4.6.  Execution of a VDAF
    5.  Preliminaries
-     5.1.  Pseudorandom Generator
-     5.2.  Finite Fields
-       5.2.1.  Deriving a Pseudorandom Vector
-       5.2.2.  Inner product of Vectors
+     5.1.  Finite Fields
+       5.1.1.  Inner product of Vectors
+       5.1.2.  Parameters
+     5.2.  Pseudorandom Generators
+       5.2.1.  Constructions
    6.  prio3
      6.1.  Fully Linear Proof (FLP) Systems
        6.1.1.  Encoding the Input
@@ -725,85 +726,150 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    This section describes the cryptographic primitives that are common
    to the VDAFs specified in this document.
 
-5.1.  Pseudorandom Generator
-
-   A pseudorandom generator is used to expand a short, random seed into
-   a long string of pseudorandom bits.
-
-   key-derivation scheme defines a method for deriving symmetric keys
-   and a method for expanding a symmetric into an arbitrary length key
-   stream are required.  This scheme consists of the following
-   algorithms:
-
-   *  get_key(init_key, aux_input) -> key derives a fresh key key from
-      an initial key init_key and auxiliary input aux_input.  The length
-      of init_key and key MUST be equal to KEY_SIZE.
-
-   *  key_stream_init(key) -> state: KeyStream returns a key stream
-      generator that is used to generate an arbitrary length stream of
-      pseudorandom bytes.  The length of key MUST be KEY_SIZE.
-
-   *  KeyStream.next(len: Unsigned) -> (new_state: KeyStream, output)
-      returns the next len bytes of the key stream and updates the key
-      stream generator state.  The length of the output MUST be len.
-
-      TODO This functionality closely resembles what people usually
-      think of as an extract-then-expand KDF, but differs somewhat in
-      its syntax and, also, its required security properties.  Can we
-      get the same functionality from something that's more commonplace?
-      HKDF doesn't fit the bill, unfortunately, because keys can only be
-      expanded to a fairly short length.  Our application requires a
-      rather long key stream.
-
-   Associated types:
-
-   *  KeyStream represents the state of the key stream generator.
-
-   Associated constants:
-
-   *  KEY_SIZE is the size of keys for the key-derivation scheme.
-
-5.2.  Finite Fields
+5.1.  Finite Fields
 
    In this document we only consider finite fields of the form GF(p) for
-   prime p.  Finite field elements are represented by a type Field that
-   defines binary operators for addition and multiplication in the
-   field.  The type also defines the following associated functions:
+   prime p.  Finite field elements are represented by a class Field that
+   defines A concrete field implements the following class methods:
 
-   *  Field.zeros(len: Unsigned) -> output: Vec[Field] returns a vector
-      of zeros.  The length of output MUST be len.
+   *  zeros(length: Unsigned) -> output: Vec[Field] returns a vector of
+      zeros.  The length of output MUST be length.
 
-   *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a
-      vector of random field elements.  The length of output MUST be
-      len.
+   *  rand_vec(length: Unsigned) -> output: Vec[Field] returns a vector
+      of random field elements.  The length of output MUST be length.
 
-         NOTE In reality this would be achieved by generating a random
-         key and expanding it into a sequence of field elements using a
-         key derivation scheme.  This should probably be made explicit.
+   An instance of this type is a field element.  The type defines the
+   usual arithmetic operations on field elements.  In addition, the type
+   defines the following instance method for converting a field element
+   to an unsigned integer:
 
-   *  Field.encode_vec(data: Vec[Field]) -> encoded_data: Bytes
-      represents the input data as a byte string encoded_data.
+   *  elem.as_int() -> Unsigned returns the integer representation of
+      field element elem.
 
-   *  Field.decode_vec(encoded_data: Bytes) -> data: Vec[Field] reverse
-      encoded_vec, returning the vector of field elements encoded by
-      encoded_data.  Raises an exception if the input does not encode a
-      valid vector of field elements.
+   Likewise, each concrete Field implements a constructor for coverting
+   an unsigned integer into a field element:
 
-5.2.1.  Deriving a Pseudorandom Vector
+   *  Field(val: Unsigned) returns val represented as a field elemetn.
 
-      TODO Specify the following function in terms of a key-derivation
-      scheme.  It'll use key_stream_init to create a KeyStream object
-      and read from it multiple times.
+   Finally, each concerete Field has two derived class methods, one for
+   encoding a vector of field elements as a byte string and another for
+   decoding a vector of field elements.
 
-   *  expand(Field, key: Bytes, len: Unsigned) -> output: Vec[Field]
-      expands a key into a pseudorandom sequence of field elements.
+   def encode_vec(Field, data: Vec[Field]) -> Bytes:
+       encoded = Bytes()
+       for x in data:
+           encoded += I2OSP(x.as_int(), Field.ENCODED_SIZE)
+       return encoded
 
-5.2.2.  Inner product of Vectors
+   def decode_vec(Field, encoded: Bytes) -> Vec[Field]:
+       if len(encoded) % Field.ENCODED_SIZE != 0:
+           raise ERR_DECODE
+       vec = []
+       for i in range(0, len(encoded), Field.ENCODED_SIZE):
+           encoded_x = encoded[i:i+Field.ENCODED_SIZE]
+           x = Field(OS2IP(encoded_x))
+           vec.append(x)
+       return vec
 
-      TODO Specify the following:
+             Figure 7: Derived class methods for finite fields.
 
-   *  inner_product(left: Vec[Field], right: Vec[Field]) -> Field
-      computes the inner product of left and right.
+5.1.1.  Inner product of Vectors
+
+   The following method is defined for computing the inner product of
+   two vectors:
+
+   def inner_product(left: Vec[Field], right: Vec[Field]) -> Field:
+   result = Field(0) for (x, y) in zip(left, right): result += x * y
+   return result
+
+5.1.2.  Parameters
+
+      TODO: Pick field parameters and specify them here.  See issue#22.
+
+5.2.  Pseudorandom Generators
+
+   A pseudorandom generator (PRG) is used to expand a short, random seed
+   into a long string of pseudorandom bits.  A PRG suitable for this
+   document implements the interface specified in this section.  TWo
+   concrete constructions are described in Section 5.2.1.
+
+   PRGs are defined by a class Prg with a single parameter:
+
+   *  SEED_SIZE: Unsigned is the size of the input seed.
+
+   A concrete Prg implements the following class method:
+
+   *  expand(seed: Bytes, info: Bytes, length: Unsigned) -> Bytes
+      derives a byte string from the given seed and info string.  The
+      length of the output MUST be length.
+
+   Each Prg has two derived class methods.  The first is used to derive
+   a fresh seed from an existing one.  The second is used to compute a
+   sequence of pseudorandom field eleements using a method based on the
+   hash_to_field algorithm described in
+   [I-D.draft-irtf-cfrg-hash-to-curve].
+
+   # Derive a new seed.
+   def derive(Prg, seed: bytes, info: bytes) -> bytes:
+       return Prg.expand(seed, info, Prg.SEED_SIZE)
+
+   # Expand a seed into a vector of Field elements.
+   def expand_into_vec(Prg, Field,
+                       seed: Bytes,
+                       info: Bytes,
+                       length: Unsigned) -> Vec[Field]:
+       L = Field.EXPANDED_SIZE
+       len_in_bytes = length * L
+       uniform_bytes = Prg.expand(seed, info, len_in_bytes)
+
+       vec = []
+       for i in range(length):
+           tv = uniform_bytes[L*i:L*(i+1)]
+           u_i = OS2IP(tv)
+           vec.append(Field(u_i))
+       return vec
+
+                 Figure 8: Derived class methods for PRGs.
+
+5.2.1.  Constructions
+
+5.2.1.1.  PrgBlockCipher(Aes128)
+
+   Our first construction, PrgBlockCipher(Aes128), converts a
+   blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
+   steps.  In the first step, CMAC [RFC4493] is applied to the seed and
+   info string to get a key.  In the second step, the derived key is
+   used in CTR-mode to encipher the all-zero string of the desired
+   length and with a fixed initializaiton vector.
+
+   SEED_SIZE=16
+
+   def expand(_, seed, info, length):
+       key = AES128-CMAC(seed, info)
+       return AES128-CTR(key, zeros(16), zeros(length))
+
+            Figure 9: Definition of PRG PrgBlockCipher(Aes128).
+
+      CP: We might be able to get away with skipping the initial CMAC
+      for some fixed value of info, e.g., info == "".
+
+5.2.1.2.  PrgHkdf(Sha256)
+
+   Our second construction, PrgHkdf(Sha256), uses HKDF [RFC5869] with
+   SHA-256 as the underlying hash function.  Let HKDF-SHA256-Expand
+   denote the expansion operation of HKDF with SHA-256.  The PRG uses
+   this operation directly, using the seed as the "PRK" value:
+
+   SEED_SIZE=32
+
+   def expand(_, seed, info, length):
+       return HKDF-SHA512-Expand(seed, info, length)
+
+               Figure 10: Definition of PRG PrgHkdf(Sha256).
+
+   Note that the maximum output size for HKDF is 255 times the output
+   size of the underlying hash function (32 bytes in our case).  This
+   limitation means that HKDF may not be suitable for some VDAFs.
 
 6.  prio3
 
@@ -888,7 +954,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
       encoded input, the "prover randomness" prove_rand, and the "joint
       randomness" joint_rand.  The proof randomness is used only by the
       prover, but the joint randomness is shared by both the prover and
-      verifier.  Type Field is a finite field as defined in Section 5.2.
+      verifier.  Type Field is a finite field as defined in Section 5.1.
 
    *  flp_query(input: Vec[Field], proof: Vec[Field], query_rand:
       Vec[Field], joint_rand: Vec[Field]) -> verifier: Vec[Field] is the
@@ -946,7 +1012,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      # Verifier decides if the input is valid.
      return flp_decide(verifier)
 
-                       Figure 7: Execution of an FLP.
+                      Figure 11: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(input) always returns True.  On the other hand, if input
@@ -1008,7 +1074,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      verify_param = [ (j, k_query_init) for j in range(SHARES) ]
      return (None, verify_param)
 
-                  Figure 8: The setup algorithm for prio3.
+                 Figure 12: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1105,7 +1171,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        ))
      return input_shares
 
-             Figure 9: Input-distribution algorithm for prio3.
+             Figure 13: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
@@ -1197,7 +1263,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return encode_prep_message(k_joint_rand, verifier)
 
-                  Figure 10: Preparation state for prio3.
+                  Figure 14: Preparation state for prio3.
 
       NOTE JOINT_RAND_LEN may be 0, in which case the joint randomness
       computation is not necessary.  Should we bake this option into the
@@ -1211,7 +1277,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        agg_share += Field.decode_vec(output_share)
      return Field.encode_vec(agg_share)
 
-                Figure 11: Aggregation algorithm for prio3.
+                Figure 15: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1221,7 +1287,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        agg += Field.decode_vec(agg_share)
      return Field.encode_vec(agg)
 
-         Figure 12: Computation of the aggregate result for prio3.
+         Figure 16: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1377,7 +1443,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
      k_verify_init = gen_rand(KEY_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 13: The setup algorithm for poplar1.
+                Figure 17: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1430,7 +1496,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return input_shares
 
-          Figure 14: The input-distribution algorithm for poplar1.
+          Figure 18: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1512,7 +1578,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(verifier)
 
-                 Figure 15: Preparation state for poplar1.
+                 Figure 19: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1527,7 +1593,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 16: Aggregation algorithm for poplar1.
+               Figure 20: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1541,7 +1607,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
      return Field[l].encode_vec(agg)
 
-        Figure 17: Computation of the aggregate result for poplar1.
+        Figure 21: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
@@ -1637,10 +1703,27 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 
 10.1.  Normative References
 
+   [I-D.draft-irtf-cfrg-hash-to-curve]
+              Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
+              and C. A. Wood, "Hashing to Elliptic Curves", Work in
+              Progress, Internet-Draft, draft-irtf-cfrg-hash-to-curve-
+              13, 10 November 2021,
+              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
+              hash-to-curve-13>.
+
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC4493]  Song, JH., Poovendran, R., Lee, J., and T. Iwata, "The
+              AES-CMAC Algorithm", RFC 4493, DOI 10.17487/RFC4493, June
+              2006, <https://www.rfc-editor.org/rfc/rfc4493>.
+
+   [RFC5869]  Krawczyk, H. and P. Eronen, "HMAC-based Extract-and-Expand
+              Key Derivation Function (HKDF)", RFC 5869,
+              DOI 10.17487/RFC5869, May 2010,
+              <https://www.rfc-editor.org/rfc/rfc5869>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,

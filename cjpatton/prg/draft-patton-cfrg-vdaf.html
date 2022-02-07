@@ -1166,16 +1166,21 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-preliminaries" class="xref">Preliminaries</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
-                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-pseudorandom-generator" class="xref">Pseudorandom Generator</a></p>
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-finite-fields" class="xref">Finite Fields</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.1">
+                    <p id="section-toc.1-1.5.2.1.2.1.1"><a href="#section-5.1.1" class="xref">5.1.1</a>.  <a href="#name-inner-product-of-vectors" class="xref">Inner product of Vectors</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.2">
+                    <p id="section-toc.1-1.5.2.1.2.2.1"><a href="#section-5.1.2" class="xref">5.1.2</a>.  <a href="#name-parameters" class="xref">Parameters</a></p>
+</li>
+                </ul>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
-                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-finite-fields" class="xref">Finite Fields</a></p>
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-pseudorandom-generators" class="xref">Pseudorandom Generators</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2.2.1">
-                    <p id="section-toc.1-1.5.2.2.2.1.1"><a href="#section-5.2.1" class="xref">5.2.1</a>.  <a href="#name-deriving-a-pseudorandom-vec" class="xref">Deriving a Pseudorandom Vector</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2.2.2">
-                    <p id="section-toc.1-1.5.2.2.2.2.1"><a href="#section-5.2.2" class="xref">5.2.2</a>.  <a href="#name-inner-product-of-vectors" class="xref">Inner product of Vectors</a></p>
+                    <p id="section-toc.1-1.5.2.2.2.1.1"><a href="#section-5.2.1" class="xref">5.2.1</a>.  <a href="#name-constructions" class="xref">Constructions</a></p>
 </li>
                 </ul>
 </li>
@@ -1942,129 +1947,219 @@ protocol needs to provide in each.<a href="#section-4.6-4" class="pilcrow">¶</a
       </h2>
 <p id="section-5-1">This section describes the cryptographic primitives that are common to the VDAFs
 specified in this document.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<div id="prg">
+<div id="field">
 <section id="section-5.1">
-        <h3 id="name-pseudorandom-generator">
-<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-pseudorandom-generator" class="section-name selfRef">Pseudorandom Generator</a>
+        <h3 id="name-finite-fields">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-finite-fields" class="section-name selfRef">Finite Fields</a>
         </h3>
-<p id="section-5.1-1">A pseudorandom generator is used to expand a short, random seed into a long
-string of pseudorandom bits.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
-<p id="section-5.1-2">key-derivation scheme defines a method for deriving symmetric keys and a
-method for expanding a symmetric into an arbitrary length key stream are
-required. This scheme consists of the following algorithms:<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-1">In this document we only consider finite fields of the form <code>GF(p)</code> for prime
+<code>p</code>. Finite field elements are represented by a class <code>Field</code> that defines A
+concrete field implements the following class methods:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.1-3.1">
-            <code>get_key(init_key, aux_input) -&gt; key</code> derives a fresh key <code>key</code> from an
-initial key <code>init_key</code> and auxiliary input <code>aux_input</code>. The length of <code>init_key</code>
-and <code>key</code> <span class="bcp14">MUST</span> be equal to <code>KEY_SIZE</code>.<a href="#section-5.1-3.1" class="pilcrow">¶</a>
+<li class="normal" id="section-5.1-2.1">
+            <code>zeros(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
+zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-5.1-3.2">
-            <code>key_stream_init(key) -&gt; state: KeyStream</code> returns a key stream generator that
-is used to generate an arbitrary length stream of pseudorandom bytes. The
-length of <code>key</code> <span class="bcp14">MUST</span> be <code>KEY_SIZE</code>.<a href="#section-5.1-3.2" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-5.1-3.3">
-            <code>KeyStream.next(len: Unsigned) -&gt; (new_state: KeyStream, output)</code> returns the
-next <code>len</code> bytes of the key stream and updates the key stream generator state.
-The length of the output <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.1-3.3" class="pilcrow">¶</a>
+          <li class="normal" id="section-5.1-2.2">
+            <code>rand_vec(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
+random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-2.2" class="pilcrow">¶</a>
 </li>
         </ul>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.1-4.1">
-            <p id="section-5.1-4.1.1">TODO This functionality closely resembles what people usually think of as an
-extract-then-expand KDF, but differs somewhat in its syntax and, also, its
-required security properties. Can we get the same functionality from something
-that's more commonplace? HKDF doesn't fit the bill, unfortunately, because
-keys can only be expanded to a fairly short length. Our application requires a
-rather long key stream.<a href="#section-5.1-4.1.1" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">An instance of this type is a field element. The type defines the usual
+arithmetic operations on field elements. In addition, the type defines the
+following instance method for converting a field element to an unsigned integer:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1-4.1">
+            <code>elem.as_int() -&gt; Unsigned</code> returns the integer representation of
+field element <code>elem</code>.<a href="#section-5.1-4.1" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-5.1-5">Associated types:<a href="#section-5.1-5" class="pilcrow">¶</a></p>
+<p id="section-5.1-5">Likewise, each concrete <code>Field</code> implements a constructor for coverting an
+unsigned integer into a field element:<a href="#section-5.1-5" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-6.1">
-            <code>KeyStream</code> represents the state of the key stream generator.<a href="#section-5.1-6.1" class="pilcrow">¶</a>
+            <code>Field(val: Unsigned)</code> returns <code>val</code> represented as a field elemetn.<a href="#section-5.1-6.1" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-5.1-7">Associated constants:<a href="#section-5.1-7" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5.1-8.1">
-            <code>KEY_SIZE</code> is the size of keys for the key-derivation scheme.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
-</li>
-        </ul>
-</section>
+<p id="section-5.1-7">Finally, each concerete <code>Field</code> has two derived class methods, one for encoding
+a vector of field elements as a byte string and another for decoding a vector of
+field elements.<a href="#section-5.1-7" class="pilcrow">¶</a></p>
+<span id="name-derived-class-methods-for-f"></span><div id="field-derived-methods">
+<figure id="figure-7">
+          <div class="alignLeft art-text artwork" id="section-5.1-8.1">
+<pre>
+def encode_vec(Field, data: Vec[Field]) -&gt; Bytes:
+    encoded = Bytes()
+    for x in data:
+        encoded += I2OSP(x.as_int(), Field.ENCODED_SIZE)
+    return encoded
+
+def decode_vec(Field, encoded: Bytes) -&gt; Vec[Field]:
+    if len(encoded) % Field.ENCODED_SIZE != 0:
+        raise ERR_DECODE
+    vec = []
+    for i in range(0, len(encoded), Field.ENCODED_SIZE):
+        encoded_x = encoded[i:i+Field.ENCODED_SIZE]
+        x = Field(OS2IP(encoded_x))
+        vec.append(x)
+    return vec
+</pre>
 </div>
-<div id="field">
-<section id="section-5.2">
-        <h3 id="name-finite-fields">
-<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-finite-fields" class="section-name selfRef">Finite Fields</a>
-        </h3>
-<p id="section-5.2-1">In this document we only consider finite fields of the form <code>GF(p)</code> for prime
-<code>p</code>. Finite field elements are represented by a type <code>Field</code> that defines binary
-operators for addition and multiplication in the field. The type also defines
-the following associated functions:<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5.2-2.1">
-            <code>Field.zeros(len: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.2-2.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-5.2-2.2">
-            <p id="section-5.2-2.2.1"><code>Field.rand_vec(len: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.2-2.2.1" class="pilcrow">¶</a></p>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2-2.2.2.1">
-                <p id="section-5.2-2.2.2.1.1">NOTE In reality this would be achieved by generating a random key and
-expanding it into a sequence of field elements using a key derivation
-scheme. This should probably be made explicit.<a href="#section-5.2-2.2.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-5.2-2.3">
-            <code>Field.encode_vec(data: Vec[Field]) -&gt; encoded_data: Bytes</code> represents the
-input <code>data</code> as a byte string <code>encoded_data</code>.<a href="#section-5.2-2.3" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-5.2-2.4">
-            <code>Field.decode_vec(encoded_data: Bytes) -&gt; data: Vec[Field]</code> reverse
-<code>encoded_vec</code>, returning the vector of field elements encoded by
-<code>encoded_data</code>. Raises an exception if the input does not encode a valid
-vector of field elements.<a href="#section-5.2-2.4" class="pilcrow">¶</a>
-</li>
-        </ul>
-<div id="deriving-a-pseudorandom-vector">
-<section id="section-5.2.1">
-          <h4 id="name-deriving-a-pseudorandom-vec">
-<a href="#section-5.2.1" class="section-number selfRef">5.2.1. </a><a href="#name-deriving-a-pseudorandom-vec" class="section-name selfRef">Deriving a Pseudorandom Vector</a>
-          </h4>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2.1-1.1">
-              <p id="section-5.2.1-1.1.1">TODO Specify the following function in terms of a key-derivation scheme. It'll
-use <code>key_stream_init</code> to create a <code>KeyStream</code> object and read from it multiple
-times.<a href="#section-5.2.1-1.1.1" class="pilcrow">¶</a></p>
-</li>
-          </ul>
-<ul class="normal">
-<li class="normal" id="section-5.2.1-2.1">
-              <code>expand(Field, key: Bytes, len: Unsigned) -&gt; output: Vec[Field]</code> expands a key
-into a pseudorandom sequence of field elements.<a href="#section-5.2.1-2.1" class="pilcrow">¶</a>
-</li>
-          </ul>
-</section>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-derived-class-methods-for-f" class="selfRef">Derived class methods for finite fields.</a>
+          </figcaption></figure>
 </div>
 <div id="inner-product-of-vectors">
-<section id="section-5.2.2">
+<section id="section-5.1.1">
           <h4 id="name-inner-product-of-vectors">
-<a href="#section-5.2.2" class="section-number selfRef">5.2.2. </a><a href="#name-inner-product-of-vectors" class="section-name selfRef">Inner product of Vectors</a>
+<a href="#section-5.1.1" class="section-number selfRef">5.1.1. </a><a href="#name-inner-product-of-vectors" class="section-name selfRef">Inner product of Vectors</a>
+          </h4>
+<p id="section-5.1.1-1">The following method is defined for computing the inner product of two vectors:<a href="#section-5.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.1-2"><code>
+def inner_product(left: Vec[Field], right: Vec[Field]) -&gt; Field:
+    result = Field(0)
+    for (x, y) in zip(left, right):
+        result += x * y
+    return result
+</code><a href="#section-5.1.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="parameters">
+<section id="section-5.1.2">
+          <h4 id="name-parameters">
+<a href="#section-5.1.2" class="section-number selfRef">5.1.2. </a><a href="#name-parameters" class="section-name selfRef">Parameters</a>
           </h4>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2.2-1.1">
-              <p id="section-5.2.2-1.1.1">TODO Specify the following:<a href="#section-5.2.2-1.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-5.1.2-1.1">
+              <p id="section-5.1.2-1.1.1">TODO: Pick field parameters and specify them here. See issue#22.<a href="#section-5.1.2-1.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="prg">
+<section id="section-5.2">
+        <h3 id="name-pseudorandom-generators">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-pseudorandom-generators" class="section-name selfRef">Pseudorandom Generators</a>
+        </h3>
+<p id="section-5.2-1">A pseudorandom generator (PRG) is used to expand a short, random seed into a
+long string of pseudorandom bits. A PRG suitable for this document implements
+the interface specified in this section. TWo concrete constructions are
+described in <a href="#prg-constructions" class="xref">Section 5.2.1</a>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">PRGs are defined by a class <code>Prg</code> with a single parameter:<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2.2-2.1">
-              <code>inner_product(left: Vec[Field], right: Vec[Field]) -&gt; Field</code> computes the
-inner product of <code>left</code> and <code>right</code>.<a href="#section-5.2.2-2.1" class="pilcrow">¶</a>
+<li class="normal" id="section-5.2-3.1">
+            <code>SEED_SIZE: Unsigned</code> is the size of the input seed.<a href="#section-5.2-3.1" class="pilcrow">¶</a>
 </li>
-          </ul>
+        </ul>
+<p id="section-5.2-4">A concrete <code>Prg</code> implements the following class method:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-5.1">
+            <code>expand(seed: Bytes, info: Bytes, length: Unsigned) -&gt; Bytes</code> derives a byte
+string from the given seed and info string. The length of the output <span class="bcp14">MUST</span> be
+<code>length</code>.<a href="#section-5.2-5.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-5.2-6">Each <code>Prg</code> has two derived class methods. The first is used to derive a fresh
+seed from an existing one. The second is used to compute a sequence of
+pseudorandom field eleements using a method based on the <code>hash_to_field</code>
+algorithm described in <span>[<a href="#I-D.draft-irtf-cfrg-hash-to-curve" class="xref">I-D.draft-irtf-cfrg-hash-to-curve</a>]</span>.<a href="#section-5.2-6" class="pilcrow">¶</a></p>
+<span id="name-derived-class-methods-for-p"></span><div id="prg-derived-methods">
+<figure id="figure-8">
+          <div class="alignLeft art-text artwork" id="section-5.2-7.1">
+<pre>
+# Derive a new seed.
+def derive(Prg, seed: bytes, info: bytes) -&gt; bytes:
+    return Prg.expand(seed, info, Prg.SEED_SIZE)
+
+# Expand a seed into a vector of Field elements.
+def expand_into_vec(Prg, Field,
+                    seed: Bytes,
+                    info: Bytes,
+                    length: Unsigned) -&gt; Vec[Field]:
+    L = Field.EXPANDED_SIZE
+    len_in_bytes = length * L
+    uniform_bytes = Prg.expand(seed, info, len_in_bytes)
+
+    vec = []
+    for i in range(length):
+        tv = uniform_bytes[L*i:L*(i+1)]
+        u_i = OS2IP(tv)
+        vec.append(Field(u_i))
+    return vec
+</pre>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-derived-class-methods-for-p" class="selfRef">Derived class methods for PRGs.</a>
+          </figcaption></figure>
+</div>
+<div id="prg-constructions">
+<section id="section-5.2.1">
+          <h4 id="name-constructions">
+<a href="#section-5.2.1" class="section-number selfRef">5.2.1. </a><a href="#name-constructions" class="section-name selfRef">Constructions</a>
+          </h4>
+<div id="prgblockcipheraes128">
+<section id="section-5.2.1.1">
+            <h5 id="name-prgblockcipheraes128">
+<a href="#section-5.2.1.1" class="section-number selfRef">5.2.1.1. </a><a href="#name-prgblockcipheraes128" class="section-name selfRef">PrgBlockCipher(Aes128)</a>
+            </h5>
+<p id="section-5.2.1.1-1">Our first construction, <code>PrgBlockCipher(Aes128)</code>, converts a blockcipher, namely
+AES-128, into a PRG. Seed expansion involves two steps. In the first step, CMAC
+<span>[<a href="#RFC4493" class="xref">RFC4493</a>]</span> is applied to the seed and info string to get a key. In the second
+step, the derived key is used in CTR-mode to encipher the all-zero string of the
+desired length and with a fixed initializaiton vector.<a href="#section-5.2.1.1-1" class="pilcrow">¶</a></p>
+<span id="name-definition-of-prg-prgblockc"></span><div id="prg-aes128">
+<figure id="figure-9">
+              <div class="alignLeft art-text artwork" id="section-5.2.1.1-2.1">
+<pre>
+SEED_SIZE=16
+
+def expand(_, seed, info, length):
+    key = AES128-CMAC(seed, info)
+    return AES128-CTR(key, zeros(16), zeros(length))
+</pre>
+</div>
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<a href="#name-definition-of-prg-prgblockc" class="selfRef">Definition of PRG PrgBlockCipher(Aes128).</a>
+              </figcaption></figure>
+</div>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-5.2.1.1-3.1">
+                <p id="section-5.2.1.1-3.1.1">CP: We might be able to get away with skipping the initial CMAC for some fixed
+value of info, e.g., info == "".<a href="#section-5.2.1.1-3.1.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</section>
+</div>
+<div id="prghkdfsha256">
+<section id="section-5.2.1.2">
+            <h5 id="name-prghkdfsha256">
+<a href="#section-5.2.1.2" class="section-number selfRef">5.2.1.2. </a><a href="#name-prghkdfsha256" class="section-name selfRef">PrgHkdf(Sha256)</a>
+            </h5>
+<p id="section-5.2.1.2-1">Our second construction, <code>PrgHkdf(Sha256)</code>, uses HKDF <span>[<a href="#RFC5869" class="xref">RFC5869</a>]</span> with SHA-256
+as the underlying hash function. Let <code>HKDF-SHA256-Expand</code> denote the expansion
+operation of HKDF with SHA-256. The PRG uses this operation directly, using the
+seed as the "PRK" value:<a href="#section-5.2.1.2-1" class="pilcrow">¶</a></p>
+<span id="name-definition-of-prg-prghkdfsh"></span><div id="prg-hkdf-sha256">
+<figure id="figure-10">
+              <div class="alignLeft art-text artwork" id="section-5.2.1.2-2.1">
+<pre>
+SEED_SIZE=32
+
+def expand(_, seed, info, length):
+    return HKDF-SHA512-Expand(seed, info, length)
+</pre>
+</div>
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<a href="#name-definition-of-prg-prghkdfsh" class="selfRef">Definition of PRG PrgHkdf(Sha256).</a>
+              </figcaption></figure>
+</div>
+<p id="section-5.2.1.2-3">Note that the maximum output size for HKDF is 255 times the output size of the
+underlying hash function (32 bytes in our case). This limitation means that HKDF
+may not be suitable for some VDAFs.<a href="#section-5.2.1.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 </section>
@@ -2151,7 +2246,7 @@ algorithms (encoding of inputs is described in <a href="#flp-encode" class="xref
 the prover. Its inputs are the encoded input, the "prover randomness"
 <code>prove_rand</code>, and the "joint randomness" <code>joint_rand</code>. The proof randomness is
 used only by the prover, but the joint randomness is shared by both the prover
-and verifier. Type <code>Field</code> is a finite field as defined in <a href="#field" class="xref">Section 5.2</a>.<a href="#section-6.1-2.1" class="pilcrow">¶</a>
+and verifier. Type <code>Field</code> is a finite field as defined in <a href="#field" class="xref">Section 5.1</a>.<a href="#section-6.1-2.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-6.1-2.2">
             <code>flp_query(input: Vec[Field], proof: Vec[Field], query_rand: Vec[Field],
@@ -2203,7 +2298,7 @@ message. In the remainder, the result generated by an aggregator will be
 referred to as its "verifier share".<a href="#section-6.1-5" class="pilcrow">¶</a></p>
 <p id="section-6.1-6">An FLP is executed by the prover and verifier as follows:<a href="#section-6.1-6" class="pilcrow">¶</a></p>
 <span id="name-execution-of-an-flp"></span><div id="run-flp">
-<figure id="figure-7">
+<figure id="figure-11">
           <div class="alignLeft art-text artwork" id="section-6.1-7.1">
 <pre>
 def run_flp(input: Vec[Field]):
@@ -2221,7 +2316,7 @@ def run_flp(input: Vec[Field]):
   return flp_decide(verifier)
 </pre>
 </div>
-<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
 <a href="#name-execution-of-an-flp" class="selfRef">Execution of an FLP.</a>
           </figcaption></figure>
 </div>
@@ -2288,7 +2383,7 @@ for at least two Aggregators, but no more than 255. (<code>2 &lt;= SHARES &lt;= 
 The key is used to derive unique joint randomness for the FLP query-generation
 algorithm run by the aggregators during preparation.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-the-setup-algorithm-for-pri"></span><div id="prio3-eval-setup">
-<figure id="figure-8">
+<figure id="figure-12">
             <div class="alignLeft art-text artwork" id="section-6.2.1-2.1">
 <pre>
 def vdaf_setup():
@@ -2297,7 +2392,7 @@ def vdaf_setup():
   return (None, verify_param)
 </pre>
 </div>
-<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
 <a href="#name-the-setup-algorithm-for-pri" class="selfRef">The setup algorithm for prio3.</a>
             </figcaption></figure>
 </div>
@@ -2339,7 +2434,7 @@ leader share and helper share. These are called <code>encode_leader_share</code>
 <code>encode_helper_share</code> respectively and they are described in
 <a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.2-5" class="pilcrow">¶</a></p>
 <span id="name-input-distribution-algorith"></span><div id="prio3-eval-input">
-<figure id="figure-9">
+<figure id="figure-13">
             <div class="alignLeft art-text artwork" id="section-6.2.2-6.1">
 <pre>
 def measurement_to_input_shares(_, measurement):
@@ -2401,7 +2496,7 @@ def measurement_to_input_shares(_, measurement):
   return input_shares
 </pre>
 </div>
-<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
 <a href="#name-input-distribution-algorith" class="selfRef">Input-distribution algorithm for prio3.</a>
             </figcaption></figure>
 </div>
@@ -2440,7 +2535,7 @@ We'll need to understand better how this impacts security.<a href="#section-6.2.
 functions, <code>encode_prep_message</code> and <code>decode_prep_message</code>, both of which are defined in
 <a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.3-5" class="pilcrow">¶</a></p>
 <span id="name-preparation-state-for-prio3"></span><div id="prio3-prep-state">
-<figure id="figure-10">
+<figure id="figure-14">
             <div class="alignLeft art-text artwork" id="section-6.2.3-6.1">
 <pre>
 class PrepState:
@@ -2500,7 +2595,7 @@ def prep_shares_to_prep(_, inbound: Vec[Bytes]):
   return encode_prep_message(k_joint_rand, verifier)
 </pre>
 </div>
-<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
 <a href="#name-preparation-state-for-prio3" class="selfRef">Preparation state for prio3.</a>
             </figcaption></figure>
 </div>
@@ -2518,7 +2613,7 @@ computation is not necessary. Should we bake this option into the spec?<a href="
 <a href="#section-6.2.4" class="section-number selfRef">6.2.4. </a><a href="#name-aggregation-2" class="section-name selfRef">Aggregation</a>
           </h4>
 <span id="name-aggregation-algorithm-for-p"></span><div id="prio3-out2agg">
-<figure id="figure-11">
+<figure id="figure-15">
             <div class="alignLeft art-text artwork" id="section-6.2.4-1.1">
 <pre>
 def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
@@ -2528,7 +2623,7 @@ def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
   return Field.encode_vec(agg_share)
 </pre>
 </div>
-<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
 <a href="#name-aggregation-algorithm-for-p" class="selfRef">Aggregation algorithm for prio3.</a>
             </figcaption></figure>
 </div>
@@ -2540,7 +2635,7 @@ def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
 <a href="#section-6.2.5" class="section-number selfRef">6.2.5. </a><a href="#name-unsharding-2" class="section-name selfRef">Unsharding</a>
           </h4>
 <span id="name-computation-of-the-aggregat"></span><div id="prio3-agg-output">
-<figure id="figure-12">
+<figure id="figure-16">
             <div class="alignLeft art-text artwork" id="section-6.2.5-1.1">
 <pre>
 def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
@@ -2550,7 +2645,7 @@ def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
   return Field.encode_vec(agg)
 </pre>
 </div>
-<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
 <a href="#name-computation-of-the-aggregat" class="selfRef">Computation of the aggregate result for prio3.</a>
             </figcaption></figure>
 </div>
@@ -2739,7 +2834,7 @@ two Aggregators (<code>SHARES == 2</code>).<a href="#section-7.2-1" class="pilcr
 <p id="section-7.2.1-1">The verification parameter is a symmetric key shared by both Aggregators. This
 VDAF has no public parameter.<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-the-setup-algorithm-for-pop"></span><div id="poplar1-eval-setup">
-<figure id="figure-13">
+<figure id="figure-17">
             <div class="alignLeft art-text artwork" id="section-7.2.1-2.1">
 <pre>
 def vdaf_setup():
@@ -2747,7 +2842,7 @@ def vdaf_setup():
   return (None, [(0, k_verify_init), (1, k_verify_init)])
 </pre>
 </div>
-<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
 <a href="#name-the-setup-algorithm-for-pop" class="selfRef">The setup algorithm for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -2773,7 +2868,7 @@ In addition, for each level of the tree, the prover generates random elements
 Putting everything together, the input-distribution algorithm is defined as
 follows. Function <code>encode_input_share</code> is defined in <a href="#poplar1-helper-functions" class="xref">Section 7.2.5</a>.<a href="#section-7.2.1.1-3" class="pilcrow">¶</a></p>
 <span id="name-the-input-distribution-algo"></span><div id="poplar1-mes2inp">
-<figure id="figure-14">
+<figure id="figure-18">
               <div class="alignLeft art-text artwork" id="section-7.2.1.1-4.1">
 <pre>
 def measurement_to_input_shares(_, alpha):
@@ -2809,7 +2904,7 @@ def measurement_to_input_shares(_, alpha):
   return input_shares
 </pre>
 </div>
-<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
 <a href="#name-the-input-distribution-algo" class="selfRef">The input-distribution algorithm for poplar1.</a>
               </figcaption></figure>
 </div>
@@ -2841,7 +2936,7 @@ derivation.<a href="#section-7.2.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <span id="name-preparation-state-for-popla"></span><div id="poplar1-prep-state">
-<figure id="figure-15">
+<figure id="figure-19">
             <div class="alignLeft art-text artwork" id="section-7.2.2-3.1">
 <pre>
 class PrepState:
@@ -2909,7 +3004,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
   return Field[l].encode_vec(verifier)
 </pre>
 </div>
-<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-preparation-state-for-popla" class="selfRef">Preparation state for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -2921,7 +3016,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 <a href="#section-7.2.3" class="section-number selfRef">7.2.3. </a><a href="#name-aggregation-3" class="section-name selfRef">Aggregation</a>
           </h4>
 <span id="name-aggregation-algorithm-for-po"></span><div id="poplar1-out2agg">
-<figure id="figure-16">
+<figure id="figure-20">
             <div class="alignLeft art-text artwork" id="section-7.2.3-1.1">
 <pre>
 def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
@@ -2936,7 +3031,7 @@ def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
   return Field[l].encode_vec(agg_share)
 </pre>
 </div>
-<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
 <a href="#name-aggregation-algorithm-for-po" class="selfRef">Aggregation algorithm for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -2948,7 +3043,7 @@ def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
 <a href="#section-7.2.4" class="section-number selfRef">7.2.4. </a><a href="#name-unsharding-3" class="section-name selfRef">Unsharding</a>
           </h4>
 <span id="name-computation-of-the-aggregate"></span><div id="poplar1-agg-output">
-<figure id="figure-17">
+<figure id="figure-21">
             <div class="alignLeft art-text artwork" id="section-7.2.4-1.1">
 <pre>
 def aggregate_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
@@ -2962,7 +3057,7 @@ def aggregate_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
   return Field[l].encode_vec(agg)
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
 <a href="#name-computation-of-the-aggregate" class="selfRef">Computation of the aggregate result for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -3091,9 +3186,21 @@ removing it after unsharding.<a href="#section-8-9" class="pilcrow">¶</a></p>
 <a href="#section-10.1" class="section-number selfRef">10.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
+<dt id="I-D.draft-irtf-cfrg-hash-to-curve">[I-D.draft-irtf-cfrg-hash-to-curve]</dt>
+        <dd>
+<span class="refAuthor">Faz-Hernandez, A.</span>, <span class="refAuthor">Scott, S.</span>, <span class="refAuthor">Sullivan, N.</span>, <span class="refAuthor">Wahby, R. S.</span>, and <span class="refAuthor">C. A. Wood</span>, <span class="refTitle">"Hashing to Elliptic Curves"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-hash-to-curve-13</span>, <time datetime="2021-11-10" class="refDate">10 November 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-13">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-13</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4493">[RFC4493]</dt>
+        <dd>
+<span class="refAuthor">Song, JH.</span>, <span class="refAuthor">Poovendran, R.</span>, <span class="refAuthor">Lee, J.</span>, and <span class="refAuthor">T. Iwata</span>, <span class="refTitle">"The AES-CMAC Algorithm"</span>, <span class="seriesInfo">RFC 4493</span>, <span class="seriesInfo">DOI 10.17487/RFC4493</span>, <time datetime="2006-06" class="refDate">June 2006</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4493">https://www.rfc-editor.org/rfc/rfc4493</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC5869">[RFC5869]</dt>
+        <dd>
+<span class="refAuthor">Krawczyk, H.</span> and <span class="refAuthor">P. Eronen</span>, <span class="refTitle">"HMAC-based Extract-and-Expand Key Derivation Function (HKDF)"</span>, <span class="seriesInfo">RFC 5869</span>, <span class="seriesInfo">DOI 10.17487/RFC5869</span>, <time datetime="2010-05" class="refDate">May 2010</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc5869">https://www.rfc-editor.org/rfc/rfc5869</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
       <dd>
