@@ -282,6 +282,10 @@ Table of Contents
    *  byte(int: Unsigned) -> Byte returns the representation of int as a
       byte.  The value of int MUST be in range [0,256).
 
+   *  I2OSP and OS2IP from [RFC8017], which are used, respectively, to
+      convert a byte string to a non-negative integer and to convert a
+      non-negative integer to a byte string.
+
 3.  Overview
 
    In a VDAF-based private measurement system, we distinguish three
@@ -1724,6 +1728,11 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
               Key Derivation Function (HKDF)", RFC 5869,
               DOI 10.17487/RFC5869, May 2010,
               <https://www.rfc-editor.org/rfc/rfc5869>.
+
+   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
+              "PKCS #1: RSA Cryptography Specifications Version 2.2",
+              RFC 8017, DOI 10.17487/RFC8017, November 2016,
+              <https://www.rfc-editor.org/rfc/rfc8017>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
