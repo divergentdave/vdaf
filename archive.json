@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-06T00:07:09.897090+00:00",
+  "timestamp": "2022-02-08T00:04:36.759357+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -243,7 +243,7 @@
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-04T17:05:55Z",
+      "updatedAt": "2022-02-06T01:57:22Z",
       "closedAt": null,
       "comments": [
         {
@@ -280,6 +280,13 @@
           "body": "Right, and given how much randomness we consume in our applications, I think it would be worthwhile providing a mapping a seed-to-field-vector expansion function that is based purely on AES. I'll put together a PR with a proposal.",
           "createdAt": "2022-02-04T17:05:54Z",
           "updatedAt": "2022-02-04T17:05:54Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Ok, before sending a PR, I want to get y'all's take on the over all shape of the solution. Here's my proposal:\r\n1. Add a parameter `EXPANDED_SIZE` to `Field` that specifies the number of random bytes that are sampled per field element.\r\n2. Adopt a modified version of `hash_to_field` in which we replace `expand_message` with the key stream output by AES-CTR (or some other, compatible primitive).\r\n\r\nThis could look something like this (quoting from https://github.com/cjpatton/vdaf/pull/24):\r\n```python\r\n# The base class for PRGs.\r\nclass Prg:\r\n    # Size of the seed.\r\n    SEED_SIZE: int\r\n\r\n    # Derive a fresh seed from an existing `seed`. The `info` input is used for\r\n    # domain sepration.\r\n    @classmethod\r\n    def derive(cls, seed: bytes, info: bytes) -> bytes:\r\n        raise Error(\"not implemented\")\r\n\r\n    # Expand the input `seed` into the number of bytes requested.\r\n    @classmethod\r\n    def expand(cls, seed: bytes, length: int) -> bytes:\r\n        raise Error(\"not implemented\")\r\n\r\n    # Expand the input `seed` into vector of `length` field elements. This\r\n    # algorithm is based on \"hash_to_field\" in draft-irtf-cfrg-hash-to-curve13.\r\n    @classmethod\r\n    def expand_into_vec(cls, Field, seed: bytes, length: int):\r\n        L = Field.EXPANDED_SIZE\r\n        len_in_bytes = length * L\r\n        uniform_bytes = cls.expand(seed, len_in_bytes)\r\n\r\n        vec = []\r\n        for i in range(length):\r\n            tv = uniform_bytes[L*i:L*(i+1)]\r\n            u_i = OS2IP(tv) # Decode `tv` into an integer.\r\n            vec.append(Field(u_i))\r\n        return vec\r\n```\r\n\r\n@schoppmp what do you think of this proposal? Of course, we wouldn't literally plop down this Python into the spec :) A concrete PRG would implement `derive` and `expand`. For example:\r\n\r\n```python\r\n# A pseudorandom generator based on AES128. CMAC {{!RFC4493}} is used for seed\r\n# derivation and CTR mode is used for seed expansion.\r\nclass PrgAes128(Prg):\r\n    # Associated parameters\r\n    SEED_SIZE = 16\r\n\r\n    @classmethod\r\n    def derive(cls, seed, info) -> bytes:\r\n        hasher = CMAC.new(seed, ciphermod=AES)\r\n        return hasher.update(info).digest()\r\n\r\n    @classmethod\r\n    def expand(cls, seed, length):\r\n        counter = Counter.new(128, initial_value=bytes_to_long(zeros(16)))\r\n        cipher = AES.new(seed, AES.MODE_CTR, counter=counter)\r\n        # CTR-mode encryption of the all-zero string of the specified length and using\r\n        # the all-zero block as the IV.\r\n        cipher_stream = cipher.encrypt(zeros(length))\r\n        return cipher_stream\r\n```\r\n\r\nCMAC is a somewhat unconventional choice. A more conventional choice might be HMAC-SHA256, however in that case we might want to increase `SEED_SIZE` to `32`.",
+          "createdAt": "2022-02-06T01:36:45Z",
+          "updatedAt": "2022-02-06T01:57:22Z"
         }
       ]
     },
@@ -2046,22 +2053,22 @@
     {
       "number": 24,
       "id": "PR_kwDOGKuqOc4yAQaA",
-      "title": "poc: Define the base class for VDAFs",
+      "title": "poc: Wrapper bits for prio3",
       "url": "https://github.com/cjpatton/vdaf/pull/24",
       "state": "OPEN",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "Adds a base class for implementing VDAFs in sage. The code also includes a framework for basic functionality testing, modeled on {{run-vdaf}} from the draft. \r\n\r\nThis change also adds implementations of the finite field currently used in libprio.\r\n\r\nPing @chris-wood for feedback on alignment of the code structure with the VOPRF draft, hash-to-curve draft, and so on.\r\nCC @schoppmp and @bifurcation in case you have an opinion about how the shape of reference implementations.",
+      "body": "",
       "createdAt": "2022-02-03T04:55:32Z",
-      "updatedAt": "2022-02-06T00:05:47Z",
+      "updatedAt": "2022-02-07T21:32:39Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "0412bc0b85f6f35bc510543840ba1a54aa9bfb35",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prio3-wrapper",
-      "headRefOid": "37c852f93502ab7252e739ce351bfd51b14a4d4b",
+      "headRefOid": "48ba2dc781cbd7567ee9b624c7cedce3cd316770",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
