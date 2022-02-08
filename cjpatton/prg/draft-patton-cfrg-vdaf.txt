@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 11 August 2022                                            Cisco
+Expires: 12 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         7 February 2022
+                                                         8 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 11 August 2022.
+   This Internet-Draft will expire on 12 August 2022.
 
 Copyright Notice
 
@@ -766,11 +766,13 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        return encoded
 
    def decode_vec(Field, encoded: Bytes) -> Vec[Field]:
-       if len(encoded) % Field.ENCODED_SIZE != 0:
+       L = Field.ENCODED_SIZE
+       if len(encoded) % L != 0:
            raise ERR_DECODE
+
        vec = []
-       for i in range(0, len(encoded), Field.ENCODED_SIZE):
-           encoded_x = encoded[i:i+Field.ENCODED_SIZE]
+       for i in range(0, len(encoded), L):
+           encoded_x = encoded[i:i+L]
            x = Field(OS2IP(encoded_x))
            vec.append(x)
        return vec
@@ -827,8 +829,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        uniform_bytes = Prg.expand(seed, info, len_in_bytes)
 
        vec = []
-       for i in range(length):
-           tv = uniform_bytes[L*i:L*(i+1)]
+       for i in range(0, uniform_bytes, L):
+           tv = uniform_bytes[i:i+L]
            u_i = OS2IP(tv)
            vec.append(Field(u_i))
        return vec
