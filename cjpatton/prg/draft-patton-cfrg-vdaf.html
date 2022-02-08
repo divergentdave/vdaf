@@ -1958,40 +1958,51 @@ specified in this document.<a href="#section-5-1" class="pilcrow">¶</a></p>
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-finite-fields" class="section-name selfRef">Finite Fields</a>
         </h3>
 <p id="section-5.1-1">In this document we only consider finite fields of the form <code>GF(p)</code> for prime
-<code>p</code>. Finite field elements are represented by a class <code>Field</code> that defines A
-concrete field implements the following class methods:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<code>p</code>. Finite field elements are represented by a class <code>Field</code> with the following
+associated parameters:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-2.1">
-            <code>zeros(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
+            <code>ENCODED_SIZE: Unsigned</code> is the number of bytes used to encode a field element
+as a byte string.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-5.1-2.2">
-            <code>rand_vec(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-2.2" class="pilcrow">¶</a>
+            <code>EXPANDED_SIZE: Unsigned</code> is the number of pseudorandom bytes that are sampled
+when expanding a seed into a sequence of field elements (see <a href="#prg" class="xref">Section 5.2</a>).<a href="#section-5.1-2.2" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-5.1-3">An instance of this type is a field element. The type defines the usual
-arithmetic operations on field elements. In addition, the type defines the
-following instance method for converting a field element to an unsigned integer:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">A concrete <code>Field</code> also implements the following class methods:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-4.1">
-            <code>elem.as_int() -&gt; Unsigned</code> returns the integer representation of
-field element <code>elem</code>.<a href="#section-5.1-4.1" class="pilcrow">¶</a>
+            <code>zeros(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
+zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-4.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-5.1-4.2">
+            <code>rand_vec(length: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
+random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>length</code>.<a href="#section-5.1-4.2" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-5.1-5">Likewise, each concrete <code>Field</code> implements a constructor for coverting an
-unsigned integer into a field element:<a href="#section-5.1-5" class="pilcrow">¶</a></p>
+<p id="section-5.1-5">An instance of this type is a field element. The type defines the usual
+arithmetic operations on field elements. In addition, the type defines the
+following instance method for converting a field element to an unsigned integer:<a href="#section-5.1-5" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-6.1">
-            <code>Field(val: Unsigned)</code> returns <code>val</code> represented as a field elemetn.<a href="#section-5.1-6.1" class="pilcrow">¶</a>
+            <code>elem.as_int() -&gt; Unsigned</code> returns the integer representation of
+field element <code>elem</code>.<a href="#section-5.1-6.1" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-5.1-7">Finally, each concerete <code>Field</code> has two derived class methods, one for encoding
+<p id="section-5.1-7">Likewise, each concrete <code>Field</code> implements a constructor for coverting an
+unsigned integer into a field element:<a href="#section-5.1-7" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1-8.1">
+            <code>Field(val: Unsigned)</code> returns <code>val</code> represented as a field element.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-5.1-9">Finally, each concerete <code>Field</code> has two derived class methods, one for encoding
 a vector of field elements as a byte string and another for decoding a vector of
-field elements.<a href="#section-5.1-7" class="pilcrow">¶</a></p>
+field elements.<a href="#section-5.1-9" class="pilcrow">¶</a></p>
 <span id="name-derived-class-methods-for-f"></span><div id="field-derived-methods">
 <figure id="figure-7">
-          <div class="alignLeft art-text artwork" id="section-5.1-8.1">
+          <div class="alignLeft art-text artwork" id="section-5.1-10.1">
 <pre>
 def encode_vec(Field, data: Vec[Field]) -&gt; Bytes:
     encoded = Bytes()

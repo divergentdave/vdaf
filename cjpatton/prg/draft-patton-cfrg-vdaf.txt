@@ -733,8 +733,17 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
 5.1.  Finite Fields
 
    In this document we only consider finite fields of the form GF(p) for
-   prime p.  Finite field elements are represented by a class Field that
-   defines A concrete field implements the following class methods:
+   prime p.  Finite field elements are represented by a class Field with
+   the following associated parameters:
+
+   *  ENCODED_SIZE: Unsigned is the number of bytes used to encode a
+      field element as a byte string.
+
+   *  EXPANDED_SIZE: Unsigned is the number of pseudorandom bytes that
+      are sampled when expanding a seed into a sequence of field
+      elements (see Section 5.2).
+
+   A concrete Field also implements the following class methods:
 
    *  zeros(length: Unsigned) -> output: Vec[Field] returns a vector of
       zeros.  The length of output MUST be length.
@@ -753,7 +762,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    Likewise, each concrete Field implements a constructor for coverting
    an unsigned integer into a field element:
 
-   *  Field(val: Unsigned) returns val represented as a field elemetn.
+   *  Field(val: Unsigned) returns val represented as a field element.
 
    Finally, each concerete Field has two derived class methods, one for
    encoding a vector of field elements as a byte string and another for
