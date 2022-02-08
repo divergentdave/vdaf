@@ -847,8 +847,8 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
        vec = []
        for i in range(0, uniform_bytes, L):
            tv = uniform_bytes[i:i+L]
-           u_i = OS2IP(tv)
-           vec.append(Field(u_i))
+           x = OS2IP(tv)
+           vec.append(Field(x))
        return vec
 
                  Figure 8: Derived class methods for PRGs.

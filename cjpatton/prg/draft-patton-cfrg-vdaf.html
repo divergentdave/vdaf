@@ -2108,8 +2108,8 @@ def expand_into_vec(Prg, Field,
     vec = []
     for i in range(0, uniform_bytes, L):
         tv = uniform_bytes[i:i+L]
-        u_i = OS2IP(tv)
-        vec.append(Field(u_i))
+        x = OS2IP(tv)
+        vec.append(Field(x))
     return vec
 </pre>
 </div>
