@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 8 August 2022                                             Cisco
+Expires: 12 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         4 February 2022
+                                                         8 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 August 2022.
+   This Internet-Draft will expire on 12 August 2022.
 
 Copyright Notice
 
@@ -80,10 +80,10 @@ Table of Contents
      4.5.  Unsharding
      4.6.  Execution of a VDAF
    5.  Preliminaries
-     5.1.  Key Derivation
-     5.2.  Finite Fields
-       5.2.1.  Deriving a Pseudorandom Vector
-       5.2.2.  Inner product of Vectors
+     5.1.  Finite Fields
+       5.1.1.  Deriving a Pseudorandom Vector
+       5.1.2.  Inner product of Vectors
+     5.2.  Key Derivation
    6.  prio3
      6.1.  Fully Linear Proof (FLP) Systems
        6.1.1.  Encoding the Input
@@ -725,7 +725,49 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    This section describes the cryptographic primitives that are common
    to the VDAFs specified in this document.
 
-5.1.  Key Derivation
+5.1.  Finite Fields
+
+   In this document we only consider finite fields of the form GF(p) for
+   prime p.  Finite field elements are represented by a type Field that
+   defines binary operators for addition and multiplication in the
+   field.  The type also defines the following associated functions:
+
+   *  Field.zeros(len: Unsigned) -> output: Vec[Field] returns a vector
+      of zeros.  The length of output MUST be len.
+
+   *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a
+      vector of random field elements.  The length of output MUST be
+      len.
+
+         NOTE In reality this would be achieved by generating a random
+         key and expanding it into a sequence of field elements using a
+         key derivation scheme.  This should probably be made explicit.
+
+   *  Field.encode_vec(data: Vec[Field]) -> encoded_data: Bytes
+      represents the input data as a byte string encoded_data.
+
+   *  Field.decode_vec(encoded_data: Bytes) -> data: Vec[Field] reverse
+      encoded_vec, returning the vector of field elements encoded by
+      encoded_data.  Raises an exception if the input does not encode a
+      valid vector of field elements.
+
+5.1.1.  Deriving a Pseudorandom Vector
+
+      TODO Specify the following function in terms of a key-derivation
+      scheme.  It'll use key_stream_init to create a KeyStream object
+      and read from it multiple times.
+
+   *  expand(Field, key: Bytes, len: Unsigned) -> output: Vec[Field]
+      expands a key into a pseudorandom sequence of field elements.
+
+5.1.2.  Inner product of Vectors
+
+      TODO Specify the following:
+
+   *  inner_product(left: Vec[Field], right: Vec[Field]) -> Field
+      computes the inner product of left and right.
+
+5.2.  Key Derivation
 
    A key-derivation scheme defines a method for deriving symmetric keys
    and a method for expanding a symmetric into an arbitrary length key
@@ -759,48 +801,6 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
    Associated constants:
 
    *  KEY_SIZE is the size of keys for the key-derivation scheme.
-
-5.2.  Finite Fields
-
-   In this document we only consider finite fields of the form GF(p) for
-   prime p.  Finite field elements are represented by a type Field that
-   defines binary operators for addition and multiplication in the
-   field.  The type also defines the following associated functions:
-
-   *  Field.zeros(len: Unsigned) -> output: Vec[Field] returns a vector
-      of zeros.  The length of output MUST be len.
-
-   *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a
-      vector of random field elements.  The length of output MUST be
-      len.
-
-         NOTE In reality this would be achieved by generating a random
-         key and expanding it into a sequence of field elements using a
-         key derivation scheme.  This should probably be made explicit.
-
-   *  Field.encode_vec(data: Vec[Field]) -> encoded_data: Bytes
-      represents the input data as a byte string encoded_data.
-
-   *  Field.decode_vec(encoded_data: Bytes) -> data: Vec[Field] reverse
-      encoded_vec, returning the vector of field elements encoded by
-      encoded_data.  Raises an exception if the input does not encode a
-      valid vector of field elements.
-
-5.2.1.  Deriving a Pseudorandom Vector
-
-      TODO Specify the following function in terms of a key-derivation
-      scheme.  It'll use key_stream_init to create a KeyStream object
-      and read from it multiple times.
-
-   *  expand(Field, key: Bytes, len: Unsigned) -> output: Vec[Field]
-      expands a key into a pseudorandom sequence of field elements.
-
-5.2.2.  Inner product of Vectors
-
-      TODO Specify the following:
-
-   *  inner_product(left: Vec[Field], right: Vec[Field]) -> Field
-      computes the inner product of left and right.
 
 6.  prio3
 
@@ -885,7 +885,7 @@ def run_vdaf(agg_param, nonces: Vec[Bytes], input_batch: Vec[Bytes]):
       encoded input, the "prover randomness" prove_rand, and the "joint
       randomness" joint_rand.  The proof randomness is used only by the
       prover, but the joint randomness is shared by both the prover and
-      verifier.  Type Field is a finite field as defined in Section 5.2.
+      verifier.  Type Field is a finite field as defined in Section 5.1.
 
    *  flp_query(input: Vec[Field], proof: Vec[Field], query_rand:
       Vec[Field], joint_rand: Vec[Field]) -> verifier: Vec[Field] is the

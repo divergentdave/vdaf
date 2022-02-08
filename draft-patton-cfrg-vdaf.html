@@ -1024,7 +1024,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Patton, et al.</td>
-<td class="center">Expires 8 August 2022</td>
+<td class="center">Expires 12 August 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1037,12 +1037,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-patton-cfrg-vdaf-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-02-04" class="published">4 February 2022</time>
+<time datetime="2022-02-08" class="published">8 February 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-08-08">8 August 2022</time></dd>
+<dd class="expires"><time datetime="2022-08-12">12 August 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1101,7 +1101,7 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 8 August 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 12 August 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1166,18 +1166,18 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-preliminaries" class="xref">Preliminaries</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
-                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-key-derivation" class="xref">Key Derivation</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
-                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-finite-fields" class="xref">Finite Fields</a></p>
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-finite-fields" class="xref">Finite Fields</a></p>
 <ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2.2.1">
-                    <p id="section-toc.1-1.5.2.2.2.1.1"><a href="#section-5.2.1" class="xref">5.2.1</a>.  <a href="#name-deriving-a-pseudorandom-vec" class="xref">Deriving a Pseudorandom Vector</a></p>
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.1">
+                    <p id="section-toc.1-1.5.2.1.2.1.1"><a href="#section-5.1.1" class="xref">5.1.1</a>.  <a href="#name-deriving-a-pseudorandom-vec" class="xref">Deriving a Pseudorandom Vector</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2.2.2">
-                    <p id="section-toc.1-1.5.2.2.2.2.1"><a href="#section-5.2.2" class="xref">5.2.2</a>.  <a href="#name-inner-product-of-vectors" class="xref">Inner product of Vectors</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.2">
+                    <p id="section-toc.1-1.5.2.1.2.2.1"><a href="#section-5.1.2" class="xref">5.1.2</a>.  <a href="#name-inner-product-of-vectors" class="xref">Inner product of Vectors</a></p>
 </li>
                 </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-key-derivation" class="xref">Key Derivation</a></p>
 </li>
             </ul>
 </li>
@@ -1942,129 +1942,129 @@ protocol needs to provide in each.<a href="#section-4.6-4" class="pilcrow">¶</a
       </h2>
 <p id="section-5-1">This section describes the cryptographic primitives that are common to the VDAFs
 specified in this document.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<div id="key-derivation">
-<section id="section-5.1">
-        <h3 id="name-key-derivation">
-<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-key-derivation" class="section-name selfRef">Key Derivation</a>
-        </h3>
-<p id="section-5.1-1">A key-derivation scheme defines a method for deriving symmetric keys and a
-method for expanding a symmetric into an arbitrary length key stream are
-required. This scheme consists of the following algorithms:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5.1-2.1">
-            <code>get_key(init_key, aux_input) -&gt; key</code> derives a fresh key <code>key</code> from an
-initial key <code>init_key</code> and auxiliary input <code>aux_input</code>. The length of <code>init_key</code>
-and <code>key</code> <span class="bcp14">MUST</span> be equal to <code>KEY_SIZE</code>.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-5.1-2.2">
-            <code>key_stream_init(key) -&gt; state: KeyStream</code> returns a key stream generator that
-is used to generate an arbitrary length stream of pseudorandom bytes. The
-length of <code>key</code> <span class="bcp14">MUST</span> be <code>KEY_SIZE</code>.<a href="#section-5.1-2.2" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-5.1-2.3">
-            <code>KeyStream.next(len: Unsigned) -&gt; (new_state: KeyStream, output)</code> returns the
-next <code>len</code> bytes of the key stream and updates the key stream generator state.
-The length of the output <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.1-2.3" class="pilcrow">¶</a>
-</li>
-        </ul>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.1-3.1">
-            <p id="section-5.1-3.1.1">TODO This functionality closely resembles what people usually think of as an
-extract-then-expand KDF, but differs somewhat in its syntax and, also, its
-required security properties. Can we get the same functionality from something
-that's more commonplace? HKDF doesn't fit the bill, unfortunately, because
-keys can only be expanded to a fairly short length. Our application requires a
-rather long key stream.<a href="#section-5.1-3.1.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
-<p id="section-5.1-4">Associated types:<a href="#section-5.1-4" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5.1-5.1">
-            <code>KeyStream</code> represents the state of the key stream generator.<a href="#section-5.1-5.1" class="pilcrow">¶</a>
-</li>
-        </ul>
-<p id="section-5.1-6">Associated constants:<a href="#section-5.1-6" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-5.1-7.1">
-            <code>KEY_SIZE</code> is the size of keys for the key-derivation scheme.<a href="#section-5.1-7.1" class="pilcrow">¶</a>
-</li>
-        </ul>
-</section>
-</div>
 <div id="field">
-<section id="section-5.2">
+<section id="section-5.1">
         <h3 id="name-finite-fields">
-<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-finite-fields" class="section-name selfRef">Finite Fields</a>
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-finite-fields" class="section-name selfRef">Finite Fields</a>
         </h3>
-<p id="section-5.2-1">In this document we only consider finite fields of the form <code>GF(p)</code> for prime
+<p id="section-5.1-1">In this document we only consider finite fields of the form <code>GF(p)</code> for prime
 <code>p</code>. Finite field elements are represented by a type <code>Field</code> that defines binary
 operators for addition and multiplication in the field. The type also defines
-the following associated functions:<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+the following associated functions:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-2.1">
+<li class="normal" id="section-5.1-2.1">
             <code>Field.zeros(len: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.2-2.1" class="pilcrow">¶</a>
+zeros. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-5.2-2.2">
-            <p id="section-5.2-2.2.1"><code>Field.rand_vec(len: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
-random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.2-2.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-5.1-2.2">
+            <p id="section-5.1-2.2.1"><code>Field.rand_vec(len: Unsigned) -&gt; output: Vec[Field]</code> returns a vector of
+random field elements. The length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2-2.2.2.1">
-                <p id="section-5.2-2.2.2.1.1">NOTE In reality this would be achieved by generating a random key and
+<li class="normal ulEmpty" id="section-5.1-2.2.2.1">
+                <p id="section-5.1-2.2.2.1.1">NOTE In reality this would be achieved by generating a random key and
 expanding it into a sequence of field elements using a key derivation
-scheme. This should probably be made explicit.<a href="#section-5.2-2.2.2.1.1" class="pilcrow">¶</a></p>
+scheme. This should probably be made explicit.<a href="#section-5.1-2.2.2.1.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li class="normal" id="section-5.2-2.3">
+          <li class="normal" id="section-5.1-2.3">
             <code>Field.encode_vec(data: Vec[Field]) -&gt; encoded_data: Bytes</code> represents the
-input <code>data</code> as a byte string <code>encoded_data</code>.<a href="#section-5.2-2.3" class="pilcrow">¶</a>
+input <code>data</code> as a byte string <code>encoded_data</code>.<a href="#section-5.1-2.3" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-5.2-2.4">
+          <li class="normal" id="section-5.1-2.4">
             <code>Field.decode_vec(encoded_data: Bytes) -&gt; data: Vec[Field]</code> reverse
 <code>encoded_vec</code>, returning the vector of field elements encoded by
 <code>encoded_data</code>. Raises an exception if the input does not encode a valid
-vector of field elements.<a href="#section-5.2-2.4" class="pilcrow">¶</a>
+vector of field elements.<a href="#section-5.1-2.4" class="pilcrow">¶</a>
 </li>
         </ul>
 <div id="deriving-a-pseudorandom-vector">
-<section id="section-5.2.1">
+<section id="section-5.1.1">
           <h4 id="name-deriving-a-pseudorandom-vec">
-<a href="#section-5.2.1" class="section-number selfRef">5.2.1. </a><a href="#name-deriving-a-pseudorandom-vec" class="section-name selfRef">Deriving a Pseudorandom Vector</a>
+<a href="#section-5.1.1" class="section-number selfRef">5.1.1. </a><a href="#name-deriving-a-pseudorandom-vec" class="section-name selfRef">Deriving a Pseudorandom Vector</a>
           </h4>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2.1-1.1">
-              <p id="section-5.2.1-1.1.1">TODO Specify the following function in terms of a key-derivation scheme. It'll
+<li class="normal ulEmpty" id="section-5.1.1-1.1">
+              <p id="section-5.1.1-1.1.1">TODO Specify the following function in terms of a key-derivation scheme. It'll
 use <code>key_stream_init</code> to create a <code>KeyStream</code> object and read from it multiple
-times.<a href="#section-5.2.1-1.1.1" class="pilcrow">¶</a></p>
+times.<a href="#section-5.1.1-1.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <ul class="normal">
-<li class="normal" id="section-5.2.1-2.1">
+<li class="normal" id="section-5.1.1-2.1">
               <code>expand(Field, key: Bytes, len: Unsigned) -&gt; output: Vec[Field]</code> expands a key
-into a pseudorandom sequence of field elements.<a href="#section-5.2.1-2.1" class="pilcrow">¶</a>
+into a pseudorandom sequence of field elements.<a href="#section-5.1.1-2.1" class="pilcrow">¶</a>
 </li>
           </ul>
 </section>
 </div>
 <div id="inner-product-of-vectors">
-<section id="section-5.2.2">
+<section id="section-5.1.2">
           <h4 id="name-inner-product-of-vectors">
-<a href="#section-5.2.2" class="section-number selfRef">5.2.2. </a><a href="#name-inner-product-of-vectors" class="section-name selfRef">Inner product of Vectors</a>
+<a href="#section-5.1.2" class="section-number selfRef">5.1.2. </a><a href="#name-inner-product-of-vectors" class="section-name selfRef">Inner product of Vectors</a>
           </h4>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2.2-1.1">
-              <p id="section-5.2.2-1.1.1">TODO Specify the following:<a href="#section-5.2.2-1.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-5.1.2-1.1">
+              <p id="section-5.1.2-1.1.1">TODO Specify the following:<a href="#section-5.1.2-1.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <ul class="normal">
-<li class="normal" id="section-5.2.2-2.1">
+<li class="normal" id="section-5.1.2-2.1">
               <code>inner_product(left: Vec[Field], right: Vec[Field]) -&gt; Field</code> computes the
-inner product of <code>left</code> and <code>right</code>.<a href="#section-5.2.2-2.1" class="pilcrow">¶</a>
+inner product of <code>left</code> and <code>right</code>.<a href="#section-5.1.2-2.1" class="pilcrow">¶</a>
 </li>
           </ul>
 </section>
 </div>
+</section>
+</div>
+<div id="key-derivation">
+<section id="section-5.2">
+        <h3 id="name-key-derivation">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-key-derivation" class="section-name selfRef">Key Derivation</a>
+        </h3>
+<p id="section-5.2-1">A key-derivation scheme defines a method for deriving symmetric keys and a
+method for expanding a symmetric into an arbitrary length key stream are
+required. This scheme consists of the following algorithms:<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-2.1">
+            <code>get_key(init_key, aux_input) -&gt; key</code> derives a fresh key <code>key</code> from an
+initial key <code>init_key</code> and auxiliary input <code>aux_input</code>. The length of <code>init_key</code>
+and <code>key</code> <span class="bcp14">MUST</span> be equal to <code>KEY_SIZE</code>.<a href="#section-5.2-2.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-5.2-2.2">
+            <code>key_stream_init(key) -&gt; state: KeyStream</code> returns a key stream generator that
+is used to generate an arbitrary length stream of pseudorandom bytes. The
+length of <code>key</code> <span class="bcp14">MUST</span> be <code>KEY_SIZE</code>.<a href="#section-5.2-2.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-5.2-2.3">
+            <code>KeyStream.next(len: Unsigned) -&gt; (new_state: KeyStream, output)</code> returns the
+next <code>len</code> bytes of the key stream and updates the key stream generator state.
+The length of the output <span class="bcp14">MUST</span> be <code>len</code>.<a href="#section-5.2-2.3" class="pilcrow">¶</a>
+</li>
+        </ul>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-5.2-3.1">
+            <p id="section-5.2-3.1.1">TODO This functionality closely resembles what people usually think of as an
+extract-then-expand KDF, but differs somewhat in its syntax and, also, its
+required security properties. Can we get the same functionality from something
+that's more commonplace? HKDF doesn't fit the bill, unfortunately, because
+keys can only be expanded to a fairly short length. Our application requires a
+rather long key stream.<a href="#section-5.2-3.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-5.2-4">Associated types:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-5.1">
+            <code>KeyStream</code> represents the state of the key stream generator.<a href="#section-5.2-5.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-5.2-6">Associated constants:<a href="#section-5.2-6" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-7.1">
+            <code>KEY_SIZE</code> is the size of keys for the key-derivation scheme.<a href="#section-5.2-7.1" class="pilcrow">¶</a>
+</li>
+        </ul>
 </section>
 </div>
 </section>
@@ -2149,7 +2149,7 @@ algorithms (encoding of inputs is described in <a href="#flp-encode" class="xref
 the prover. Its inputs are the encoded input, the "prover randomness"
 <code>prove_rand</code>, and the "joint randomness" <code>joint_rand</code>. The proof randomness is
 used only by the prover, but the joint randomness is shared by both the prover
-and verifier. Type <code>Field</code> is a finite field as defined in <a href="#field" class="xref">Section 5.2</a>.<a href="#section-6.1-2.1" class="pilcrow">¶</a>
+and verifier. Type <code>Field</code> is a finite field as defined in <a href="#field" class="xref">Section 5.1</a>.<a href="#section-6.1-2.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-6.1-2.2">
             <code>flp_query(input: Vec[Field], proof: Vec[Field], query_rand: Vec[Field],
