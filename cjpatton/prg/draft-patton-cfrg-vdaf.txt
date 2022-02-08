@@ -1096,7 +1096,7 @@ def expand(_, seed, info, length):
    preparation.
 
    def vdaf_setup():
-     k_query_init = gen_rand(KEY_SIZE)
+     k_query_init = gen_rand(SEED_SIZE)
      verify_param = [ (j, k_query_init) for j in range(SHARES) ]
      return (None, verify_param)
 
@@ -1149,8 +1149,8 @@ def expand(_, seed, info, length):
      k_helper_blinds = []
      k_helper_hints = []
      for j in range(SHARES-1):
-       k_blind = gen_rand(KEY_SIZE)
-       k_share = gen_rand(KEY_SIZE)
+       k_blind = gen_rand(SEED_SIZE)
+       k_share = gen_rand(SEED_SIZE)
        helper_input_share = expand(Field, k_share, INPUT_LEN)
        leader_input_share -= helper_input_share
        k_hint = get_key(k_blind,
@@ -1159,7 +1159,7 @@ def expand(_, seed, info, length):
        k_helper_input_shares.append(k_share)
        k_helper_blinds.append(k_blind)
        k_helper_hints.append(k_hint)
-     k_leader_blind = gen_rand(KEY_SIZE)
+     k_leader_blind = gen_rand(SEED_SIZE)
      k_leader_hint = get_key(k_leader_blind,
          byte(0) + Field.encode_vec(leader_input_share))
      k_joint_rand ^= k_leader_hint
@@ -1171,12 +1171,12 @@ def expand(_, seed, info, length):
 
      # Generate the proof shares.
      joint_rand = expand(Field, k_joint_rand, JOINT_RAND_LEN)
-     prove_rand = expand(Field, gen_rand(KEY_SIZE), PROVE_RAND_LEN)
+     prove_rand = expand(Field, gen_rand(SEED_SIZE), PROVE_RAND_LEN)
      proof = flp_prove(input, prove_rand, joint_rand)
      leader_proof_share = proof
      k_helper_proof_shares = []
      for j in range(SHARES-1):
-       k_share = gen_rand(KEY_SIZE)
+       k_share = gen_rand(SEED_SIZE)
        k_helper_proof_shares.append(k_share)
        helper_proof_share = expand(Field, k_share, PROOF_LEN)
        leader_proof_share -= helper_proof_share
@@ -1278,7 +1278,7 @@ def expand(_, seed, info, length):
      if len(inbound) != SHARES:
        raise ERR_INVALID_INPUT
 
-     k_joint_rand = zeros(KEY_SIZE)
+     k_joint_rand = zeros(SEED_SIZE)
      verifier = Field.zeros(VERIFIER_LEN)
      for r_share in inbound:
        (k_joint_rand_share,
@@ -1466,7 +1466,7 @@ def expand(_, seed, info, length):
    Aggregators.  This VDAF has no public parameter.
 
    def vdaf_setup():
-     k_verify_init = gen_rand(KEY_SIZE)
+     k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
                 Figure 17: The setup algorithm for poplar1.
