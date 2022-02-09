@@ -73,13 +73,12 @@ Table of Contents
    2.  Conventions and Definitions
    3.  Overview
    4.  Definition of VDAFs
-     4.1.  Constants and Associated Types
-     4.2.  Setup
-     4.3.  Sharding
-     4.4.  Preparation
-     4.5.  Aggregation
-     4.6.  Unsharding
-     4.7.  Execution of a VDAF
+     4.1.  Setup
+     4.2.  Sharding
+     4.3.  Preparation
+     4.4.  Aggregation
+     4.5.  Unsharding
+     4.6.  Execution of a VDAF
    5.  Preliminaries
      5.1.  Finite Fields
        5.1.1.  Inner product of Vectors
@@ -403,46 +402,43 @@ Table of Contents
 
    The remainder of this section defines the VDAF interface in terms of
    an abstract base class Vdaf.  This class defines the set of methods
-   and attributes a conceret VDAF must provide.
+   and attributes a concrete VDAF must provide.  The attributes are
+   listed in [{vdaf-param}}; the methods are defined in the subsections
+   that follow.
 
-4.1.  Constants and Associated Types
+       +=============+=============================================+
+       | Parameter   | Description                                 |
+       +=============+=============================================+
+       | ROUNDS      | Number of rounds of communication during    |
+       |             | the preparation phase (Section 4.3)         |
+       +-------------+---------------------------------------------+
+       | SHARES      | Number of input shares into which each      |
+       |             | measurement is sharded (Section 4.2)        |
+       +-------------+---------------------------------------------+
+       | Measurement | Type of each measurement                    |
+       +-------------+---------------------------------------------+
+       | PublicParam | Type of public parameter used by the Client |
+       |             | during the sharding phase (Section 4.2)     |
+       +-------------+---------------------------------------------+
+       | VerifyParam | Type of verification parameter used by each |
+       |             | Aggregator during the preparation phase     |
+       |             | (Section 4.3)                               |
+       +-------------+---------------------------------------------+
+       | AggParam    | Type of aggregation parameter               |
+       +-------------+---------------------------------------------+
+       | Prep        | State of each Aggregator during the         |
+       |             | preparation phase (Section 4.3)             |
+       +-------------+---------------------------------------------+
+       | OutShare    | Type of each output share                   |
+       +-------------+---------------------------------------------+
+       | AggShare    | Type of each aggreagte share                |
+       +-------------+---------------------------------------------+
+       | AggResult   | Type of the aggreagte result                |
+       +-------------+---------------------------------------------+
 
-   Each concrete VDAF specifies the following constants:
+        Table 1: Constants and types defined by each concrete VDAF.
 
-   *  SHARES: Unsigned is the number of Aggregators for which the VDAF
-      is defined.
-
-   *  ROUNDS: Unsigned is the number of rounds of communication during
-      the preparation phase.  (The communication pattern is derfined in
-      Section 4.4.)
-
-   In addition, the VDAF provides the following types:
-
-   *  Measurement is the type measurement type used by a client during
-      the sharding phase (Section 4.3).
-
-   *  PublicParam is the type of public parameter used by a Client
-      during the sharding phase.
-
-   *  VerifyParam is the type of verification parameter used by each
-      Aggregator during the preparation phase (Section 4.4).
-
-   *  AggParam is the type of aggregation parameter used by each
-      Aggregator during the preparation phase.
-
-   *  OutShare is the type of each output share recovered by the
-      Aggregators during the preparation phase.
-
-   *  AggShare is the type of result of combining a sequence of output
-      shares during the aggregation phase (Section 4.5).
-
-   *  AggResult is the type of aggregate result (Section 4.6).
-
-   *  Prep represents the state of an Aggregator during the preparation
-      phase.  This class implements the interface described in
-      Section 4.4.
-
-4.2.  Setup
+4.1.  Setup
 
    Before execution of the VDAF can begin, it is necessary to distribute
    long-lived parameters to the Client and Aggregators.  The long-lived
@@ -458,7 +454,7 @@ Table of Contents
       See Section 8 for a discussion of the security implications this
       has depending on the threat model.
 
-4.3.  Sharding
+4.2.  Sharding
 
    In order to protect the privacy of its measurements, a VDAF client
    splits its measurements into "input shares".  The
@@ -498,7 +494,7 @@ Table of Contents
       rotate the verify_param without also having to update the clients.
       We should consider dropping this at some point.
 
-4.4.  Preparation
+4.3.  Preparation
 
    To recover and verify output shares, the Aggregators interact with
    one another over ROUNDS rounds.  Prior to each round, each Aggregator
@@ -621,7 +617,7 @@ Table of Contents
       OPEN ISSUE Depending on what we do for issue#20, we may end up
       needeing to revise the above paragraph.
 
-4.5.  Aggregation
+4.4.  Aggregation
 
    Once an Aggregator holds validated output shares for a batch of
    measurements (where batches are defined by the application), it
@@ -659,7 +655,7 @@ Table of Contents
    provided at the same time.  Some VDAFs may also support a "streaming"
    form, where shares are processed one at a time.
 
-4.6.  Unsharding
+4.5.  Unsharding
 
    After the Aggregators have aggregated a sufficient number of output
    shares, each sends its aggregate share to the Collector, who runs the
@@ -696,7 +692,7 @@ Table of Contents
       [I-D.draft-gpew-priv-ppm].)  Or is this out-of-scope of this
       document?
 
-4.7.  Execution of a VDAF
+4.6.  Execution of a VDAF
 
    Executing a VDAF involves the concurrent evaluation of the VDAF on
    individual inputs and aggregation of the recovered output shares.
@@ -950,40 +946,43 @@ Table of Contents
 
    As usual, we will describe the interface implemented by a concrete
    FLP in terms of an abstraction base class Flp that specifies the set
-   of methods, constants, and types a concrete FLP must provide.
+   of methods and parameters a concrete FLP must provide.
+
+   The parameters define by an FLP are listed in Table 2.
 
    First, a concrete FLP defines the following constants:
 
-   *  PROVE_RAND_LEN: Unsigned is the length of the prover randomness,
-      i.e., the amount of randomness consumed by the prover.  This
-      number of random field elements are provided to the prover for
-      generating the proof.  (See below for an explanation.)
+       +================+==========================================+
+       | Parameter      | Description                              |
+       +================+==========================================+
+       | PROVE_RAND_LEN | Length of the prover randomness, the     |
+       |                | number of random field elements consumed |
+       |                | by the prover when generating a proof    |
+       +----------------+------------------------------------------+
+       | QUERY_RAND_LEN | Length of the query randomness, the      |
+       |                | number of random field elements consumed |
+       |                | by the verifier                          |
+       +----------------+------------------------------------------+
+       | JOINT_RAND_LEN | Length of the joint randomness, the      |
+       |                | number of random field elements consuemd |
+       |                | by both the prover and verifier          |
+       +----------------+------------------------------------------+
+       | INPUT_LEN      | Length of the encoded measurement        |
+       |                | (Section 6.1.1)                          |
+       +----------------+------------------------------------------+
+       | OUTPUT_LEN     | Length of the aggregtrable output        |
+       |                | (Section 6.1.1)                          |
+       +----------------+------------------------------------------+
+       | PROOF_LEN      | Length of the proof                      |
+       +----------------+------------------------------------------+
+       | VERIFIER_LEN   | Length of the verifier message generated |
+       |                | by quering the input and proof           |
+       +----------------+------------------------------------------+
+       | Field          | The finite field for which the FLP is    |
+       |                | defined (Section 5.1)                    |
+       +----------------+------------------------------------------+
 
-   *  QUERY_RAND_LEN: Unsigned is the length of the query randomness,
-      i.e., the amount of randomness consumed by the verifier.
-
-   *  JOINT_RAND_LEN: Unsigned is the length of the joint randomness in
-      number of field elements.  The joint randomness is the randomness
-      consumed by by both the prover and verifier.
-
-   *  INPUT_LEN: Unsigned is the number of field elements comprising an
-      input.  A measurement is encoded as a vector of this length before
-      the proof is generated.  (See Section 6.1.1 for details.)
-
-   *  OUTPUT_LEN: Unsigned is the length of the aggregable output.  (See
-      Section 6.1.1.)
-
-   *  PROOF_LEN: Unsigned is the length of the proof in number of field
-      elements.
-
-   *  VERIFIER_LEN: Unsigned is the length of the verifier message
-      generated by querying an input and proof.  (See below for an
-      explanation.)
-
-   A concerte FLP also defines an associated type:
-
-   *  Field is the finite field for which the FLP is defined.  This
-      object is compatible with the interface described in Section 5.1.
+         Table 2: Constants and types defined by each concrete FLP.
 
    An FLP specifies the following algorithms for generating and
    verifying proofs of validity for encoded inputs (encoding is
@@ -1088,7 +1087,7 @@ Table of Contents
    This section specifies Prio3, an implementation of the Vdaf interface
    (Section 4).  It has two generic parameters: an Flp (Section 6.1) and
    a Prg (Section 5.2).  The associated constants and types required by
-   the Vdaf interface are defined in Table 1.  The methods required for
+   the Vdaf interface are defined in Table 3.  The methods required for
    sharding, preparation, aggregation, and unsharding are desribed in
    the remaining subsections.
 
@@ -1116,7 +1115,7 @@ Table of Contents
            | AggResult   | Vec[Unsigned]                       |
            +-------------+-------------------------------------+
 
-             Table 1: Associated parameters for the prio3 VDAF.
+             Table 3: Associated parameters for the prio3 VDAF.
 
 6.2.1.  Setup
 
