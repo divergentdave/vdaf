@@ -81,7 +81,7 @@ Table of Contents
      4.6.  Execution of a VDAF
    5.  Preliminaries
      5.1.  Finite Fields
-       5.1.1.  Inner product of Vectors
+       5.1.1.  Helper Functions
        5.1.2.  Parameters
      5.2.  Pseudorandom Generators
        5.2.1.  Constructions
@@ -282,6 +282,10 @@ Table of Contents
 
    *  byte(int: Unsigned) -> Bytes returns the representation of int as
       a byte string.  The value of int MUST be in range [0,256).
+
+   *  xor(left: Bytes, right: Bytes) -> Bytes returns the bitwise XOR of
+      left and right.  An exception is raised if the inputs are not the
+      same length.
 
    *  I2OSP and OS2IP from [RFC8017], which are used, respectively, to
       convert a non-negative integer to a byte string and convert a byte
@@ -835,14 +839,27 @@ Table of Contents
 
              Figure 7: Derived class methods for finite fields.
 
-5.1.1.  Inner product of Vectors
+5.1.1.  Helper Functions
 
-   The following method is defined for computing the inner product of
-   two vectors:
+   The following auxiliary functions on vectors of field elements are
+   used in the remainder of this document.  Note that an exception is
+   raised by each function if the operands are not the same length.
 
+   # Compute the inner product of the operands.
    def inner_product(left: Vec[Field], right: Vec[Field]) -> Field:
-   result = Field(0) for (x, y) in zip(left, right): result += x * y
-   return result
+       return reduce(lambda x, y: x + y,
+                     map(lambda x: x[0] * x[1],
+                         zip(left, right)))
+
+   # Subtract the right operand from the left and return the result.
+   def vec_sub(left, right):
+       return list(map(lambda x: x[0] - x[1], zip(left, right)))
+
+   # Add the right operand to the left and return the result.
+   def vec_add(left, right):
+       return list(map(lambda x: x[0] + x[1], zip(left, right)))
+
+               Figure 8: Common functions for finite fields.
 
 5.1.2.  Parameters
 
@@ -1038,7 +1055,7 @@ Table of Contents
        # Verifier decides if the input is valid.
        return Flp.decide(verifier)
 
-                       Figure 8: Execution of an FLP.
+                       Figure 9: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(Flp,. input) always returns True.  On the other hand, if
@@ -1131,7 +1148,7 @@ Table of Contents
        verify_param = [(j, k_query_init) for j in range(Prio3.SHARES)]
        return (None, verify_param)
 
-                  Figure 9: The setup algorithm for prio3.
+                 Figure 10: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1247,7 +1264,7 @@ Table of Contents
            ))
        return input_shares
 
-             Figure 10: Input-distribution algorithm for prio3.
+             Figure 11: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
@@ -1351,7 +1368,7 @@ Table of Contents
 
        return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
-                  Figure 11: Preparation state for prio3.
+                  Figure 12: Preparation state for prio3.
 
 6.2.4.  Aggregation
 
@@ -1361,7 +1378,7 @@ Table of Contents
            agg_share = vec_add(agg_share, out_share)
        return agg_share
 
-                Figure 12: Aggregation algorithm for prio3.
+                Figure 13: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1371,7 +1388,7 @@ Table of Contents
            agg = vec_add(agg, agg_share)
        return list(map(lambda x: x.as_unsigned(), agg))
 
-         Figure 13: Computation of the aggregate result for prio3.
+         Figure 14: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1456,7 +1473,7 @@ Table of Contents
            raise ERR_DECODE
        return (verifier, k_joint_rand)
 
-              Figure 14: Helper functions required for prio3.
+              Figure 15: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1593,7 +1610,7 @@ Table of Contents
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 15: The setup algorithm for poplar1.
+                Figure 16: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1646,7 +1663,7 @@ Table of Contents
 
      return input_shares
 
-          Figure 16: The input-distribution algorithm for poplar1.
+          Figure 17: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1728,7 +1745,7 @@ Table of Contents
 
      return Field[l].encode_vec(verifier)
 
-                 Figure 17: Preparation state for poplar1.
+                 Figure 18: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1743,7 +1760,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 18: Aggregation algorithm for poplar1.
+               Figure 19: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1757,7 +1774,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg)
 
-        Figure 19: Computation of the aggregate result for poplar1.
+        Figure 20: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
