@@ -103,11 +103,12 @@ Table of Contents
        7.2.3.  Aggregation
        7.2.4.  Unsharding
        7.2.5.  Helper Functions
-   8.  Security Considerations
-   9.  IANA Considerations
-   10. References
-     10.1.  Normative References
-     10.2.  Informative References
+   8.  A General-Purpose FLP
+   9.  Security Considerations
+   10. IANA Considerations
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
    Acknowledgments
    Authors' Addresses
 
@@ -254,7 +255,7 @@ Table of Contents
    gives a brief overview of VDAFs; Section 4 defines the syntax for
    VDAFs; Section 5 defines various functionalities that are common to
    our constructions; Section 7 describes the poplar1 construction;
-   Section 6 describes the prio3 construction; and Section 8 enumerates
+   Section 6 describes the prio3 construction; and Section 9 enumerates
    the security considerations for VDAFs.
 
 2.  Conventions and Definitions
@@ -451,7 +452,7 @@ Table of Contents
       Aggregator's verification parameter is considered secret and MUST
       NOT be revealed to the Clients, Collector or other Aggregators.
       The parameters MAY be reused across multiple VDAF evaluations.
-      See Section 8 for a discussion of the security implications this
+      See Section 9 for a discussion of the security implications this
       has depending on the threat model.
 
 4.2.  Sharding
@@ -757,7 +758,7 @@ Table of Contents
    The aggregation parameter is chosen by the Aggregators prior to
    executing the VDAF.  This document does not specify how the nonces
    are chosen, but some of our security considerations require that the
-   nonces be unique for each VDAF evaluation.  See Section 8 for
+   nonces be unique for each VDAF evaluation.  See Section 9 for
    details.
 
    Another important question this document leaves out of scope is how a
@@ -769,7 +770,7 @@ Table of Contents
    "wrapper protocol", such as [I-D.draft-gpew-priv-ppm] that implements
    suitable cryptographic functionalities.  Moreover, some fraction of
    the Aggregators (or Clients) may be malicious and diverge from their
-   prescribed behaviors.  Section 8 describes the execution of the VDAF
+   prescribed behaviors.  Section 9 describes the execution of the VDAF
    in various adversarial environments and what properties the wrapper
    protocol needs to provide in each.
 
@@ -881,8 +882,9 @@ Table of Contents
    over a finite field, and the aggregate is computed by summing the
    vectors element-wise.  Validity is defined by an arithmetic circuit C
    that takes as input a vector of field elements x: if C(x) == 0, then
-   we say that x is valid; otherwise, we say that x is invalid.  A
-   number of useful measurement types can be defined this way:
+   we say that x is valid; otherwise, we say that x is invalid.  We call
+   C the "validity circuit".  A number of useful measurement types can
+   be defined this way:
 
    *  Simples statistics, like sum, average, and standard deviation;
 
@@ -933,7 +935,9 @@ Table of Contents
 
    prio3 can be viewed as a transformation of a particular class of FLP
    systems into a VDAF.  The next section specified the syntax of
-   suitable FLPs in detail.  The transformation is given in Section 6.2.
+   suitable FLPs in detail; the transformation is given in Section 6.2.
+   Finally, a concrete, general-purpose FLP suitable for any validity
+   circuit is specified in section Section 8.
 
 6.1.  Fully Linear Proof (FLP) Systems
 
@@ -947,9 +951,7 @@ Table of Contents
    FLP in terms of an abstraction base class Flp that specifies the set
    of methods and parameters a concrete FLP must provide.
 
-   The parameters define by an FLP are listed in Table 2.
-
-   First, a concrete FLP defines the following constants:
+   The parameters provided by a concrete FLP are listed in Table 2.
 
        +================+==========================================+
        | Parameter      | Description                              |
@@ -1772,7 +1774,11 @@ Table of Contents
       BITS] and indexes[i] MUST be in range [2^(l-1), 2^l) for all i.
       An error is raised if encoded cannot be decoded.
 
-8.  Security Considerations
+8.  A General-Purpose FLP
+
+      TODO
+
+9.  Security Considerations
 
       NOTE: This is a brief outline of the security considerations.
       This section will be filled out more as the draft matures and
@@ -1843,13 +1849,13 @@ Table of Contents
    features, e.g., by injecting noise before the sharding stage and
    removing it after unsharding.
 
-9.  IANA Considerations
+10.  IANA Considerations
 
    This document makes no request of IANA.
 
-10.  References
+11.  References
 
-10.1.  Normative References
+11.1.  Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1865,7 +1871,7 @@ Table of Contents
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
-10.2.  Informative References
+11.2.  Informative References
 
    [AGJOP21]  Addanki, S., Garbe, K., Jaffe, E., Ostrovsky, R., and A.
               Polychroniadou, "Prio+: Privacy Preserving Aggregate
