@@ -1252,6 +1252,14 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-a-general-purpose-flp" class="xref">A General-Purpose FLP</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-overview-2" class="xref">Overview</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-construction-3" class="xref">Construction</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
             <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a></p>
@@ -2273,7 +2281,7 @@ valid input.<a href="#section-6-8" class="pilcrow">¶</a></p>
 into a VDAF. The next section specified the syntax of suitable FLPs in detail;
 the transformation is given in <a href="#prio3-construction" class="xref">Section 6.2</a>. Finally, a concrete,
 general-purpose FLP suitable for any validity circuit is specified in section
-<a href="#flp-construction" class="xref">Section 8</a>.<a href="#section-6-9" class="pilcrow">¶</a></p>
+<a href="#flp-generic" class="xref">Section 8</a>.<a href="#section-6-9" class="pilcrow">¶</a></p>
 <div id="flp">
 <section id="section-6.1">
         <h3 id="name-fully-linear-proof-flp-syst">
@@ -3376,67 +3384,96 @@ decoded.<a href="#section-7.2.5-2.3" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
-<div id="flp-construction">
+<div id="flp-generic">
 <section id="section-8">
       <h2 id="name-a-general-purpose-flp">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-a-general-purpose-flp" class="section-name selfRef">A General-Purpose FLP</a>
       </h2>
 <p id="section-8-1">This section describes an FLP based on the fully linear PCP described in
-<span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 4.2. The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> is designed to work
-for any language recognized by an arithemtic circuit. The high-level objective
-of the proof system is to allow the verifier to evaluate the validity circuit
+<span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 4.2. We begin this section with an overview of their proof
+system (<a href="#flp-generic-overview" class="xref">Section 8.1</a>). We specify the construction in
+<a href="#flp-generic-construction" class="xref">Section 8.2</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<div id="flp-generic-overview">
+<section id="section-8.1">
+        <h3 id="name-overview-2">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-overview-2" class="section-name selfRef">Overview</a>
+        </h3>
+<p id="section-8.1-1">The proof system is designed to be compatible with
+any language recognized by an arithemtic circuit over a finite field. The
+high-level objective is to allow the verifier to evaluate the validity circuit
 over an input using only linear operations. Indeed, the linearity of this
-computation is what allows it to be distributed amongst multiple parties, as is
-done in prio3 <a href="#prio3" class="xref">Section 6</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
-<p id="section-8-2">Suppose for a moment that the validity cicruit <code>C</code> is affine (i.e., its only
-operations are addition and multiplicaiton-by-constant). To decide if an input
-is valid, each Aggregator could evaluate <code>C</code> on its input share locally, then
-send the result its peers. The output of the circuit can then be reconstructed
-from the result shares, since for any sequence of <code>SHARES</code> input shares:<a href="#section-8-2" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8-3">
+computation is what allows it to be distributed amongst multiple Aggregators, as
+is done in prio3 <a href="#prio3" class="xref">Section 6</a>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Suppose for a moment that the validity cicruit <code>C</code> is affine, meaning its only
+operations are addition and multiplicaiton-by-constant. In particular, the
+circuit does not contain a multiplication operation in which both operands are
+constatnt. To decide if an input is valid, each Aggregator could evaluate <code>C</code> on
+its input share locally and broadcast the result. The output of the circuit can
+then be reconstructed by adding adding up the result shares. That is, for any
+sequence of <code>SHARES</code> secret shares shares of the input:<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-3">
 <pre>
 C(input_share[0] + ... + input_share[SHARES-1]) =
     C(input_share[0]) + ... + C(input_share[SHARES-1])
-</pre><a href="#section-8-3" class="pilcrow">¶</a>
+</pre><a href="#section-8.1-3" class="pilcrow">¶</a>
 </div>
-<p id="section-8-4">(Note that it may be necessary to scale any constants in the circuit by <code>SHARES</code>
+<p id="section-8.1-4">(Note that it may be necessary to scale any constants in the circuit by <code>SHARES</code>
 for this equality to hold.) However this is not the case if <code>C</code> is not affine
-(i.e., it contains at least one multiplication operation, where nether operand
-is a constant). Thus the purpose of the proof generated by the prover is to
-allow the (distributed) verifier to evaluate the non-affine operations using
-only linear operations on (its share of) the input and proof.<a href="#section-8-4" class="pilcrow">¶</a></p>
-<p id="section-8-5">The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> is restricted to valididy circuits that exhibit
-a special structure. Specifically, an arithmetic circuit with "G-gates" (see
-<span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Definition 4.2) is composed of affine gates and instances of a
+(i.e., it contains at least one multiplication operation in which neither
+operand is a constant). Thus the primary purpose of the proof in the proof
+sysetem of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> is to allow the (distributed) verifier to evaluate the
+non-affine operations using only linear operations on (its share of) the input
+and proof.<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+<p id="section-8.1-5">The proof system is restricted to valididy circuits that exhibit a special
+structure. Specifically, an arithmetic circuit with "G-gates" (see <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>,
+Theorem 4.3) is composed of affine gates and any number of instances of a
 distingushed gate <code>G</code>, which may be non-affine. We will refer to this class of
-circuits as "gadget circuits" and to <code>G</code> as the "gadget".<a href="#section-8-5" class="pilcrow">¶</a></p>
-<p id="section-8-6">As an illustrative example, consider a validity circuit <code>C</code> that recognizes the
-set <code>L = set([0], [1])</code>. That is, <code>C</code> takes as input a length-1 vector <code>x</code> and
-returns <code>0</code> if <code>x[0] in range(2)</code> and outputs something else otherwise. This
-circuit can be expressed as the following degree-2 polynomial:<a href="#section-8-6" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8-7">
+circuits as "gadget circuits" and to <code>G</code> as the "gadget".<a href="#section-8.1-5" class="pilcrow">¶</a></p>
+<p id="section-8.1-6">As an illustrative example, consider a validity circuit <code>C</code> that recognizes the
+set <code>L = set([0], [1])</code>. That is, <code>C</code> takes as input a length-1 vector <code>input</code>
+and returns <code>0</code> if <code>input[0] in range(2)</code> and outputs something else otherwise.
+This circuit can be expressed as the following degree-2 polynomial:<a href="#section-8.1-6" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-7">
 <pre>
 C(x) = (x - 1) * x = x^2 - x
-</pre><a href="#section-8-7" class="pilcrow">¶</a>
+</pre><a href="#section-8.1-7" class="pilcrow">¶</a>
 </div>
-<p id="section-8-8">This circuit recognizes <code>L</code> becuase <code>x^2 = x</code> is only true for <code>x in range(2)</code>.
-Notice that the polynomial involves a non-afine operation (<code>x^2</code>). The circuit
-would be expressed in terms of a gadget that subsumes this non-affine operation.
-For example, the gadget might be multiplication:<a href="#section-8-8" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8-9">
+<p id="section-8.1-8">This polynomial recognizes <code>L</code> becuase <code>x^2 = x</code> is only true for <code>x in
+range(2)</code>. Notice that the polynomial involves a non-afine operation (<code>x^2</code>). In
+order to apply <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3, the circuit would be rewritten in
+terms of a gadget that subsumes this non-affine operation. For example, the
+gadget might be multiplication:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-9">
 <pre>
 G(left, right) = left * right
-</pre><a href="#section-8-9" class="pilcrow">¶</a>
+</pre><a href="#section-8.1-9" class="pilcrow">¶</a>
 </div>
-<p id="section-8-10">Then the validity circuit would be rewritten in terms of <code>G</code> like so:<a href="#section-8-10" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8-11">
+<p id="section-8.1-10">Then the validity circuit would be rewritten like so:<a href="#section-8.1-10" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-11">
 <pre>
 C(x) = G(x, x) - x
-</pre><a href="#section-8-11" class="pilcrow">¶</a>
+</pre><a href="#section-8.1-11" class="pilcrow">¶</a>
 </div>
-<p id="section-8-12">In the proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, the proof is used to allow the verifier to
-evaluate each instance of the gadget (i.e., <code>G(x, x)</code> in our example) using
-linear queries over the input and proof.<a href="#section-8-12" class="pilcrow">¶</a></p>
+<p id="section-8.1-12">The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> allows verifier to evaluate each instance of
+the gadget (i.e., <code>G(x, x)</code> in our example) using linear queries over the input
+and proof. In the distributed setting, this amounts to each Aggregator
+performing local computation on its share of the input and proof, then
+exchanging a "verifier share" with its peers in order to finish evaluation of
+the validity circuit.<a href="#section-8.1-12" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flp-generic-construction">
+<section id="section-8.2">
+        <h3 id="name-construction-3">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-construction-3" class="section-name selfRef">Construction</a>
+        </h3>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-8.2-1.1">
+            <p id="section-8.2-1.1.1">TODO<a href="#section-8.2-1.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
 </section>
 </div>
 <div id="security">
