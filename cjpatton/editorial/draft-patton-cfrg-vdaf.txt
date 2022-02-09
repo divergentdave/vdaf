@@ -1093,30 +1093,31 @@ Table of Contents
    sharding, preparation, aggregation, and unsharding are desribed in
    the remaining subsections.
 
-                 +=============+========================+
-                 | Parameter   | Value                  |
-                 +=============+========================+
-                 | ROUNDS      | 1                      |
-                 +-------------+------------------------+
-                 | SHARES      | in range [2, 255)      |
-                 +-------------+------------------------+
-                 | Measurement | Flp.Measurement        |
-                 +-------------+------------------------+
-                 | PublicParam | None                   |
-                 +-------------+------------------------+
-                 | VerifyParam | Tuple[Unsigned, Bytes] |
-                 +-------------+------------------------+
-                 | AggParam    | None                   |
-                 +-------------+------------------------+
-                 | OutShare    | Vec[Flp.Field]         |
-                 +-------------+------------------------+
-                 | AggShare    | Vec[Flp.Field]         |
-                 +-------------+------------------------+
-                 | AggResult   | Vec[Unsigned]          |
-                 +-------------+------------------------+
+           +=============+=====================================+
+           | Parameter   | Value                               |
+           +=============+=====================================+
+           | ROUNDS      | 1                                   |
+           +-------------+-------------------------------------+
+           | SHARES      | in range [2, 255)                   |
+           +-------------+-------------------------------------+
+           | Measurement | Flp.Measurement                     |
+           +-------------+-------------------------------------+
+           | PublicParam | None                                |
+           +-------------+-------------------------------------+
+           | VerifyParam | Tuple[Unsigned, Bytes]              |
+           +-------------+-------------------------------------+
+           | AggParam    | None                                |
+           +-------------+-------------------------------------+
+           | Prep        | Tuple[Vec[Flp.Field], Bytes, Bytes] |
+           +-------------+-------------------------------------+
+           | OutShare    | Vec[Flp.Field]                      |
+           +-------------+-------------------------------------+
+           | AggShare    | Vec[Flp.Field]                      |
+           +-------------+-------------------------------------+
+           | AggResult   | Vec[Unsigned]                       |
+           +-------------+-------------------------------------+
 
-                    Table 1: Associated parameters for
-                             the prio3 VDAF.
+             Table 1: Associated parameters for the prio3 VDAF.
 
 6.2.1.  Setup
 
@@ -1279,67 +1280,72 @@ Table of Contents
       NOTE This optimization somewhat diverges from Section 6.2.3 of
       [BBCGGI19].  Security analysis is needed.
 
-   XXX
+   The algorithms required for preparation are defined as follows.
+   These algorithms make use of encoding and decoding methods defined in
+   Section 6.2.6.
 
-   The preparation state is defined as follows.  It involves two
-   additional helper functions, encode_prep_message and
-   decode_prep_message, both of which are defined in Section 6.2.6.
-
-   class PrepState:
-     def __init__(verify_param, _, nonce, r_input_share):
+   def prep_init(Prio3, verify_param, _agg_param, nonce, input_share):
        (j, k_query_init) = verify_param
 
-       if j == 0: # leader
-         (self.input_share, self.proof_share,
-          k_blind, k_hint) = decode_leader_share(r_input_share)
-       else:
-         (k_input_share, k_proof_share,
-          k_blind, k_hint) = decode_helper_share(r_input_share)
-         self.input_share = expand(Field, k_input_share, INPUT_LEN)
-         self.proof_share = expand(Field, k_proof_share, PROOF_LEN)
+       (input_share, proof_share, k_blind, k_hint) = \
+           Prio3.decode_leader_share(input_share) if j == 0 else \
+           Prio3.decode_helper_share(input_share)
 
-       self.k_joint_rand_share = get_key(
-         k_blind, byte(j) + self.input_share)
-       self.k_joint_rand = k_hint ^ self.k_joint_rand_share
-       self.k_query_rand = get_key(k_query_init, byte(255) + nonce)
-       self.step = "ready"
+       out_share = Prio3.Flp.truncate(input_share)
 
-     def next(self, inbound: Optional[Bytes]):
-       if self.step == "ready" and inbound == None:
-         joint_rand = expand(Field, self.k_joint_rand, JOINT_RAND_LEN)
-         query_rand = expand(Field, self.k_query_rand, QUERY_RAND_LEN)
-         verifier_share = flp_query(
-           self.input_share, self.proof_share, query_rand, joint_rand)
+       k_query_rand = Prio3.Prg.derive(k_query_init, byte(255) + nonce)
+       query_rand = Prio3.Prg.expand_into_vec(
+           Prio3.Flp.Field,
+           k_query_rand,
+           b"query rand",
+           Prio3.Flp.QUERY_RAND_LEN
+       )
+       encoded = Prio3.Flp.Field.encode_vec(input_share)
+       k_joint_rand_share = Prio3.Prg.derive(k_blind, byte(j) + encoded)
+       k_joint_rand = xor(k_hint, k_joint_rand_share)
+       joint_rand = Prio3.Prg.expand_into_vec(
+           Prio3.Flp.Field,
+           k_joint_rand,
+           b"joint rand",
+           Prio3.Flp.JOINT_RAND_LEN
+       )
+       verifier_share = Prio3.Flp.query(input_share,
+                                        proof_share,
+                                        query_rand,
+                                        joint_rand,
+                                        Prio3.SHARES)
 
-         self.output_share = flp_truncate(input_share)
-         self.step = "waiting"
-         return encode_prep_message(
-           self.k_joint_rand_share,
-           self.verifier_share,
-         )
+       prep_msg = Prio3.encode_prepare_message(verifier_share,
+                                               k_joint_rand_share)
+       return (out_share, k_joint_rand, prep_msg)
 
-       elif self.step == "waiting" and inbound != None:
-         (k_joint_rand, verifier) = decode_prep_message(inbound)
-         if k_joint_rand != self.k_joint_rand: raise ERR_INVALID
-         if not flp_decide(verifier): raise ERR_INVALID
-         return Field.encode_vec(self.output_share)
+   def prep_next(Prio3, prep, inbound):
+       (out_share, k_joint_rand, prep_msg) = prep
 
-       else: raise ERR_INVALID_STATE
+       if inbound is None:
+           return (prep, prep_msg)
 
-   def prep_shares_to_prep(_, inbound: Vec[Bytes]):
-     if len(inbound) != SHARES:
-       raise ERR_INVALID_INPUT
+       (verifier, k_joint_rand_check) = \
+           Prio3.decode_prepare_message(inbound)
 
-     k_joint_rand = zeros(SEED_SIZE)
-     verifier = Field.zeros(VERIFIER_LEN)
-     for r_share in inbound:
-       (k_joint_rand_share,
-        verifier_share) = decode_prep_message(r_share)
+       if k_joint_rand_check != k_joint_rand or \
+               not Prio3.Flp.decide(verifier):
+           raise ERR_VERIFY
 
-       k_joint_rand ^= k_joint_rand_share
-       verifer += verifier_share
+       return out_share
 
-     return encode_prep_message(k_joint_rand, verifier)
+   def prep_shares_to_prep(Prio3, _agg_param, prep_shares):
+       verifier = Prio3.Flp.Field.zeros(Prio3.Flp.VERIFIER_LEN)
+       k_joint_rand_check = zeros(Prio3.Prg.SEED_SIZE)
+       for encoded in prep_shares:
+           (verifier_share, k_joint_rand_share) = \
+               Prio3.decode_prepare_message(encoded)
+
+           verifier = vec_add(verifier, verifier_share)
+           k_joint_rand_check = xor(k_joint_rand_check,
+                                    k_joint_rand_share)
+
+       return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
                   Figure 11: Preparation state for prio3.
 
@@ -1349,42 +1355,99 @@ Table of Contents
 
 6.2.4.  Aggregation
 
-   def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
-     agg_share = Field.zeros(OUTPUT_LEN)
-     for output_share in output_shares:
-       agg_share += Field.decode_vec(output_share)
-     return Field.encode_vec(agg_share)
+   def out_shares_to_agg_share(Prio3, _agg_param, out_shares):
+       agg_share = Prio3.Flp.Field.zeros(Prio3.Flp.OUTPUT_LEN)
+       for out_share in out_shares:
+           agg_share = vec_add(agg_share, out_share)
+       return agg_share
 
                 Figure 12: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
-   def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
-     agg = Field.zeros(OUTPUT_LEN)
-     for agg_share in agg_shares:
-       agg += Field.decode_vec(agg_share)
-     return Field.encode_vec(agg)
+   def agg_shares_to_result(Prio3, _agg_param, agg_shares):
+       agg = Prio3.Flp.Field.zeros(Prio3.Flp.OUTPUT_LEN)
+       for agg_share in agg_shares:
+           agg = vec_add(agg, agg_share)
+       return list(map(lambda x: x.as_unsigned(), agg))
 
          Figure 13: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
-      TODO Specify the following functionalities.
+   def encode_leader_share(Prio3,
+                           input_share,
+                           proof_share,
+                           k_blind,
+                           k_hint):
+       encoded = Bytes()
+       encoded += Prio3.Flp.Field.encode_vec(input_share)
+       encoded += Prio3.Flp.Field.encode_vec(proof_share)
+       encoded += k_blind
+       encoded += k_hint
+       return encoded
 
-   *  encode_leader_share(input_share: Vec[Field], proof_share:
-      Vec[Field], blind, hint) -> encoded: Bytes encodes a leader share
-      as a byte string.
+   def decode_leader_share(Prio3, encoded):
+       l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.INPUT_LEN
+       encoded_input_share, encoded = encoded[:l], encoded[l:]
+       input_share = Prio3.Flp.Field.decode_vec(encoded_input_share)
+       l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.PROOF_LEN
+       encoded_proof_share, encoded = encoded[:l], encoded[l:]
+       proof_share = Prio3.Flp.Field.decode_vec(encoded_proof_share)
+       l = Prio3.Prg.SEED_SIZE
+       k_blind, encoded = encoded[:l], encoded[l:]
+       k_hint, encoded = encoded[:l], encoded[l:]
+       if len(encoded) != 0:
+           raise ERR_DECODE
+       return (input_share, proof_share, k_blind, k_hint)
 
-   *  encode_helper_share(input_share, proof_share, blind, hint) ->
-      encoded: Bytes encodes a helper share as a byte string.
+   def encode_helper_share(Prio3,
+                           k_input_share,
+                           k_proof_share,
+                           k_blind,
+                           k_hint):
+       encoded = Bytes()
+       encoded += k_input_share
+       encoded += k_proof_share
+       encoded += k_blind
+       encoded += k_hint
+       return encoded
 
-   *  decode_leader_share and decode_helper_share decode a leader and
-      helper share respectively.
+   def decode_helper_share(Prio3, encoded):
+       l = Prio3.Prg.SEED_SIZE
+       k_input_share, encoded = encoded[:l], encoded[l:]
+       input_share = Prio3.Prg.expand_into_vec(Prio3.Flp.Field,
+                                               k_input_share,
+                                               b"input share",
+                                               Prio3.Flp.INPUT_LEN)
+       k_proof_share, encoded = encoded[:l], encoded[l:]
+       proof_share = Prio3.Prg.expand_into_vec(Prio3.Flp.Field,
+                                               k_proof_share,
+                                               b"proof share",
+                                               Prio3.Flp.PROOF_LEN)
+       k_blind, encoded = encoded[:l], encoded[l:]
+       k_hint, encoded = encoded[:l], encoded[l:]
+       if len(encoded) != 0:
+           raise ERR_DECODE
+       return (input_share, proof_share, k_blind, k_hint)
 
-   *  encode_prep_message(key, verifier: Vec[Field]) -> encoded encodes
-      a key (share) and verifier (share) as a byte string.
+   def encode_prepare_message(Prio3, verifier, k_joint_rand):
+       encoded = Bytes()
+       encoded += Prio3.Flp.Field.encode_vec(verifier)
+       encoded += k_joint_rand
+       return encoded
 
-   *  decode_prep_message decodes a key (share) and verifier (share).
+   def decode_prepare_message(Prio3, encoded):
+       l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.VERIFIER_LEN
+       encoded_verifier, encoded = encoded[:l], encoded[l:]
+       verifier = Prio3.Flp.Field.decode_vec(encoded_verifier)
+       l = Prio3.Prg.SEED_SIZE
+       k_joint_rand, encoded = encoded[:l], encoded[l:]
+       if len(encoded) != 0:
+           raise ERR_DECODE
+       return (verifier, k_joint_rand)
+
+              Figure 14: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1521,7 +1584,7 @@ Table of Contents
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 14: The setup algorithm for poplar1.
+                Figure 15: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1574,7 +1637,7 @@ Table of Contents
 
      return input_shares
 
-          Figure 15: The input-distribution algorithm for poplar1.
+          Figure 16: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1656,7 +1719,7 @@ Table of Contents
 
      return Field[l].encode_vec(verifier)
 
-                 Figure 16: Preparation state for poplar1.
+                 Figure 17: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1671,7 +1734,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 17: Aggregation algorithm for poplar1.
+               Figure 18: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1685,7 +1748,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg)
 
-        Figure 18: Computation of the aggregate result for poplar1.
+        Figure 19: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 

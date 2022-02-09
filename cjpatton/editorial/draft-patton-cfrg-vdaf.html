@@ -2456,6 +2456,14 @@ aggregation, and unsharding are desribed in the remaining subsections.<a href="#
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
+                <code>Prep</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Tuple[Vec[Flp.Field], Bytes, Bytes]</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
                 <code>OutShare</code>
 </td>
               <td class="text-left" rowspan="1" colspan="1">
@@ -2661,69 +2669,74 @@ of the PRG seed along with their verifier shares.<a href="#section-6.2.3-3" clas
 Security analysis is needed.<a href="#section-6.2.3-4.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
-<p id="section-6.2.3-5">XXX<a href="#section-6.2.3-5" class="pilcrow">¶</a></p>
-<p id="section-6.2.3-6">The preparation state is defined as follows. It involves two additional helper
-functions, <code>encode_prep_message</code> and <code>decode_prep_message</code>, both of which are defined in
-<a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.3-6" class="pilcrow">¶</a></p>
+<p id="section-6.2.3-5">The algorithms required for preparation are defined as follows. These algorithms
+make use of encoding and decoding methods defined in <a href="#prio3-helper-functions" class="xref">Section 6.2.6</a>.<a href="#section-6.2.3-5" class="pilcrow">¶</a></p>
 <span id="name-preparation-state-for-prio3"></span><div id="prio3-prep-state">
 <figure id="figure-11">
-            <div class="alignLeft art-text artwork" id="section-6.2.3-7.1">
+            <div class="alignLeft art-text artwork" id="section-6.2.3-6.1">
 <pre>
-class PrepState:
-  def __init__(verify_param, _, nonce, r_input_share):
+def prep_init(Prio3, verify_param, _agg_param, nonce, input_share):
     (j, k_query_init) = verify_param
 
-    if j == 0: # leader
-      (self.input_share, self.proof_share,
-       k_blind, k_hint) = decode_leader_share(r_input_share)
-    else:
-      (k_input_share, k_proof_share,
-       k_blind, k_hint) = decode_helper_share(r_input_share)
-      self.input_share = expand(Field, k_input_share, INPUT_LEN)
-      self.proof_share = expand(Field, k_proof_share, PROOF_LEN)
+    (input_share, proof_share, k_blind, k_hint) = \
+        Prio3.decode_leader_share(input_share) if j == 0 else \
+        Prio3.decode_helper_share(input_share)
 
-    self.k_joint_rand_share = get_key(
-      k_blind, byte(j) + self.input_share)
-    self.k_joint_rand = k_hint ^ self.k_joint_rand_share
-    self.k_query_rand = get_key(k_query_init, byte(255) + nonce)
-    self.step = "ready"
+    out_share = Prio3.Flp.truncate(input_share)
 
-  def next(self, inbound: Optional[Bytes]):
-    if self.step == "ready" and inbound == None:
-      joint_rand = expand(Field, self.k_joint_rand, JOINT_RAND_LEN)
-      query_rand = expand(Field, self.k_query_rand, QUERY_RAND_LEN)
-      verifier_share = flp_query(
-        self.input_share, self.proof_share, query_rand, joint_rand)
+    k_query_rand = Prio3.Prg.derive(k_query_init, byte(255) + nonce)
+    query_rand = Prio3.Prg.expand_into_vec(
+        Prio3.Flp.Field,
+        k_query_rand,
+        b"query rand",
+        Prio3.Flp.QUERY_RAND_LEN
+    )
+    encoded = Prio3.Flp.Field.encode_vec(input_share)
+    k_joint_rand_share = Prio3.Prg.derive(k_blind, byte(j) + encoded)
+    k_joint_rand = xor(k_hint, k_joint_rand_share)
+    joint_rand = Prio3.Prg.expand_into_vec(
+        Prio3.Flp.Field,
+        k_joint_rand,
+        b"joint rand",
+        Prio3.Flp.JOINT_RAND_LEN
+    )
+    verifier_share = Prio3.Flp.query(input_share,
+                                     proof_share,
+                                     query_rand,
+                                     joint_rand,
+                                     Prio3.SHARES)
 
-      self.output_share = flp_truncate(input_share)
-      self.step = "waiting"
-      return encode_prep_message(
-        self.k_joint_rand_share,
-        self.verifier_share,
-      )
+    prep_msg = Prio3.encode_prepare_message(verifier_share,
+                                            k_joint_rand_share)
+    return (out_share, k_joint_rand, prep_msg)
 
-    elif self.step == "waiting" and inbound != None:
-      (k_joint_rand, verifier) = decode_prep_message(inbound)
-      if k_joint_rand != self.k_joint_rand: raise ERR_INVALID
-      if not flp_decide(verifier): raise ERR_INVALID
-      return Field.encode_vec(self.output_share)
+def prep_next(Prio3, prep, inbound):
+    (out_share, k_joint_rand, prep_msg) = prep
 
-    else: raise ERR_INVALID_STATE
+    if inbound is None:
+        return (prep, prep_msg)
 
-def prep_shares_to_prep(_, inbound: Vec[Bytes]):
-  if len(inbound) != SHARES:
-    raise ERR_INVALID_INPUT
+    (verifier, k_joint_rand_check) = \
+        Prio3.decode_prepare_message(inbound)
 
-  k_joint_rand = zeros(SEED_SIZE)
-  verifier = Field.zeros(VERIFIER_LEN)
-  for r_share in inbound:
-    (k_joint_rand_share,
-     verifier_share) = decode_prep_message(r_share)
+    if k_joint_rand_check != k_joint_rand or \
+            not Prio3.Flp.decide(verifier):
+        raise ERR_VERIFY
 
-    k_joint_rand ^= k_joint_rand_share
-    verifer += verifier_share
+    return out_share
 
-  return encode_prep_message(k_joint_rand, verifier)
+def prep_shares_to_prep(Prio3, _agg_param, prep_shares):
+    verifier = Prio3.Flp.Field.zeros(Prio3.Flp.VERIFIER_LEN)
+    k_joint_rand_check = zeros(Prio3.Prg.SEED_SIZE)
+    for encoded in prep_shares:
+        (verifier_share, k_joint_rand_share) = \
+            Prio3.decode_prepare_message(encoded)
+
+        verifier = vec_add(verifier, verifier_share)
+        k_joint_rand_check = xor(k_joint_rand_check,
+                                 k_joint_rand_share)
+
+    return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 </pre>
 </div>
 <figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
@@ -2731,9 +2744,9 @@ def prep_shares_to_prep(_, inbound: Vec[Bytes]):
             </figcaption></figure>
 </div>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-6.2.3-8.1">
-              <p id="section-6.2.3-8.1.1">NOTE <code>JOINT_RAND_LEN</code> may be <code>0</code>, in which case the joint randomness
-computation is not necessary. Should we bake this option into the spec?<a href="#section-6.2.3-8.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-6.2.3-7.1">
+              <p id="section-6.2.3-7.1.1">NOTE <code>JOINT_RAND_LEN</code> may be <code>0</code>, in which case the joint randomness
+computation is not necessary. Should we bake this option into the spec?<a href="#section-6.2.3-7.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 </section>
@@ -2747,11 +2760,11 @@ computation is not necessary. Should we bake this option into the spec?<a href="
 <figure id="figure-12">
             <div class="alignLeft art-text artwork" id="section-6.2.4-1.1">
 <pre>
-def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
-  agg_share = Field.zeros(OUTPUT_LEN)
-  for output_share in output_shares:
-    agg_share += Field.decode_vec(output_share)
-  return Field.encode_vec(agg_share)
+def out_shares_to_agg_share(Prio3, _agg_param, out_shares):
+    agg_share = Prio3.Flp.Field.zeros(Prio3.Flp.OUTPUT_LEN)
+    for out_share in out_shares:
+        agg_share = vec_add(agg_share, out_share)
+    return agg_share
 </pre>
 </div>
 <figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
@@ -2769,11 +2782,11 @@ def output_to_aggregate_shares(_, output_shares: Vec[Bytes]):
 <figure id="figure-13">
             <div class="alignLeft art-text artwork" id="section-6.2.5-1.1">
 <pre>
-def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
-  agg = Field.zeros(OUTPUT_LEN)
-  for agg_share in agg_shares:
-    agg += Field.decode_vec(agg_share)
-  return Field.encode_vec(agg)
+def agg_shares_to_result(Prio3, _agg_param, agg_shares):
+    agg = Prio3.Flp.Field.zeros(Prio3.Flp.OUTPUT_LEN)
+    for agg_share in agg_shares:
+        agg = vec_add(agg, agg_share)
+    return list(map(lambda x: x.as_unsigned(), agg))
 </pre>
 </div>
 <figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
@@ -2787,32 +2800,87 @@ def aggregate_shares_to_result(_, agg_shares: Vec[Bytes]):
           <h4 id="name-helper-functions">
 <a href="#section-6.2.6" class="section-number selfRef">6.2.6. </a><a href="#name-helper-functions" class="section-name selfRef">Helper Functions</a>
           </h4>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-6.2.6-1.1">
-              <p id="section-6.2.6-1.1.1">TODO Specify the following functionalities.<a href="#section-6.2.6-1.1.1" class="pilcrow">¶</a></p>
-</li>
-          </ul>
-<ul class="normal">
-<li class="normal" id="section-6.2.6-2.1">
-              <code>encode_leader_share(input_share: Vec[Field], proof_share: Vec[Field], blind,
-hint) -&gt; encoded: Bytes</code> encodes a leader share as a byte string.<a href="#section-6.2.6-2.1" class="pilcrow">¶</a>
-</li>
-            <li class="normal" id="section-6.2.6-2.2">
-              <code>encode_helper_share(input_share, proof_share, blind, hint) -&gt; encoded: Bytes</code>
-encodes a helper share as a byte string.<a href="#section-6.2.6-2.2" class="pilcrow">¶</a>
-</li>
-            <li class="normal" id="section-6.2.6-2.3">
-              <code>decode_leader_share</code> and <code>decode_helper_share</code> decode a leader and helper
-share respectively.<a href="#section-6.2.6-2.3" class="pilcrow">¶</a>
-</li>
-            <li class="normal" id="section-6.2.6-2.4">
-              <code>encode_prep_message(key, verifier: Vec[Field]) -&gt; encoded</code> encodes a
-key (share) and verifier (share) as a byte string.<a href="#section-6.2.6-2.4" class="pilcrow">¶</a>
-</li>
-            <li class="normal" id="section-6.2.6-2.5">
-              <code>decode_prep_message</code> decodes a key (share) and verifier (share).<a href="#section-6.2.6-2.5" class="pilcrow">¶</a>
-</li>
-          </ul>
+<span id="name-helper-functions-required-f"></span><div id="prio3-helpers">
+<figure id="figure-14">
+            <div class="alignLeft art-text artwork" id="section-6.2.6-1.1">
+<pre>
+def encode_leader_share(Prio3,
+                        input_share,
+                        proof_share,
+                        k_blind,
+                        k_hint):
+    encoded = Bytes()
+    encoded += Prio3.Flp.Field.encode_vec(input_share)
+    encoded += Prio3.Flp.Field.encode_vec(proof_share)
+    encoded += k_blind
+    encoded += k_hint
+    return encoded
+
+def decode_leader_share(Prio3, encoded):
+    l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.INPUT_LEN
+    encoded_input_share, encoded = encoded[:l], encoded[l:]
+    input_share = Prio3.Flp.Field.decode_vec(encoded_input_share)
+    l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.PROOF_LEN
+    encoded_proof_share, encoded = encoded[:l], encoded[l:]
+    proof_share = Prio3.Flp.Field.decode_vec(encoded_proof_share)
+    l = Prio3.Prg.SEED_SIZE
+    k_blind, encoded = encoded[:l], encoded[l:]
+    k_hint, encoded = encoded[:l], encoded[l:]
+    if len(encoded) != 0:
+        raise ERR_DECODE
+    return (input_share, proof_share, k_blind, k_hint)
+
+def encode_helper_share(Prio3,
+                        k_input_share,
+                        k_proof_share,
+                        k_blind,
+                        k_hint):
+    encoded = Bytes()
+    encoded += k_input_share
+    encoded += k_proof_share
+    encoded += k_blind
+    encoded += k_hint
+    return encoded
+
+def decode_helper_share(Prio3, encoded):
+    l = Prio3.Prg.SEED_SIZE
+    k_input_share, encoded = encoded[:l], encoded[l:]
+    input_share = Prio3.Prg.expand_into_vec(Prio3.Flp.Field,
+                                            k_input_share,
+                                            b"input share",
+                                            Prio3.Flp.INPUT_LEN)
+    k_proof_share, encoded = encoded[:l], encoded[l:]
+    proof_share = Prio3.Prg.expand_into_vec(Prio3.Flp.Field,
+                                            k_proof_share,
+                                            b"proof share",
+                                            Prio3.Flp.PROOF_LEN)
+    k_blind, encoded = encoded[:l], encoded[l:]
+    k_hint, encoded = encoded[:l], encoded[l:]
+    if len(encoded) != 0:
+        raise ERR_DECODE
+    return (input_share, proof_share, k_blind, k_hint)
+
+def encode_prepare_message(Prio3, verifier, k_joint_rand):
+    encoded = Bytes()
+    encoded += Prio3.Flp.Field.encode_vec(verifier)
+    encoded += k_joint_rand
+    return encoded
+
+def decode_prepare_message(Prio3, encoded):
+    l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.VERIFIER_LEN
+    encoded_verifier, encoded = encoded[:l], encoded[l:]
+    verifier = Prio3.Flp.Field.decode_vec(encoded_verifier)
+    l = Prio3.Prg.SEED_SIZE
+    k_joint_rand, encoded = encoded[:l], encoded[l:]
+    if len(encoded) != 0:
+        raise ERR_DECODE
+    return (verifier, k_joint_rand)
+</pre>
+</div>
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<a href="#name-helper-functions-required-f" class="selfRef">Helper functions required for prio3.</a>
+            </figcaption></figure>
+</div>
 </section>
 </div>
 </section>
@@ -2965,7 +3033,7 @@ two Aggregators (<code>SHARES == 2</code>).<a href="#section-7.2-1" class="pilcr
 <p id="section-7.2.1-1">The verification parameter is a symmetric key shared by both Aggregators. This
 VDAF has no public parameter.<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-the-setup-algorithm-for-pop"></span><div id="poplar1-eval-setup">
-<figure id="figure-14">
+<figure id="figure-15">
             <div class="alignLeft art-text artwork" id="section-7.2.1-2.1">
 <pre>
 def vdaf_setup():
@@ -2973,7 +3041,7 @@ def vdaf_setup():
   return (None, [(0, k_verify_init), (1, k_verify_init)])
 </pre>
 </div>
-<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
 <a href="#name-the-setup-algorithm-for-pop" class="selfRef">The setup algorithm for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -2999,7 +3067,7 @@ In addition, for each level of the tree, the prover generates random elements
 Putting everything together, the input-distribution algorithm is defined as
 follows. Function <code>encode_input_share</code> is defined in <a href="#poplar1-helper-functions" class="xref">Section 7.2.5</a>.<a href="#section-7.2.1.1-3" class="pilcrow">¶</a></p>
 <span id="name-the-input-distribution-algo"></span><div id="poplar1-mes2inp">
-<figure id="figure-15">
+<figure id="figure-16">
               <div class="alignLeft art-text artwork" id="section-7.2.1.1-4.1">
 <pre>
 def measurement_to_input_shares(_, alpha):
@@ -3035,7 +3103,7 @@ def measurement_to_input_shares(_, alpha):
   return input_shares
 </pre>
 </div>
-<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
 <a href="#name-the-input-distribution-algo" class="selfRef">The input-distribution algorithm for poplar1.</a>
               </figcaption></figure>
 </div>
@@ -3067,7 +3135,7 @@ derivation.<a href="#section-7.2.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <span id="name-preparation-state-for-popla"></span><div id="poplar1-prep-state">
-<figure id="figure-16">
+<figure id="figure-17">
             <div class="alignLeft art-text artwork" id="section-7.2.2-3.1">
 <pre>
 class PrepState:
@@ -3135,7 +3203,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
   return Field[l].encode_vec(verifier)
 </pre>
 </div>
-<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
 <a href="#name-preparation-state-for-popla" class="selfRef">Preparation state for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -3147,7 +3215,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 <a href="#section-7.2.3" class="section-number selfRef">7.2.3. </a><a href="#name-aggregation-3" class="section-name selfRef">Aggregation</a>
           </h4>
 <span id="name-aggregation-algorithm-for-po"></span><div id="poplar1-out2agg">
-<figure id="figure-17">
+<figure id="figure-18">
             <div class="alignLeft art-text artwork" id="section-7.2.3-1.1">
 <pre>
 def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
@@ -3162,7 +3230,7 @@ def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
   return Field[l].encode_vec(agg_share)
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
 <a href="#name-aggregation-algorithm-for-po" class="selfRef">Aggregation algorithm for poplar1.</a>
             </figcaption></figure>
 </div>
@@ -3174,7 +3242,7 @@ def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
 <a href="#section-7.2.4" class="section-number selfRef">7.2.4. </a><a href="#name-unsharding-3" class="section-name selfRef">Unsharding</a>
           </h4>
 <span id="name-computation-of-the-aggregate"></span><div id="poplar1-agg-output">
-<figure id="figure-18">
+<figure id="figure-19">
             <div class="alignLeft art-text artwork" id="section-7.2.4-1.1">
 <pre>
 def aggregate_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
@@ -3188,7 +3256,7 @@ def aggregate_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
   return Field[l].encode_vec(agg)
 </pre>
 </div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-computation-of-the-aggregate" class="selfRef">Computation of the aggregate result for poplar1.</a>
             </figcaption></figure>
 </div>
