@@ -86,7 +86,7 @@ Table of Contents
        5.1.2.  Parameters
      5.2.  Pseudorandom Generators
        5.2.1.  Constructions
-   6.  Prio3
+   6.  prio3
      6.1.  Fully Linear Proof (FLP) Systems
        6.1.1.  Encoding the Input
      6.2.  Construction
@@ -427,10 +427,6 @@ Table of Contents
    *  VerifyParam is the type of verification parameter used by each
       Aggregator during the preparation phase (Section 4.4).
 
-   *  Prep represents the state of an Aggregator during the preparation
-      phase.  This class implements the interface described in
-      Section 4.4.
-
    *  AggParam is the type of aggregation parameter used by each
       Aggregator during the preparation phase.
 
@@ -441,6 +437,10 @@ Table of Contents
       shares during the aggregation phase (Section 4.5).
 
    *  AggResult is the type of aggregate result (Section 4.6).
+
+   *  Prep represents the state of an Aggregator during the preparation
+      phase.  This class implements the interface described in
+      Section 4.4.
 
 4.2.  Setup
 
@@ -527,12 +527,12 @@ Table of Contents
          |              |              ...  |
          V              V                   V
        +-----------+  +-----------+       +-----------+
-       | prep init |  | prep init |       | prep init |
+       | prep_init |  | prep_init |       | prep_init |
        +-----------+  +------------+      +-----------+
          |              |              ...  |             \
          V              V                   V             |
        +-----------+  +-----------+       +-----------+   |
-       | prep next |  | prep next |       | prep next |   |
+       | prep_next |  | prep_next |       | prep_next |   |
        +-----------+  +-----------+       +-----------+   |
          |              |              ...  |             |
          V              V                   V             | x ROUNDS
@@ -629,11 +629,10 @@ Table of Contents
    algorithm is performed locally at each Aggregator, without
    communication with the other Aggregators.
 
-   *  Vdaf.output_to_aggregate_shares(agg_param: AggParam,
-      output_shares: Vec[OutShare]) -> agg_share: AggShare is the
-      deterministic aggregation algorithm.  It is run by each Aggregator
-      over the output shares it has computed over a batch of measurement
-      inputs.
+   *  Vdaf.out_shares_to_agg_share(agg_param: AggParam, output_shares:
+      Vec[OutShare]) -> agg_share: AggShare is the deterministic
+      aggregation algorithm.  It is run by each Aggregator over the
+      output shares it has computed over a batch of measurement inputs.
 
        Aggregator 0    Aggregator 1        Aggregator SHARES-1
        ============    ============        ===================
@@ -666,7 +665,7 @@ Table of Contents
    shares, each sends its aggregate share to the Collector, who runs the
    following algorithm to recover the following output:
 
-   *  Vdaf.aggregate_shares_to_result(agg_param: AggParam, agg_shares:
+   *  Vdaf.agg_shares_to_result(agg_param: AggParam, agg_shares:
       Vec[AggShare]) -> AggResult is run by the Collector in order to
       compute the aggregate result from the Aggregators' shares.  The
       length of agg_shares MUST be SHARES.  This algorithm is
@@ -679,7 +678,7 @@ Table of Contents
          |               |                   |
          V               V                   V
        +-----------------------------------------------+
-       | aggregate_shares_to_result                    |
+       | agg_shares_to_result                          |
        +-----------------------------------------------+
          |
          V
@@ -877,7 +876,7 @@ Table of Contents
 
       TODO
 
-6.  Prio3
+6.  prio3
 
       NOTE This construction has not undergone significant security
       analysis.
@@ -1723,7 +1722,7 @@ Table of Contents
 
 7.2.3.  Aggregation
 
-   def output_to_aggregate_shares(agg_param, output_shares: Vec[Bytes]):
+   def out_shares_to_agg_share(agg_param, output_shares: Vec[Bytes]):
      (l, candidate_prefixes) = decode_indexes(agg_param)
      if len(output_shares) != len(candidate_prefixes):
        raise ERR_INVALID_INPUT
@@ -1738,7 +1737,7 @@ Table of Contents
 
 7.2.4.  Unsharding
 
-   def aggregate_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
+   def agg_shares_to_result(agg_param, agg_shares: Vec[Bytes]):
      (l, _) = decode_indexes(agg_param)
      if len(agg_shares) != 2:
        raise ERR_INVALID_INPUT
