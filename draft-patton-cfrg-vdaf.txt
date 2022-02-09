@@ -1166,88 +1166,87 @@ Table of Contents
    encode_leader_share and encode_helper_share respectively and they are
    described in Section 6.2.6.
 
-   def measurement_to_input_shares(Prio3, _public_param, measurement):
-       inp = Prio3.Flp.encode(measurement)
-       k_joint_rand = zeros(Prio3.Prg.SEED_SIZE)
+ def measurement_to_input_shares(Prio3, _public_param, measurement):
+     inp = Prio3.Flp.encode(measurement)
+     k_joint_rand = zeros(Prio3.Prg.SEED_SIZE)
 
-       # Generate input shares.
-       leader_input_share = inp
-       k_helper_input_shares = []
-       k_helper_blinds = []
-       k_helper_hints = []
-       for j in range(Prio3.SHARES-1):
-           k_blind = gen_rand(Prio3.Prg.SEED_SIZE)
-           k_share = gen_rand(Prio3.Prg.SEED_SIZE)
-           helper_input_share = Prio3.Prg.expand_into_vec(
-               Prio3.Flp.Field,
-               k_share,
-               b"input share",
-               Prio3.Flp.INPUT_LEN
-           )
-           leader_input_share = vec_sub(leader_input_share,
-                                        helper_input_share)
-           encoded = Prio3.Flp.Field.encode_vec(helper_input_share)
-           k_hint = Prio3.Prg.derive(k_blind, byte(j+1) + encoded)
-           k_joint_rand = xor(k_joint_rand, k_hint)
-           k_helper_input_shares.append(k_share)
-           k_helper_blinds.append(k_blind)
-           k_helper_hints.append(k_hint)
-       k_leader_blind = gen_rand(Prio3.Prg.SEED_SIZE)
-       k_leader_hint = Prio3.Prg.derive(
-               k_leader_blind,
-               byte(0) + Prio3.Flp.Field.encode_vec(leader_input_share))
-       k_joint_rand = xor(k_joint_rand, k_leader_hint)
+     # Generate input shares.
+     leader_input_share = inp
+     k_helper_input_shares = []
+     k_helper_blinds = []
+     k_helper_hints = []
+     for j in range(Prio3.SHARES-1):
+         k_blind = gen_rand(Prio3.Prg.SEED_SIZE)
+         k_share = gen_rand(Prio3.Prg.SEED_SIZE)
+         helper_input_share = Prio3.Prg.expand_into_vec(
+             Prio3.Flp.Field,
+             k_share,
+             b"input share",
+             Prio3.Flp.INPUT_LEN
+         )
+         leader_input_share = vec_sub(leader_input_share,
+                                      helper_input_share)
+         encoded = Prio3.Flp.Field.encode_vec(helper_input_share)
+         k_hint = Prio3.Prg.derive(k_blind, byte(j+1) + encoded)
+         k_joint_rand = xor(k_joint_rand, k_hint)
+         k_helper_input_shares.append(k_share)
+         k_helper_blinds.append(k_blind)
+         k_helper_hints.append(k_hint)
+     k_leader_blind = gen_rand(Prio3.Prg.SEED_SIZE)
+     encoded = Prio3.Flp.Field.encode_vec(leader_input_share)
+     k_leader_hint = Prio3.Prg.derive(k_leader_blind, byte(0) + encoded)
+     k_joint_rand = xor(k_joint_rand, k_leader_hint)
 
-       # Finish joint randomness hints.
-       for j in range(Prio3.SHARES-1):
-           k_helper_hints[j] = xor(k_helper_hints[j], k_joint_rand)
-       k_leader_hint = xor(k_leader_hint, k_joint_rand)
+     # Finish joint randomness hints.
+     for j in range(Prio3.SHARES-1):
+         k_helper_hints[j] = xor(k_helper_hints[j], k_joint_rand)
+     k_leader_hint = xor(k_leader_hint, k_joint_rand)
 
-       # Generate the proof shares.
-       prove_rand = Prio3.Prg.expand_into_vec(
-           Prio3.Flp.Field,
-           gen_rand(Prio3.Prg.SEED_SIZE),
-           b"prove rand",
-           Prio3.Flp.PROVE_RAND_LEN
-       )
-       joint_rand = Prio3.Prg.expand_into_vec(
-           Prio3.Flp.Field,
-           k_joint_rand,
-           b"joint rand",
-           Prio3.Flp.JOINT_RAND_LEN
-       )
-       proof = Prio3.Flp.prove(inp, prove_rand, joint_rand)
-       leader_proof_share = proof
-       k_helper_proof_shares = []
-       for j in range(Prio3.SHARES-1):
-           k_share = gen_rand(Prio3.Prg.SEED_SIZE)
-           k_helper_proof_shares.append(k_share)
-           helper_proof_share = Prio3.Prg.expand_into_vec(
-               Prio3.Flp.Field,
-               k_share,
-               b"proof share",
-               Prio3.Flp.PROOF_LEN
-           )
-           leader_proof_share = vec_sub(leader_proof_share,
-                                        helper_proof_share)
+     # Generate the proof shares.
+     prove_rand = Prio3.Prg.expand_into_vec(
+         Prio3.Flp.Field,
+         gen_rand(Prio3.Prg.SEED_SIZE),
+         b"prove rand",
+         Prio3.Flp.PROVE_RAND_LEN
+     )
+     joint_rand = Prio3.Prg.expand_into_vec(
+         Prio3.Flp.Field,
+         k_joint_rand,
+         b"joint rand",
+         Prio3.Flp.JOINT_RAND_LEN
+     )
+     proof = Prio3.Flp.prove(inp, prove_rand, joint_rand)
+     leader_proof_share = proof
+     k_helper_proof_shares = []
+     for j in range(Prio3.SHARES-1):
+         k_share = gen_rand(Prio3.Prg.SEED_SIZE)
+         k_helper_proof_shares.append(k_share)
+         helper_proof_share = Prio3.Prg.expand_into_vec(
+             Prio3.Flp.Field,
+             k_share,
+             b"proof share",
+             Prio3.Flp.PROOF_LEN
+         )
+         leader_proof_share = vec_sub(leader_proof_share,
+                                      helper_proof_share)
 
-       input_shares = []
-       input_shares.append(Prio3.encode_leader_share(
-           leader_input_share,
-           leader_proof_share,
-           k_leader_blind,
-           k_leader_hint,
-       ))
-       for j in range(Prio3.SHARES-1):
-           input_shares.append(Prio3.encode_helper_share(
-               k_helper_input_shares[j],
-               k_helper_proof_shares[j],
-               k_helper_blinds[j],
-               k_helper_hints[j],
-           ))
-       return input_shares
+     input_shares = []
+     input_shares.append(Prio3.encode_leader_share(
+         leader_input_share,
+         leader_proof_share,
+         k_leader_blind,
+         k_leader_hint,
+     ))
+     for j in range(Prio3.SHARES-1):
+         input_shares.append(Prio3.encode_helper_share(
+             k_helper_input_shares[j],
+             k_helper_proof_shares[j],
+             k_helper_blinds[j],
+             k_helper_hints[j],
+         ))
+     return input_shares
 
-             Figure 10: Input-distribution algorithm for prio3.
+           Figure 10: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
