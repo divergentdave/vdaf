@@ -547,7 +547,7 @@ Table of Contents
          |              |                   |
          V              V                   V
        +-----------+  +-----------+       +-----------+
-       | prep next |  | prep next |       | prep next |
+       | prep_next |  | prep_next |       | prep_next |
        +-----------+  +-----------+       +-----------+
          |              |              ...  |
          V              V                   V
