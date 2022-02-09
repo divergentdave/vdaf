@@ -1850,14 +1850,14 @@ Table of Contents
    be rewritten in terms of a gadget that subsumes this non-affine
    operation.  For example, the gadget might be multiplication:
 
-   G(left, right) = left * right
+   Mul(left, right) = left * right
 
    Then the validity circuit would be rewritten like so:
 
-   C(x) = G(x, x) - x
+   C(x) = Mul(x, x) - x
 
    The proof system of [BBCGGI19] allows verifier to evaluate each
-   instance of the gadget (i.e., G(x, x) in our example) using linear
+   instance of the gadget (i.e., Mul(x, x) in our example) using linear
    queries over the input and proof.  In the distributed setting, this
    amounts to each Aggregator performing local computation on its share
    of the input and proof, then exchanging a "verifier share" with its
@@ -1874,7 +1874,7 @@ Table of Contents
    output of the kth call to the gadget.  Polynomial evaluation is
    linear, which means that, in the distributed setting, the Client can
    disseminate additive shares of the gadget polynomial that the
-   Aggregators can use to compute additve shares of each gadget output.
+   Aggregators then use to compute additve shares of each gadget output.
    This allows each Aggregator to evaluate a share of C(x) locally from
    its share of x and its share of the gadget polynomial.
 
@@ -1882,12 +1882,52 @@ Table of Contents
    malicious prover to produce a gadget polynomial that would result in
    C(x) being computed incorrectly.  To prevent this, the verifier (or
    the Aggregators in the distributed setting) perform a probabilistic
-   test to check that the gadget polynomial is well-foremd.  See the
-   next section for details.
+   test to check that the gadget polynomial is well-foremd.  This test
+   is described in detail in the next section.
+
+   The FLP described in the section extends the proof system [BBCGGI19],
+   Theorem 4.3 in three ways.
+
+   First, the validity circuit in our setting includes an additional,
+   random input (this is the "joint randomness" derived from the input
+   shares in prio3; see Section 6), which allows for circuit
+   optimziations that trade a small soundness error for a shorter proof.
+   For example, consider a circuit that recognizes the set of length-N
+   vectors for which each element is either 1 or 0.  A deterministic
+   circuit could be constructed for this language, but it involve a
+   large number of multiplications that would result in a large proof.
+   discussion in [BBCGGI19], Section 5.2).  A much shorter proof can be
+   generated for the following circuit (this is a special case of
+   [BBCGGI19], Theorem 5.2):
+
+   C(inp, r) = r * Rng(inp[0]) + ... + r^N * Rng(inp[N-1])
+
+   Here x is the length-N input and r is a random field element.  The
+   gadget circuit Rng is the "range-check" circuit above, i.e., Rng(x) =
+   x^2 - x.  The idea is that, if each inp[j] is in range(2), then the
+   circuit will evaluate to 0 regardless of the value of r; but if
+   inp[j] is not in range(2) for some j, the output will be non-0 with
+   high probability.
+
+   The second extension our FLP may be comprised of multiple gadgets.
+   For example, the following circuit is allowed, where Mul and Rng are
+   gadgets defined above (the input has length N+1):
+
+   C(inp, r) = r * Rng(inp[0]) + ... + r^N * Rng(inp[N-1]) + \
+               2^0 * inp[0] +    ... + 2^(N-1) * inp[N-1]) - \
+               Mul(inp[N], inp[N])
+
+   This generalization was first suggested in [BBCGGI19], Remark 4.5.
+
+   Finally, in [BBCGGI19], Theorem 4.3, the fixed points alpha_1, ...,
+   alpha_M are not specified, except that they must be distinct.  In
+   this document, the fixed points are chosen so that the gadget
+   polynomial can be constructed efficiently using the Cooley-Tukey FFT
+   ("Fast Fourier Transform") algorithm.  Note that this has
+   implications for how the finite field is chosen.  Details are given
+   in the next section.
 
 8.2.  Construction
-
-      TODO
 
 9.  Security Considerations
 

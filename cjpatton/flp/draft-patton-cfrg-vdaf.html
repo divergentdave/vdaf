@@ -3445,18 +3445,18 @@ terms of a gadget that subsumes this non-affine operation. For example, the
 gadget might be multiplication:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-8.1-9">
 <pre>
-G(left, right) = left * right
+Mul(left, right) = left * right
 </pre><a href="#section-8.1-9" class="pilcrow">¶</a>
 </div>
 <p id="section-8.1-10">Then the validity circuit would be rewritten like so:<a href="#section-8.1-10" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-8.1-11">
 <pre>
-C(x) = G(x, x) - x
+C(x) = Mul(x, x) - x
 </pre><a href="#section-8.1-11" class="pilcrow">¶</a>
 </div>
 <p id="section-8.1-12">The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> allows verifier to evaluate each instance of
-the gadget (i.e., <code>G(x, x)</code> in our example) using linear queries over the input
-and proof. In the distributed setting, this amounts to each Aggregator
+the gadget (i.e., <code>Mul(x, x)</code> in our example) using linear queries over the
+input and proof. In the distributed setting, this amounts to each Aggregator
 performing local computation on its share of the input and proof, then
 exchanging a "verifier share" with its peers in order to finish evaluation of
 the validity circuit.<a href="#section-8.1-12" class="pilcrow">¶</a></p>
@@ -3469,26 +3469,59 @@ elements <code>alpha_1, ..., alpha_M</code>.<a href="#section-8.1-13" class="pil
 polynomial that, when evaluated at <code>alpha_k</code>, produces the output of the <code>k</code>th
 call to the gadget. Polynomial evaluation is linear, which means that, in the
 distributed setting, the Client can disseminate additive shares of the gadget
-polynomial that the Aggregators can use to compute additve shares of each gadget
-output. This allows each Aggregator to evaluate a share of <code>C(x)</code> locally from
-its share of <code>x</code> and its share of the gadget polynomial.<a href="#section-8.1-14" class="pilcrow">¶</a></p>
+polynomial that the Aggregators then use to compute additve shares of each
+gadget output. This allows each Aggregator to evaluate a share of <code>C(x)</code> locally
+from its share of <code>x</code> and its share of the gadget polynomial.<a href="#section-8.1-14" class="pilcrow">¶</a></p>
 <p id="section-8.1-15">There is one more wrinkle, however. It is still possible for a malicious prover
 to produce a gadget polynomial that would result in <code>C(x)</code> being computed
 incorrectly. To prevent this, the verifier (or the Aggregators in the
 distributed setting) perform a probabilistic test to check that the gadget
-polynomial is well-foremd. See the next section for details.<a href="#section-8.1-15" class="pilcrow">¶</a></p>
+polynomial is well-foremd. This test is described in detail in the next section.<a href="#section-8.1-15" class="pilcrow">¶</a></p>
+<p id="section-8.1-16">The FLP described in the section extends the proof system <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem
+4.3 in three ways.<a href="#section-8.1-16" class="pilcrow">¶</a></p>
+<p id="section-8.1-17">First, the validity circuit in our setting includes an additional, random input
+(this is the "joint randomness" derived from the input shares in prio3; see
+<a href="#prio3" class="xref">Section 6</a>), which allows for circuit optimziations that trade a small soundness
+error for a shorter proof. For example, consider a circuit that recognizes the
+set of length-<code>N</code> vectors for which each element is either <code>1</code> or <code>0</code>. A
+deterministic circuit could be constructed for this language, but it involve a
+large number of multiplications that would result in a large proof. discussion
+in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 5.2). A much shorter proof can be generated for the
+following circuit (this is a special case of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 5.2):<a href="#section-8.1-17" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-18">
+<pre>
+C(inp, r) = r * Rng(inp[0]) + ... + r^N * Rng(inp[N-1])
+</pre><a href="#section-8.1-18" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-19">Here <code>x</code> is the length-<code>N</code> input and <code>r</code> is a random field element. The gadget
+circuit <code>Rng</code> is the "range-check" circuit above, i.e., <code>Rng(x) = x^2 - x</code>. The
+idea is that, if each <code>inp[j]</code> is in <code>range(2)</code>, then the circuit will evaluate
+to <code>0</code> regardless of the value of <code>r</code>; but if <code>inp[j]</code> is not in <code>range(2)</code> for
+some <code>j</code>, the output will be non-<code>0</code> with high probability.<a href="#section-8.1-19" class="pilcrow">¶</a></p>
+<p id="section-8.1-20">The second extension our FLP may be comprised of multiple gadgets. For example,
+the following circuit is allowed, where <code>Mul</code> and <code>Rng</code> are gadgets defined
+above (the input has length <code>N+1</code>):<a href="#section-8.1-20" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-21">
+<pre>
+C(inp, r) = r * Rng(inp[0]) + ... + r^N * Rng(inp[N-1]) + \
+            2^0 * inp[0] +    ... + 2^(N-1) * inp[N-1]) - \
+            Mul(inp[N], inp[N])
+</pre><a href="#section-8.1-21" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-22">This generalization was first suggested in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Remark 4.5.<a href="#section-8.1-22" class="pilcrow">¶</a></p>
+<p id="section-8.1-23">Finally, in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3, the fixed points <code>alpha_1, ..., alpha_M</code>
+are not specified, except that they must be distinct. In this document, the
+fixed points are chosen so that the gadget polynomial can be constructed
+efficiently using the Cooley-Tukey FFT ("Fast Fourier Transform") algorithm.
+Note that this has implications for how the finite field is chosen. Details are
+given in the next section.<a href="#section-8.1-23" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="flp-generic-construction">
 <section id="section-8.2">
         <h3 id="name-construction-3">
 <a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-construction-3" class="section-name selfRef">Construction</a>
-        </h3>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-8.2-1.1">
-            <p id="section-8.2-1.1.1">TODO<a href="#section-8.2-1.1.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
+      </h3>
 </section>
 </div>
 </section>
