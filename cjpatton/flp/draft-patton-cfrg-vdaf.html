@@ -3390,7 +3390,7 @@ decoded.<a href="#section-7.2.5-2.3" class="pilcrow">¶</a>
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-a-general-purpose-flp" class="section-name selfRef">A General-Purpose FLP</a>
       </h2>
 <p id="section-8-1">This section describes an FLP based on the fully linear PCP described in
-<span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 4.2. We begin this section with an overview of their proof
+<span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3. We begin this section with an overview of their proof
 system (<a href="#flp-generic-overview" class="xref">Section 8.1</a>). We specify the construction in
 <a href="#flp-generic-construction" class="xref">Section 8.2</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
 <div id="flp-generic-overview">
@@ -3398,19 +3398,19 @@ system (<a href="#flp-generic-overview" class="xref">Section 8.1</a>). We specif
         <h3 id="name-overview-2">
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-overview-2" class="section-name selfRef">Overview</a>
         </h3>
-<p id="section-8.1-1">The proof system is designed to be compatible with
-any language recognized by an arithemtic circuit over a finite field. The
-high-level objective is to allow the verifier to evaluate the validity circuit
-over an input using only linear operations. Indeed, the linearity of this
-computation is what allows it to be distributed amongst multiple Aggregators, as
-is done in prio3 <a href="#prio3" class="xref">Section 6</a>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-1">The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> is designed to be compatible with any language
+recognized by an arithemtic circuit over a finite field. The high-level
+objective is to allow the verifier to evaluate the validity circuit over an
+input using only linear operations. Indeed, the linearity of this computation is
+what allows it to be distributed amongst multiple Aggregators, as is done in
+prio3 <a href="#prio3" class="xref">Section 6</a>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
 <p id="section-8.1-2">Suppose for a moment that the validity cicruit <code>C</code> is affine, meaning its only
 operations are addition and multiplicaiton-by-constant. In particular, the
 circuit does not contain a multiplication operation in which both operands are
 constatnt. To decide if an input is valid, each Aggregator could evaluate <code>C</code> on
 its input share locally and broadcast the result. The output of the circuit can
 then be reconstructed by adding adding up the result shares. That is, for any
-sequence of <code>SHARES</code> secret shares shares of the input:<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+sequence of <code>SHARES</code> additive shares shares of the input:<a href="#section-8.1-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-8.1-3">
 <pre>
 C(input_share[0] + ... + input_share[SHARES-1]) =
@@ -3426,7 +3426,7 @@ non-affine operations using only linear operations on (its share of) the input
 and proof.<a href="#section-8.1-4" class="pilcrow">¶</a></p>
 <p id="section-8.1-5">The proof system is restricted to valididy circuits that exhibit a special
 structure. Specifically, an arithmetic circuit with "G-gates" (see <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>,
-Theorem 4.3) is composed of affine gates and any number of instances of a
+Definition 5.2) is composed of affine gates and any number of instances of a
 distingushed gate <code>G</code>, which may be non-affine. We will refer to this class of
 circuits as "gadget circuits" and to <code>G</code> as the "gadget".<a href="#section-8.1-5" class="pilcrow">¶</a></p>
 <p id="section-8.1-6">As an illustrative example, consider a validity circuit <code>C</code> that recognizes the
@@ -3460,6 +3460,23 @@ and proof. In the distributed setting, this amounts to each Aggregator
 performing local computation on its share of the input and proof, then
 exchanging a "verifier share" with its peers in order to finish evaluation of
 the validity circuit.<a href="#section-8.1-12" class="pilcrow">¶</a></p>
+<p id="section-8.1-13">The validity proof for an input <code>x</code> is constructed roughly as follows. Let <code>C</code>
+be the gadget circuit and suppose the gadget is arity-<code>L</code>. Let <code>wire_j[k]</code>
+denote the value of the <code>j</code>th wire of the <code>k</code>th call to the gadget during
+evaluation of <code>C(x)</code>. Suppose there are <code>M</code> such calls and fix distinct field
+elements <code>alpha_1, ..., alpha_M</code>.<a href="#section-8.1-13" class="pilcrow">¶</a></p>
+<p id="section-8.1-14">The prover constructs from <code>wire_1, ..., wire_L</code> and <code>alpha_1, ..., alpha_M</code> a
+polynomial that, when evaluated at <code>alpha_k</code>, produces the output of the <code>k</code>th
+call to the gadget. Polynomial evaluation is linear, which means that, in the
+distributed setting, the Client can disseminate additive shares of the gadget
+polynomial that the Aggregators can use to compute additve shares of each gadget
+output. This allows each Aggregator to evaluate a share of <code>C(x)</code> locally from
+its share of <code>x</code> and its share of the gadget polynomial.<a href="#section-8.1-14" class="pilcrow">¶</a></p>
+<p id="section-8.1-15">There is one more wrinkle, however. It is still possible for a malicious prover
+to produce a gadget polynomial that would result in <code>C(x)</code> being computed
+incorrectly. To prevent this, the verifier (or the Aggregators in the
+distributed setting) perform a probabilistic test to check that the gadget
+polynomial is well-foremd. See the next section for details.<a href="#section-8.1-15" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="flp-generic-construction">

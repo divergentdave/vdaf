@@ -1796,17 +1796,17 @@ Table of Contents
 8.  A General-Purpose FLP
 
    This section describes an FLP based on the fully linear PCP described
-   in [BBCGGI19], Section 4.2.  We begin this section with an overview
+   in [BBCGGI19], Theorem 4.3.  We begin this section with an overview
    of their proof system (Section 8.1).  We specify the construction in
    Section 8.2.
 
 8.1.  Overview
 
-   The proof system is designed to be compatible with any language
-   recognized by an arithemtic circuit over a finite field.  The high-
-   level objective is to allow the verifier to evaluate the validity
-   circuit over an input using only linear operations.  Indeed, the
-   linearity of this computation is what allows it to be distributed
+   The proof system of [BBCGGI19] is designed to be compatible with any
+   language recognized by an arithemtic circuit over a finite field.
+   The high-level objective is to allow the verifier to evaluate the
+   validity circuit over an input using only linear operations.  Indeed,
+   the linearity of this computation is what allows it to be distributed
    amongst multiple Aggregators, as is done in prio3 Section 6.
 
    Suppose for a moment that the validity cicruit C is affine, meaning
@@ -1816,7 +1816,7 @@ Table of Contents
    valid, each Aggregator could evaluate C on its input share locally
    and broadcast the result.  The output of the circuit can then be
    reconstructed by adding adding up the result shares.  That is, for
-   any sequence of SHARES secret shares shares of the input:
+   any sequence of SHARES additive shares shares of the input:
 
    C(input_share[0] + ... + input_share[SHARES-1]) =
        C(input_share[0]) + ... + C(input_share[SHARES-1])
@@ -1831,9 +1831,9 @@ Table of Contents
 
    The proof system is restricted to valididy circuits that exhibit a
    special structure.  Specifically, an arithmetic circuit with
-   "G-gates" (see [BBCGGI19], Theorem 4.3) is composed of affine gates
-   and any number of instances of a distingushed gate G, which may be
-   non-affine.  We will refer to this class of circuits as "gadget
+   "G-gates" (see [BBCGGI19], Definition 5.2) is composed of affine
+   gates and any number of instances of a distingushed gate G, which may
+   be non-affine.  We will refer to this class of circuits as "gadget
    circuits" and to G as the "gadget".
 
    As an illustrative example, consider a validity circuit C that
@@ -1862,6 +1862,28 @@ Table of Contents
    amounts to each Aggregator performing local computation on its share
    of the input and proof, then exchanging a "verifier share" with its
    peers in order to finish evaluation of the validity circuit.
+
+   The validity proof for an input x is constructed roughly as follows.
+   Let C be the gadget circuit and suppose the gadget is arity-L.  Let
+   wire_j[k] denote the value of the jth wire of the kth call to the
+   gadget during evaluation of C(x).  Suppose there are M such calls and
+   fix distinct field elements alpha_1, ..., alpha_M.
+
+   The prover constructs from wire_1, ..., wire_L and alpha_1, ...,
+   alpha_M a polynomial that, when evaluated at alpha_k, produces the
+   output of the kth call to the gadget.  Polynomial evaluation is
+   linear, which means that, in the distributed setting, the Client can
+   disseminate additive shares of the gadget polynomial that the
+   Aggregators can use to compute additve shares of each gadget output.
+   This allows each Aggregator to evaluate a share of C(x) locally from
+   its share of x and its share of the gadget polynomial.
+
+   There is one more wrinkle, however.  It is still possible for a
+   malicious prover to produce a gadget polynomial that would result in
+   C(x) being computed incorrectly.  To prevent this, the verifier (or
+   the Aggregators in the distributed setting) perform a probabilistic
+   test to check that the gadget polynomial is well-foremd.  See the
+   next section for details.
 
 8.2.  Construction
 
