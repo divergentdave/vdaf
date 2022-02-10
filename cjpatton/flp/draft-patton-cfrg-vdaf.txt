@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 13 August 2022                                            Cisco
+Expires: 14 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         9 February 2022
+                                                        10 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 August 2022.
+   This Internet-Draft will expire on 14 August 2022.
 
 Copyright Notice
 
@@ -105,7 +105,8 @@ Table of Contents
        7.2.5.  Helper Functions
    8.  A General-Purpose FLP
      8.1.  Overview
-     8.2.  Construction
+     8.2.  Circuits
+     8.3.  Construction
    9.  Security Considerations
    10. IANA Considerations
    11. References
@@ -849,9 +850,8 @@ Table of Contents
 
    # Compute the inner product of the operands.
    def inner_product(left: Vec[Field], right: Vec[Field]) -> Field:
-       return reduce(lambda x, y: x + y,
-                     map(lambda x: x[0] * x[1],
-                         zip(left, right)))
+       return sum(lambda x, y: x + y,
+                  map(lambda x: x[0] * x[1], zip(left, right)))
 
    # Subtract the right operand from the left and return the result.
    def vec_sub(left, right):
@@ -998,8 +998,7 @@ Table of Contents
        | VERIFIER_LEN   | Length of the verifier message generated |
        |                | by queering the input and proof          |
        +----------------+------------------------------------------+
-       | Field          | The finite field for which the FLP is    |
-       |                | defined (Section 5.1)                    |
+       | Field          | As defined in (Section 5.1)              |
        +----------------+------------------------------------------+
 
          Table 2: Constants and types defined by each concrete FLP.
@@ -1798,7 +1797,7 @@ Table of Contents
    This section describes an FLP based on the fully linear PCP described
    in [BBCGGI19], Theorem 4.3.  We begin this section with an overview
    of their proof system (Section 8.1).  We specify the construction in
-   Section 8.2.
+   Section 8.3.
 
 8.1.  Overview
 
@@ -1920,14 +1919,41 @@ Table of Contents
    This generalization was first suggested in [BBCGGI19], Remark 4.5.
 
    Finally, in [BBCGGI19], Theorem 4.3, the fixed points alpha_1, ...,
-   alpha_M are not specified, except that they must be distinct.  In
-   this document, the fixed points are chosen so that the gadget
-   polynomial can be constructed efficiently using the Cooley-Tukey FFT
-   ("Fast Fourier Transform") algorithm.  Note that this has
-   implications for how the finite field is chosen.  Details are given
-   in the next section.
+   alpha_M are not not sepcified other than requiring them to be
+   distinct.  In this document, the fixed points are chosen so that the
+   gadget polynomial can be constructed efficiently using the Cooley-
+   Tukey FFT ("Fast Fourier Transform") algorithm.  Note that this has
+   implications for how the finite field is chosen.
 
-8.2.  Construction
+8.2.  Circuits
+
+8.3.  Construction
+
+   Our FLP FlpGeneric is specified in terms of a gadget circuit C
+   implementing the interface described in Section 8.2.  It has the
+   following parameters:
+
+    +================+================================================+
+    | Parameter      | Value                                          |
+    +================+================================================+
+    | PROVE_RAND_LEN | sum(map(lambda G: G.ARITY, C.GADGETS))         |
+    +----------------+------------------------------------------------+
+    | QUERY_RAND_LEN | len(C.GADGETS)                                 |
+    +----------------+------------------------------------------------+
+    | JOINT_RAND_LEN | C.RAND_LEN                                     |
+    +----------------+------------------------------------------------+
+    | INPUT_LEN      | C.INPUT_LEN                                    |
+    +----------------+------------------------------------------------+
+    | OUTPUT_LEN     | C.OUTPUT_LEN                                   |
+    +----------------+------------------------------------------------+
+    | PROOF_LEN      | sum(map(lambda G: G.proof_len(), G.GADGETS))   |
+    +----------------+------------------------------------------------+
+    | VERIFIER_LEN   | 1 + sum(map(lambda G: 1 + G.ARITY, G.GADGETS)) |
+    +----------------+------------------------------------------------+
+    | Field          | C.Field                                        |
+    +----------------+------------------------------------------------+
+
+              Table 4: Constants and types of the genric FLP.
 
 9.  Security Considerations
 
