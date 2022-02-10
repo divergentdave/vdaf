@@ -1257,21 +1257,21 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
                 <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-overview-2" class="xref">Overview</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-gadgets" class="xref">Gadgets</a></p>
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-construction-3" class="xref">Construction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2.2.1">
-                    <p id="section-toc.1-1.8.2.2.2.1.1"><a href="#section-8.2.1" class="xref">8.2.1</a>.  <a href="#name-multiplication" class="xref">Multiplication</a></p>
+                    <p id="section-toc.1-1.8.2.2.2.1.1"><a href="#section-8.2.1" class="xref">8.2.1</a>.  <a href="#name-validity-circuits" class="xref">Validity Circuits</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2.2.2">
-                    <p id="section-toc.1-1.8.2.2.2.2.1"><a href="#section-8.2.2" class="xref">8.2.2</a>.  <a href="#name-polynomial-evaluation" class="xref">Polynomial Evaluation</a></p>
+                    <p id="section-toc.1-1.8.2.2.2.2.1"><a href="#section-8.2.2" class="xref">8.2.2</a>.  <a href="#name-prover" class="xref">Prover</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2.2.3">
+                    <p id="section-toc.1-1.8.2.2.2.3.1"><a href="#section-8.2.3" class="xref">8.2.3</a>.  <a href="#name-verifier" class="xref">Verifier</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2.2.4">
+                    <p id="section-toc.1-1.8.2.2.2.4.1"><a href="#section-8.2.4" class="xref">8.2.4</a>.  <a href="#name-encoding" class="xref">Encoding</a></p>
 </li>
                 </ul>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
-                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="xref">8.3</a>.  <a href="#name-validity-circuits" class="xref">Validity Circuits</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
-                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="xref">8.4</a>.  <a href="#name-construction-3" class="xref">Construction</a></p>
 </li>
             </ul>
 </li>
@@ -3411,7 +3411,7 @@ decoded.<a href="#section-7.2.5-2.3" class="pilcrow">¶</a>
 <p id="section-8-1">This section describes an FLP based on the fully linear PCP described in
 <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3. We begin this section with an overview of their proof
 system (<a href="#flp-generic-overview" class="xref">Section 8.1</a>). We specify the construction in
-<a href="#flp-generic-construction" class="xref">Section 8.4</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<a href="#flp-generic-construction" class="xref">Section 8.2</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
 <div id="flp-generic-overview">
 <section id="section-8.1">
         <h3 id="name-overview-2">
@@ -3533,242 +3533,33 @@ are not not sepcified other than requiring them to be distinct. In this
 document, the fixed points are chosen so that the gadget polynomial can be
 constructed efficiently using the Cooley-Tukey FFT ("Fast Fourier Transform")
 algorithm. (Note that this has implications for how the finite field is chosen.)<a href="#section-8.1-23" class="pilcrow">¶</a></p>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-8.1-24.1">
-            <p id="section-8.1-24.1.1">TODO The remainder of this section was written by hand. It should be generated
-by the reference implementation instead.<a href="#section-8.1-24.1.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
-</section>
-</div>
-<div id="flp-generic-gadget">
-<section id="section-8.2">
-        <h3 id="name-gadgets">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-gadgets" class="section-name selfRef">Gadgets</a>
-        </h3>
-<p id="section-8.2-1">This section defines the interface of gadgets. A <code>Gadget</code> defines the following
-parameters:<a href="#section-8.2-1" class="pilcrow">¶</a></p>
-<span id="name-constants-defined-by-a-gadg"></span><div id="flp-generic-gadget-param">
-<table class="center" id="table-4">
-          <caption>
-<a href="#table-4" class="selfRef">Table 4</a>:
-<a href="#name-constants-defined-by-a-gadg" class="selfRef">Constants defined by a gadget.</a>
-          </caption>
-<thead>
-            <tr>
-              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
-              <th class="text-left" rowspan="1" colspan="1">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>ARITY</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">The number of input wires</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>DEGREE</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">the arithmetic degree of the circuit (see below)</td>
-            </tr>
-          </tbody>
-        </table>
-</div>
-<p id="section-8.2-3">A concrete gadget provides an implementation of the following instance methods:<a href="#section-8.2-3" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-8.2-4.1">
-            <code>gadget.call(Field, inp: Vec[Field]) -&gt; Field</code> evaluates the validity circuit
-over a vector of <code>Field</code> elements. The length of the input <span class="bcp14">MUST</span> be
-<code>Gadget.ARITY</code>. (Note that <code>gadget</code> is an instance of <code>Gadget</code>.)<a href="#section-8.2-4.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-8.2-4.2">
-            <code>gadget.call_poly(Field, inp: Vec[Vec[Field]]) -&gt; Vec[Field]</code> evaluates the
-validity circuit over a vector of polynomials over the finite field <code>Field</code>.
-That is, each input is interpreted as the coefficients of a polynomial.
-Arithmetic is defined over the ring of polynomials over the given field. The
-length of the input <span class="bcp14">MUST</span> be <code>Gadget.ARITY</code>. (Note that <code>gadget</code> is an instance
-of <code>Gadget</code>.)<a href="#section-8.2-4.2" class="pilcrow">¶</a>
-</li>
-        </ul>
-<p id="section-8.2-5">For each gadget circuit there is an equivalent polynomial whose variables are
-the input wires of the circuit. The "arithmetic degree" of the circuit (i.e.,
-<code>Gadget.DEGREE</code>) is defined to be the degree of this polynomial.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
-<p id="section-8.2-6">Two commonly used gadgets are specified below, one for multiplication and
-another for evaluation of a polynomial.<a href="#section-8.2-6" class="pilcrow">¶</a></p>
-<div id="multiplication">
-<section id="section-8.2.1">
-          <h4 id="name-multiplication">
-<a href="#section-8.2.1" class="section-number selfRef">8.2.1. </a><a href="#name-multiplication" class="section-name selfRef">Multiplication</a>
-          </h4>
-<table class="center" id="table-5">
-            <caption><a href="#table-5" class="selfRef">Table 5</a></caption>
-<thead>
-              <tr>
-                <th class="text-left" rowspan="1" colspan="1">Parameter</th>
-                <th class="text-left" rowspan="1" colspan="1">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">
-                  <code>ARITY</code>
-</td>
-                <td class="text-left" rowspan="1" colspan="1">2</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">
-                  <code>DEGREE</code>
-</td>
-                <td class="text-left" rowspan="1" colspan="1">2</td>
-              </tr>
-            </tbody>
-          </table>
-<div class="alignLeft art-text artwork" id="section-8.2.1-2">
-<pre>
-def call(self, Field, inp):
-    # XXX
-
-def call_poly(self, Field, inp):
-    # XXX
-</pre><a href="#section-8.2.1-2" class="pilcrow">¶</a>
-</div>
-</section>
-</div>
-<div id="polynomial-evaluation">
-<section id="section-8.2.2">
-          <h4 id="name-polynomial-evaluation">
-<a href="#section-8.2.2" class="section-number selfRef">8.2.2. </a><a href="#name-polynomial-evaluation" class="section-name selfRef">Polynomial Evaluation</a>
-          </h4>
-<span id="name-parameters-of-the-polynomia"></span><table class="center" id="table-6">
-            <caption>
-<a href="#table-6" class="selfRef">Table 6</a>:
-<a href="#name-parameters-of-the-polynomia" class="selfRef">Parameters of the polynomial-evaluation gadget</a>
-            </caption>
-<thead>
-              <tr>
-                <th class="text-left" rowspan="1" colspan="1">Parameter</th>
-                <th class="text-left" rowspan="1" colspan="1">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">
-                  <code>ARITY</code>
-</td>
-                <td class="text-left" rowspan="1" colspan="1">1</td>
-              </tr>
-              <tr>
-                <td class="text-left" rowspan="1" colspan="1">
-                  <code>DEGREE</code>
-</td>
-                <td class="text-left" rowspan="1" colspan="1">2</td>
-              </tr>
-            </tbody>
-          </table>
-<div class="alignLeft art-text artwork" id="section-8.2.2-2">
-<pre>
-def call(self, Field, inp):
-    # XXX
-
-def call_poly(self, Field, inp):
-    # XXX
-</pre><a href="#section-8.2.2-2" class="pilcrow">¶</a>
-</div>
-</section>
-</div>
-</section>
-</div>
-<div id="flp-generic-validity-circuit">
-<section id="section-8.3">
-        <h3 id="name-validity-circuits">
-<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-validity-circuits" class="section-name selfRef">Validity Circuits</a>
-        </h3>
-<p id="section-8.3-1">This section defines the interface implemented by validity circuits. A <code>Circuit</code>
-defines the following parameters:<a href="#section-8.3-1" class="pilcrow">¶</a></p>
-<span id="name-parameters-of-a-validity-ci"></span><div id="flp-generic-validity-circuit-param">
-<table class="center" id="table-7">
-          <caption>
-<a href="#table-7" class="selfRef">Table 7</a>:
-<a href="#name-parameters-of-a-validity-ci" class="selfRef">Parameters of a validity circuit.</a>
-          </caption>
-<thead>
-            <tr>
-              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
-              <th class="text-left" rowspan="1" colspan="1">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>GADGETS</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">List of gadget types (each is a concerte subclass of <code>Gadget</code>)</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>GADGET_CALLS</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">Number of times each gadget is called</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>INPUT_LEN</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">Length of the input</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>OUTPUT_LEN</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">Length of the aggregatable output</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>RAND_LEN</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">Length of the random input</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>Measurement</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">The type of measurement</td>
-            </tr>
-            <tr>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>Field</code>
-</td>
-              <td class="text-left" rowspan="1" colspan="1">As defined in <a href="#field" class="xref">Section 5.1</a>
-</td>
-            </tr>
-          </tbody>
-        </table>
-</div>
-<p id="section-8.3-3">A concrete <code>Circuit</code> also provides a concrete implementation of the following
-method:<a href="#section-8.3-3" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-8.3-4.1">
-            <code>Circuit.eval(gadgets: Vec[Gadget], inp: Vec[Field], rand: Vec[Field]) -&gt; Field</code><a href="#section-8.3-4.1" class="pilcrow">¶</a>
-</li>
-        </ul>
 </section>
 </div>
 <div id="flp-generic-construction">
-<section id="section-8.4">
+<section id="section-8.2">
         <h3 id="name-construction-3">
-<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-construction-3" class="section-name selfRef">Construction</a>
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-construction-3" class="section-name selfRef">Construction</a>
         </h3>
-<p id="section-8.4-1">We are now ready to specify our construction. The FLP <code>FlpGeneric</code> is specified
-in terms of a validity circuit <code>Circuit</code> implementing the interface described in
-<a href="#flp-generic-validity-circuit" class="xref">Section 8.3</a>. The parameters required by the FLP interface
-are defined as follows:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
-<span id="name-constants-and-types-of-the-"></span><div id="flp-generic-param">
-<table class="center" id="table-8">
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-8.2-1.1">
+            <p id="section-8.2-1.1.1">CP A more precise specification of this FLP is needed. The reason a precise
+spec is not provided yet is that we're not sure whether to specify the
+general-purpose FLP or to specify specialized FLPs for each data type that we
+want to standardize. The latter seems preferable because (1) specialized FLPs
+will be easier to specify and (2) we may end up tailoring each FLP to the data
+type in a way that improves performance or proof size, but breaks
+compatibility with the general-purpose FLP. But because we don't yet know what
+data types we'll want to standardize, we're sticking with the general-purpose
+FLP for now.<a href="#section-8.2-1.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-8.2-2">Our FLP is defined in terms of a validity circuit <code>Valid</code> that implements the
+interface described in <a href="#flp-generic-valid" class="xref">Section 8.2.1</a>. Its paramters are defined as
+follows:<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<span id="name-parameters-of-the-general-p"></span><table class="center" id="table-4">
           <caption>
-<a href="#table-8" class="selfRef">Table 8</a>:
-<a href="#name-constants-and-types-of-the-" class="selfRef">Constants and types of the genric FLP.</a>
+<a href="#table-4" class="selfRef">Table 4</a>:
+<a href="#name-parameters-of-the-general-p" class="selfRef">Parameters of the general-purpose FLP.</a>
           </caption>
 <thead>
             <tr>
@@ -3781,16 +3572,14 @@ are defined as follows:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
               <td class="text-left" rowspan="1" colspan="1">
                 <code>PROVE_RAND_LEN</code>
 </td>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>sum(map(lambda G: G.ARITY, Circuit.GADGETS))</code>
+              <td class="text-left" rowspan="1" colspan="1">Equal to the sum of the arities of the gadgets, i.e., <code>sum(map(lambda G: G.ARITY, Circuit.GADGETS))</code>
 </td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
                 <code>QUERY_RAND_LEN</code>
 </td>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>len(Circuit.GADGETS)</code>
+              <td class="text-left" rowspan="1" colspan="1">Equal to the number of gadgets <code>len(Circuit.GADGETS)</code>
 </td>
             </tr>
             <tr>
@@ -3821,15 +3610,23 @@ are defined as follows:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
               <td class="text-left" rowspan="1" colspan="1">
                 <code>PROOF_LEN</code>
 </td>
-              <td class="text-left" rowspan="1" colspan="1">
-                <code>Circuit.proof_len()</code> (see <a href="#flp-generic-validity-circuit" class="xref">Section 8.3</a>)</td>
+              <td class="text-left" rowspan="1" colspan="1">Equal to <code>Circuit.proof_len()</code>
+</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
                 <code>VERIFIER_LEN</code>
 </td>
+              <td class="text-left" rowspan="1" colspan="1">Equal to <code>Circuit.verifier_len()</code>
+</td>
+            </tr>
+            <tr>
               <td class="text-left" rowspan="1" colspan="1">
-                <code>Circuit.verifier_len()</code> (see <a href="#flp-generic-validity-circuit" class="xref">Section 8.3</a>)</td>
+                <code>Measurement</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Circuit.Measurement</code>
+</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
@@ -3841,6 +3638,115 @@ are defined as follows:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
             </tr>
           </tbody>
         </table>
+<div id="flp-generic-valid">
+<section id="section-8.2.1">
+          <h4 id="name-validity-circuits">
+<a href="#section-8.2.1" class="section-number selfRef">8.2.1. </a><a href="#name-validity-circuits" class="section-name selfRef">Validity Circuits</a>
+          </h4>
+<span id="name-validity-circuit-parameters"></span><table class="center" id="table-5">
+            <caption>
+<a href="#table-5" class="selfRef">Table 5</a>:
+<a href="#name-validity-circuit-parameters" class="selfRef">Validity circuit parameters.</a>
+            </caption>
+<thead>
+              <tr>
+                <th class="text-left" rowspan="1" colspan="1">Parameter</th>
+                <th class="text-left" rowspan="1" colspan="1">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>GADGETS</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">A list of gadgets</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>GADGET_CALLS</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">Number of times each gadget is called</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>INPUT_LEN</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">Length of the input</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>OUTPUT_LEN</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">Length of the aggregatable output</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>RAND_LEN</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">Length of the random input</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>Measurement</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">The type of measurement</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">
+                  <code>Field</code>
+</td>
+                <td class="text-left" rowspan="1" colspan="1">As defined in <a href="#field" class="xref">Section 5.1</a>
+</td>
+              </tr>
+            </tbody>
+          </table>
+<p id="section-8.2.1-2">Each gadget <code>G</code> defines a parameter <code>DEGREE</code> that specifies the circuit's
+"arithmetic degree". The arithmetic degree of a circuit is the defined to be the
+degree of the polynomial that computes it. For example, the <code>Mul</code> circuit in
+<a href="#flp-generic-overview" class="xref">Section 8.1</a> is defined by the polynomial <code>Mul(x) = x * x</code>, which
+has degree <code>2</code>. Hence, the arithmetic degree of this gadget is <code>2</code>.<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-3">The follwing class methods are derived for each concrete <code>Valid</code>:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.2.1-4">
+<pre>
+def proof_len(Circuit):
+    length = 0
+    for (calls, G) in zip(Circuit.GADGET_CALLS, Circuit.GADGETS):
+        padded_calls = next_power_of_2(1 + calls)
+        length += G.ARITY + G.DEGREE * (padded_calls - 1) + 1
+    return length
+
+def verifier_len(Circuit):
+    length = 1
+    for G in Circuit.GADGET_CALLS:
+        length += G.ARITY + 1
+    return length
+</pre><a href="#section-8.2.1-4" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="prover">
+<section id="section-8.2.2">
+          <h4 id="name-prover">
+<a href="#section-8.2.2" class="section-number selfRef">8.2.2. </a><a href="#name-prover" class="section-name selfRef">Prover</a>
+          </h4>
+<p id="section-8.2.2-1">XXX<a href="#section-8.2.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="verifier">
+<section id="section-8.2.3">
+          <h4 id="name-verifier">
+<a href="#section-8.2.3" class="section-number selfRef">8.2.3. </a><a href="#name-verifier" class="section-name selfRef">Verifier</a>
+          </h4>
+<p id="section-8.2.3-1">XXX<a href="#section-8.2.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="encoding">
+<section id="section-8.2.4">
+          <h4 id="name-encoding">
+<a href="#section-8.2.4" class="section-number selfRef">8.2.4. </a><a href="#name-encoding" class="section-name selfRef">Encoding</a>
+          </h4>
+<p id="section-8.2.4-1">XXX<a href="#section-8.2.4-1" class="pilcrow">¶</a></p>
+</section>
 </div>
 </section>
 </div>
