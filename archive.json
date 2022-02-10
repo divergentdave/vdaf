@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-08T00:04:36.759357+00:00",
+  "timestamp": "2022-02-10T00:04:23.678883+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -243,7 +243,7 @@
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-06T01:57:22Z",
+      "updatedAt": "2022-02-08T18:52:12Z",
       "closedAt": null,
       "comments": [
         {
@@ -287,6 +287,76 @@
           "body": "Ok, before sending a PR, I want to get y'all's take on the over all shape of the solution. Here's my proposal:\r\n1. Add a parameter `EXPANDED_SIZE` to `Field` that specifies the number of random bytes that are sampled per field element.\r\n2. Adopt a modified version of `hash_to_field` in which we replace `expand_message` with the key stream output by AES-CTR (or some other, compatible primitive).\r\n\r\nThis could look something like this (quoting from https://github.com/cjpatton/vdaf/pull/24):\r\n```python\r\n# The base class for PRGs.\r\nclass Prg:\r\n    # Size of the seed.\r\n    SEED_SIZE: int\r\n\r\n    # Derive a fresh seed from an existing `seed`. The `info` input is used for\r\n    # domain sepration.\r\n    @classmethod\r\n    def derive(cls, seed: bytes, info: bytes) -> bytes:\r\n        raise Error(\"not implemented\")\r\n\r\n    # Expand the input `seed` into the number of bytes requested.\r\n    @classmethod\r\n    def expand(cls, seed: bytes, length: int) -> bytes:\r\n        raise Error(\"not implemented\")\r\n\r\n    # Expand the input `seed` into vector of `length` field elements. This\r\n    # algorithm is based on \"hash_to_field\" in draft-irtf-cfrg-hash-to-curve13.\r\n    @classmethod\r\n    def expand_into_vec(cls, Field, seed: bytes, length: int):\r\n        L = Field.EXPANDED_SIZE\r\n        len_in_bytes = length * L\r\n        uniform_bytes = cls.expand(seed, len_in_bytes)\r\n\r\n        vec = []\r\n        for i in range(length):\r\n            tv = uniform_bytes[L*i:L*(i+1)]\r\n            u_i = OS2IP(tv) # Decode `tv` into an integer.\r\n            vec.append(Field(u_i))\r\n        return vec\r\n```\r\n\r\n@schoppmp what do you think of this proposal? Of course, we wouldn't literally plop down this Python into the spec :) A concrete PRG would implement `derive` and `expand`. For example:\r\n\r\n```python\r\n# A pseudorandom generator based on AES128. CMAC {{!RFC4493}} is used for seed\r\n# derivation and CTR mode is used for seed expansion.\r\nclass PrgAes128(Prg):\r\n    # Associated parameters\r\n    SEED_SIZE = 16\r\n\r\n    @classmethod\r\n    def derive(cls, seed, info) -> bytes:\r\n        hasher = CMAC.new(seed, ciphermod=AES)\r\n        return hasher.update(info).digest()\r\n\r\n    @classmethod\r\n    def expand(cls, seed, length):\r\n        counter = Counter.new(128, initial_value=bytes_to_long(zeros(16)))\r\n        cipher = AES.new(seed, AES.MODE_CTR, counter=counter)\r\n        # CTR-mode encryption of the all-zero string of the specified length and using\r\n        # the all-zero block as the IV.\r\n        cipher_stream = cipher.encrypt(zeros(length))\r\n        return cipher_stream\r\n```\r\n\r\nCMAC is a somewhat unconventional choice. A more conventional choice might be HMAC-SHA256, however in that case we might want to increase `SEED_SIZE` to `32`.",
           "createdAt": "2022-02-06T01:36:45Z",
           "updatedAt": "2022-02-06T01:57:22Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "PR #25 addresses the issue raised here. I ended up going in a slightly different direction with the API:\r\n```python\r\nclass Prg:\r\n    # Size of the seed.\r\n    SEED_SIZE: int\r\n\r\n    # Number of bytes sampled per pseudorandom field element.\r\n    EXPANDED_SIZE: int\r\n\r\n    # Expand the input `seed` into the number of bytes requested.\r\n    @classmethod\r\n    def expand(cls, seed: bytes, info: bytes, length: int) -> bytes:\r\n        raise Error(\"not implemented\")\r\n\r\n    # Derive a fresh seed from an existing one.\r\n    @classmethod\r\n    def derive(cls, seed: bytes, info: bytes) -> bytes:\r\n        return cls.expand(seed, info, cls.SEED_SIZE)\r\n\r\n    # Expand the input `seed` into vector of `length` field elements. This\r\n    # algorithm is based on \"hash_to_field\" in draft-irtf-cfrg-hash-to-curve13.\r\n    @classmethod\r\n    def expand_into_vec(cls, Field, seed: bytes, info: bytes, length: int):\r\n        L = Field.EXPANDED_SIZE\r\n        len_in_bytes = length * L\r\n        uniform_bytes = cls.expand(seed, info, len_in_bytes)\r\n\r\n        vec = []\r\n        for i in range(0, len(uniform_bytes), L):\r\n            tv = uniform_bytes[i:i+L]\r\n            x = OS2IP(tv)\r\n            vec.append(Field(x))\r\n        return vec\r\n```",
+          "createdAt": "2022-02-08T01:21:33Z",
+          "updatedAt": "2022-02-08T01:24:00Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "body": "> @schoppmp made an excellent point, which we ought to take into account: hash_to_field appears to be designed for entropy extraction.\r\n\r\nFWIW, I don't think this is correct. ",
+          "createdAt": "2022-02-08T13:54:36Z",
+          "updatedAt": "2022-02-08T13:54:36Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@cjpatton I don't think this approach works directly as you describe it. The reason is that if the field modulus p is small-ish (e.g., 32 bits), then just taking 32 uniform bits and reducing them mod p will result in something far from uniform. This is what hash_to_curve fixes by increasing L by the security parameter k. \r\n\r\nMy point was twofold: \r\n1. If we want to sample n prime field elements from a single seed, we don't need log(p) + k uniform bits for *every* element we sample, but something more on the order of log(p) * n + k + log(n) for *all* n samples. (Edit: Fixed the formula)\r\n2. If our seed is uniform, then using AES (either in counter mode or as a [hash function](https://eprint.iacr.org/2019/074.pdf)) might be cheaper than SHA(KE).\r\n\r\n@chris-wood Could you elaborate with which part you disagree?",
+          "createdAt": "2022-02-08T17:13:43Z",
+          "updatedAt": "2022-02-08T17:26:04Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "body": "> @chris-wood Could you elaborate with which part you disagree?\r\n\r\nWith one exception, I don't disagree with anything you wrote in that comment. I was merely responding to the \"entropy extraction\" point, which is not an explicit goal of hash-to-field.\r\n\r\n> If our seed is uniform, then using AES (either in counter mode or as a [hash function](https://eprint.iacr.org/2019/074.pdf)) might be cheaper than SHA(KE).\r\n\r\nI may be misunderstanding you, but this seems like a non sequitur since `expand_message` will work for any input, regardless of its distribution. In any case, I think it's reasonable to require the seed to be uniformly distributed. And using a stream cipher instead of hash-based `expand_message` certainly seems like an improvement. (In fact, we should consider adding such variant to the hash-to-curve draft!)",
+          "createdAt": "2022-02-08T17:18:44Z",
+          "updatedAt": "2022-02-08T17:18:44Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "> @schoppmp     1. If we want to sample n prime field elements from a single seed, we don't need log(p) + k uniform bits for _every_ element \r\nwe sample, but something more on the order of log(p) + n * k + log(n) for _all_ n samples.\r\n\r\nDo you mean `(log(p) + n) * k + log(n)` or `log(p) + (n * k) + log(n)`?\r\n",
+          "createdAt": "2022-02-08T17:23:14Z",
+          "updatedAt": "2022-02-08T17:23:14Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I may be misunderstanding you, but this seems like a non sequitur since expand_message will work for any input, regardless of its distribution.\r\n\r\nIf we want pseudorandom outputs, then the seed needs to be be pseudorandom as well, or, alternatively, have high entropy so we can use a hash function (e.g. SHA) to reduce it to a uniform pseudorandom seed. I think the second part is what @cjpatton meant by entropy extraction.\r\n\r\n> Do you mean (log(p) + n) * k + log(n) or log(p) + (n * k) + log(n)?\r\n\r\nI actually meant `(log(p) * n) + k + log(n)` :smile: . I'll fix the comment above.\r\n",
+          "createdAt": "2022-02-08T17:25:09Z",
+          "updatedAt": "2022-02-08T17:25:51Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "body": "@schoppmp right -- it doesn't extract entropy. Garbage in means garbage out. =) In any case, I think we're aligned now.",
+          "createdAt": "2022-02-08T17:27:20Z",
+          "updatedAt": "2022-02-08T17:27:20Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "@schoppmp Very interesting. Would you mind writing down the algorithm for mapping a `(log(p) * n) + k + log(n)` bits to `n` field elements? I'm curious how the extra `k + log(n)` bits are used. (You can also refer me to the IDPF code base.)",
+          "createdAt": "2022-02-08T17:34:41Z",
+          "updatedAt": "2022-02-08T17:34:41Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Sure, you can have a look [here](https://github.com/google/distributed_point_functions/blob/master/dpf/int_mod_n.h#L155). Note that the current implementation only works on 128-bit blocks, which limits the maximum `k` supported.",
+          "createdAt": "2022-02-08T17:56:06Z",
+          "updatedAt": "2022-02-08T17:56:06Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Alright, this is super neat. Me and @armfazh are going to work on benchmarking (in libprio) rejection sampling vs pad-then-reduce (a la hash_to_field) vs @schoppmp's algorithm. We should have this done today. \r\n\r\nIn the meantime, @schoppmp: Would you mind working on an alternative PR to #25 that specifies your algorithm?\r\n\r\nEDIT: By the way, I think it would make sense to fix the same \"security parameter\" (say, 64) for all fields, and possibly exclude fields that are too small for this sampling method to be statistically close to uniform (e.g., less than 64 bits). See also #22.",
+          "createdAt": "2022-02-08T18:20:25Z",
+          "updatedAt": "2022-02-08T18:52:12Z"
         }
       ]
     },
@@ -295,15 +365,15 @@
       "id": "I_kwDOGKuqOc5A-WhR",
       "title": "prio3: Make joint randomness optional",
       "url": "https://github.com/cjpatton/vdaf/issues/15",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Not all FLPs take joint randomness as input, in particular those for which `JOINT_RAND_LEN == 0`. For these FLPs we can reduce the bandwidth overhead by removing the `k_blind` and `k_hint` fields from the input share and the `k_joint_rand_share` from the prepare message.",
       "createdAt": "2021-12-28T19:27:29Z",
-      "updatedAt": "2021-12-28T19:27:29Z",
-      "closedAt": null,
+      "updatedAt": "2022-02-09T04:35:39Z",
+      "closedAt": "2022-02-09T04:35:39Z",
       "comments": []
     },
     {
@@ -1431,7 +1501,7 @@
       "labels": [],
       "body": "Closes #11.\r\n\r\nThis makes explicit a feature of prio3 and hits that allows applications\r\nto save on bandwidth. At the same time, it does not decrease generality\r\nsince this preprocessing step might simply be a no-op.\r\n\r\nThis change also replaces reference to `vec_zeros()` with\r\n`Field.zeros()`.\r\n",
       "createdAt": "2021-12-28T18:47:12Z",
-      "updatedAt": "2022-01-19T17:44:44Z",
+      "updatedAt": "2022-02-08T16:52:27Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "71f9481b446f191da17118fd4b82b1a8cf9aa6fd",
@@ -1702,7 +1772,7 @@
       "labels": [],
       "body": "The authors of [BBCGGI21] have recently amended their paper to give the\r\nprotocol a proper name.",
       "createdAt": "2022-01-04T21:41:01Z",
-      "updatedAt": "2022-01-06T18:31:40Z",
+      "updatedAt": "2022-02-08T16:52:26Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "84e7b02d3474c2a6fcf79de1c79abacec4d0303f",
@@ -2055,24 +2125,80 @@
       "id": "PR_kwDOGKuqOc4yAQaA",
       "title": "poc: Wrapper bits for prio3",
       "url": "https://github.com/cjpatton/vdaf/pull/24",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2022-02-03T04:55:32Z",
-      "updatedAt": "2022-02-07T21:32:39Z",
+      "updatedAt": "2022-02-08T22:16:46Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "0412bc0b85f6f35bc510543840ba1a54aa9bfb35",
+      "baseRefOid": "5da19ba913c82e3b8c9a4d0cdeaa5fcf6309f778",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prio3-wrapper",
-      "headRefOid": "48ba2dc781cbd7567ee9b624c7cedce3cd316770",
+      "headRefOid": "6d2f6fa590e0ecabaf9825f3aa6f4f086714c9c3",
+      "closedAt": "2022-02-08T22:16:39Z",
+      "mergedAt": "2022-02-08T22:16:39Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "181607612619efcab9115c5572ec523d364f0a5b"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 25,
+      "id": "PR_kwDOGKuqOc4yNMJN",
+      "title": "Specify a method for deriving pseudorandom field elements",
+      "url": "https://github.com/cjpatton/vdaf/pull/25",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #13.",
+      "createdAt": "2022-02-08T01:15:41Z",
+      "updatedAt": "2022-02-09T01:26:08Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "a5af1245c4b1f4b3ffe0bd536ef8f4f6c3936466",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/prg",
+      "headRefOid": "886bb5ea3786667bb0b4146a7e82645c5d4f8630",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 26,
+      "id": "PR_kwDOGKuqOc4yRjBk",
+      "title": "prio3: Don't generate joint randomness if JOINT_RAND_LEN == 0",
+      "url": "https://github.com/cjpatton/vdaf/pull/26",
+      "state": "MERGED",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #15.",
+      "createdAt": "2022-02-09T03:58:04Z",
+      "updatedAt": "2022-02-09T04:35:53Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "0ed776f687b2592820af150416a30ed16dbab7da",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/joint-rand-len",
+      "headRefOid": "94a9986bc29be2455f998dd60eec9091186fbf03",
+      "closedAt": "2022-02-09T04:35:39Z",
+      "mergedAt": "2022-02-09T04:35:39Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "5de2062ac1f1524a9ce8e23c08a24938c5f32fc1"
+      },
       "comments": [],
       "reviews": []
     }
