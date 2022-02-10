@@ -1927,33 +1927,69 @@ Table of Contents
 
 8.2.  Circuits
 
+   This subseciton defines the interface implemented by circuits and
+   validity circuits.  The latter is a refinement of the former that is
+   affine, but which has an optional, random input and makes calls to a
+   number of circuits, which we will cal its "gadgets".
+
+   A Gadget defines the following parameters:
+
+     +===========+==================================================+
+     | Parameter | Description                                      |
+     +===========+==================================================+
+     | ARITY     | The number of input wires                        |
+     +-----------+--------------------------------------------------+
+     | DEGREE    | the arithmetic degree of the circuit (see below) |
+     +-----------+--------------------------------------------------+
+
+                 Table 4: Constants defined by a gadget.
+
+         +==============+========================================+
+         | Parameter    | Description                            |
+         +==============+========================================+
+         | GADGETS      | List of gadgets (subclasses of Gadget) |
+         +--------------+----------------------------------------+
+         | GADGET_CALLS | Number of times each gadget is called  |
+         +--------------+----------------------------------------+
+         | INPUT_LEN    | Length of the input                    |
+         +--------------+----------------------------------------+
+         | OUTPUT_LEN   | Length of the aggregatable output      |
+         +--------------+----------------------------------------+
+         | RAND_LEN     | Length of the random input             |
+         +--------------+----------------------------------------+
+         | Field        | As defined in (Section 5.1)            |
+         +--------------+----------------------------------------+
+
+             Table 5: Constants and types defined by a validity
+                                  circuit.
+
 8.3.  Construction
 
    Our FLP FlpGeneric is specified in terms of a gadget circuit C
    implementing the interface described in Section 8.2.  It has the
    following parameters:
 
-    +================+================================================+
-    | Parameter      | Value                                          |
-    +================+================================================+
-    | PROVE_RAND_LEN | sum(map(lambda G: G.ARITY, C.GADGETS))         |
-    +----------------+------------------------------------------------+
-    | QUERY_RAND_LEN | len(C.GADGETS)                                 |
-    +----------------+------------------------------------------------+
-    | JOINT_RAND_LEN | C.RAND_LEN                                     |
-    +----------------+------------------------------------------------+
-    | INPUT_LEN      | C.INPUT_LEN                                    |
-    +----------------+------------------------------------------------+
-    | OUTPUT_LEN     | C.OUTPUT_LEN                                   |
-    +----------------+------------------------------------------------+
-    | PROOF_LEN      | sum(map(lambda G: G.proof_len(), G.GADGETS))   |
-    +----------------+------------------------------------------------+
-    | VERIFIER_LEN   | 1 + sum(map(lambda G: 1 + G.ARITY, G.GADGETS)) |
-    +----------------+------------------------------------------------+
-    | Field          | C.Field                                        |
-    +----------------+------------------------------------------------+
+        +================+========================================+
+        | Parameter      | Value                                  |
+        +================+========================================+
+        | PROVE_RAND_LEN | sum(map(lambda G: G.ARITY, C.GADGETS)) |
+        +----------------+----------------------------------------+
+        | QUERY_RAND_LEN | len(C.GADGETS)                         |
+        +----------------+----------------------------------------+
+        | JOINT_RAND_LEN | C.RAND_LEN                             |
+        +----------------+----------------------------------------+
+        | INPUT_LEN      | C.INPUT_LEN                            |
+        +----------------+----------------------------------------+
+        | OUTPUT_LEN     | C.OUTPUT_LEN                           |
+        +----------------+----------------------------------------+
+        | PROOF_LEN      | C.proof_len() (see below)              |
+        +----------------+----------------------------------------+
+        | VERIFIER_LEN   | C.verifier_len() (see below)           |
+        +----------------+----------------------------------------+
+        | Field          | C.Field                                |
+        +----------------+----------------------------------------+
 
-              Table 4: Constants and types of the genric FLP.
+              Table 6: Constants and types of the genric FLP.
 
 9.  Security Considerations
 

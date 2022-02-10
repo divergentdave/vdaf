@@ -3522,7 +3522,92 @@ algorithm. Note that this has implications for how the finite field is chosen.<a
 <section id="section-8.2">
         <h3 id="name-circuits">
 <a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-circuits" class="section-name selfRef">Circuits</a>
-      </h3>
+        </h3>
+<p id="section-8.2-1">This subseciton defines the interface implemented by circuits and validity
+circuits. The latter is a refinement of the former that is affine, but which has
+an optional, random input and makes calls to a number of circuits, which we will
+cal its "gadgets".<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">A <code>Gadget</code> defines the following parameters:<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<span id="name-constants-defined-by-a-gadg"></span><div id="flp-generic-gadget-param">
+<table class="center" id="table-4">
+          <caption>
+<a href="#table-4" class="selfRef">Table 4</a>:
+<a href="#name-constants-defined-by-a-gadg" class="selfRef">Constants defined by a gadget.</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>ARITY</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The number of input wires</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>DEGREE</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">the arithmetic degree of the circuit (see below)</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+<span id="name-constants-and-types-defined-b"></span><div id="flp-generic-validity-circuit-param">
+<table class="center" id="table-5">
+          <caption>
+<a href="#table-5" class="selfRef">Table 5</a>:
+<a href="#name-constants-and-types-defined-b" class="selfRef">Constants and types defined by a validity circuit.</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>GADGETS</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">List of gadgets (subclasses of <code>Gadget</code>)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>GADGET_CALLS</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Number of times each gadget is called</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>INPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>OUTPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the aggregatable output</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>RAND_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the random input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Field</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">As defined in (<a href="#field" class="xref">Section 5.1</a>)</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
 </section>
 </div>
 <div id="flp-generic-construction">
@@ -3534,9 +3619,9 @@ algorithm. Note that this has implications for how the finite field is chosen.<a
 the interface described in <a href="#flp-generic-circuit" class="xref">Section 8.2</a>. It has the following
 parameters:<a href="#section-8.3-1" class="pilcrow">¶</a></p>
 <span id="name-constants-and-types-of-the-"></span><div id="flp-generic-param">
-<table class="center" id="table-4">
+<table class="center" id="table-6">
           <caption>
-<a href="#table-4" class="selfRef">Table 4</a>:
+<a href="#table-6" class="selfRef">Table 6</a>:
 <a href="#name-constants-and-types-of-the-" class="selfRef">Constants and types of the genric FLP.</a>
           </caption>
 <thead>
@@ -3591,16 +3676,14 @@ parameters:<a href="#section-8.3-1" class="pilcrow">¶</a></p>
                 <code>PROOF_LEN</code>
 </td>
               <td class="text-left" rowspan="1" colspan="1">
-                <code>sum(map(lambda G: G.proof_len(), G.GADGETS))</code>
-</td>
+                <code>C.proof_len()</code> (see below)</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
                 <code>VERIFIER_LEN</code>
 </td>
               <td class="text-left" rowspan="1" colspan="1">
-                <code>1 + sum(map(lambda G: 1 + G.ARITY, G.GADGETS))</code>
-</td>
+                <code>C.verifier_len()</code> (see below)</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
