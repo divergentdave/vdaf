@@ -1945,7 +1945,7 @@ Table of Contents
    gadgets defined above (the input has length N+1):
 
    C(inp, r) = r * Poly(inp[0]) + ... + r^N * Poly(inp[N-1]) + \
-               2^0 * in p[0]    + ... + 2^(N-1) * inp[N-1])  - \
+               2^0 * in p[0]    + ... + 2^(N-1) * inp[N-1]   - \
                Mul(inp[N], inp[N])
 
    Finally, in [BBCGGI19], Theorem 4.3, the fixed points alpha[0], ...,
