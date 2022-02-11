@@ -109,9 +109,10 @@ Table of Contents
        8.1.1.  Extensions
      8.2.  Validity Circuits
      8.3.  Construction
-       8.3.1.  Prover
-       8.3.2.  Verifier
-       8.3.3.  Encoding
+       8.3.1.  Proof Generation
+       8.3.2.  Query Generation
+       8.3.3.  Decision
+       8.3.4.  Encoding
    9.  Security Considerations
    10. IANA Considerations
    11. References
@@ -1991,6 +1992,16 @@ Table of Contents
    Each gadge also defines a parameter ARITY that specifies the
    cicruit's arity.
 
+   A concrete Valid provides the following methods for encoding a
+   measurement as an input vector and truncating an input vector to the
+   legnth of an aggregatable output:
+
+   *  Circuit.encode(measurement: Measurement) -> Vec[Field] returns a
+      vector of length INPUT_LEN represeenting a measuremnet.
+
+   *  Circuit.truncate(input: Vec[Field]) -> Vec[Field] returns a vector
+      of length OUTPUT_LEN representing an aggregatable output.
+
    The following class methods are derived for each concrete Valid:
 
    def prove_rand_len(Valid):
@@ -2072,9 +2083,10 @@ Table of Contents
 
       -  Let M_i = Valid.GADGET_CALLS[i]
 
-      -  Let P_i = next_power_of_2(M_i+1)
+      -  Let P_i = next_power_of_2(M_i+1) ` Let alpha_i =
+         Field.gen()^(Field.GEN_ORDER / P_i)
 
-8.3.1.  Prover
+8.3.1.  Proof Generation
 
    On input inp, prove_rand, and joint_rand, the proof is computed as
    follows:
@@ -2099,10 +2111,8 @@ Table of Contents
        *  Let padded_wire = wire + padding, where padding is the all-
           zero vector of length P_i - len(wire).
 
-       *  Let alpha = Field.gen()^(Field.GEN_ORDER / P_i).
-
-       *  Let F be the lowest degree polynomial for which F(alpha^k) ==
-          padded_wire[k] for all k in [P_i].
+       *  Let F be the lowest degree polynomial for which F(alpha_i^k)
+          == padded_wire[k] for all k in [P_i].
 
        *  Set poly_wire_i[j-1] to F.
 
@@ -2113,16 +2123,65 @@ Table of Contents
           polynomials for the ith gadget.  (Arithmetic is in the ring of
           polynomials over Field.)
 
-   The proof is proof = S_1 + T_1 + ... + S_H + T_H, where T_i is the
-   vector of coefficients of poly_gadget_i for each i in [H].
+   The proof is the vector proof = S_1 + T_1 + ... + S_H + T_H, where
+   T_i is the vector of coefficients of poly_gadget_i for each i in [H].
 
-8.3.2.  Verifier
+8.3.2.  Query Generation
 
-   XXX
+   On input of inp, proof, query_rand, and joint_rand, the verifier
+   message is generated as follows:
 
-8.3.3.  Encoding
+   1.  For every i in [H] create an empty table W_i.
 
-   XXX
+   2.  Partition proof into the subvectors S_1, T_1, ..., S_H, T_H
+       defined in Section 8.3.1.
+
+   3.  Evaluate Valid on input of inp, joint_rand, recording the inputs
+       of each gadget in the corresponding table.  This step is similar
+       to the prover's step (3.) except the verifier does not evaluate
+       the gadgets.  Instead, it computes the output of the kth call to
+       G_i by evaluating poly_gadget_i(alpha_i^k).  Let v denote the
+       output of the circuit evaluation.
+
+   4.  Compute the wire polynomials just as in the prover's step (4.).
+
+   5.  Compute the tests for well-formedness of the gadget polynomials.
+       For every i in [H]:
+
+       *  Let t = query_rand[i] and check if t^(P_i) == 1.  If so, then
+          raise ERR_ABORT and halt.  (This prevents the verifier from
+          inadvertently leaking a gadget output in the verifier
+          message.)
+
+       *  Let y_i = poly_gadget_i(t).
+
+       *  For each j in [L_i] let x_i[j-1] = poly_wire_i[j-1](t).
+
+   The verifier message is the vector verifier = [v] + x_1 + [y_1] + ...
+   + x_H + [y_H].
+
+8.3.3.  Decision
+
+   On input of verifier, the verifier decides if the input is valid as
+   follows:
+
+   1.  Parse verifier into v, x_1, y_1, ..., x_H, y_H as defined in
+       Section 8.3.2.
+
+   2.  Check for well-formedness of the gadget polynomials.  For every i
+       in [H]:
+
+       *  Let z = G_i(x_i).  That is, evaluate the circuit G_i on x_i
+          and set z to the output.
+
+       *  Let w_ii == (z != y_i), then return False and halt.
+
+   3.  Return True if v == 0 and False otherwise.
+
+8.3.4.  Encoding
+
+   The FLP encoding and truncation methods invoke Circuit.encode and
+   Circuit.truncate in the natural way.
 
 9.  Security Considerations
 

@@ -1271,13 +1271,16 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
                 <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="xref">8.3</a>.  <a href="#name-construction-3" class="xref">Construction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.1">
-                    <p id="section-toc.1-1.8.2.3.2.1.1"><a href="#section-8.3.1" class="xref">8.3.1</a>.  <a href="#name-prover" class="xref">Prover</a></p>
+                    <p id="section-toc.1-1.8.2.3.2.1.1"><a href="#section-8.3.1" class="xref">8.3.1</a>.  <a href="#name-proof-generation" class="xref">Proof Generation</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.2">
-                    <p id="section-toc.1-1.8.2.3.2.2.1"><a href="#section-8.3.2" class="xref">8.3.2</a>.  <a href="#name-verifier" class="xref">Verifier</a></p>
+                    <p id="section-toc.1-1.8.2.3.2.2.1"><a href="#section-8.3.2" class="xref">8.3.2</a>.  <a href="#name-query-generation" class="xref">Query Generation</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.3">
-                    <p id="section-toc.1-1.8.2.3.2.3.1"><a href="#section-8.3.3" class="xref">8.3.3</a>.  <a href="#name-encoding" class="xref">Encoding</a></p>
+                    <p id="section-toc.1-1.8.2.3.2.3.1"><a href="#section-8.3.3" class="xref">8.3.3</a>.  <a href="#name-decision" class="xref">Decision</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.4">
+                    <p id="section-toc.1-1.8.2.3.2.4.1"><a href="#section-8.3.4" class="xref">8.3.4</a>.  <a href="#name-encoding" class="xref">Encoding</a></p>
 </li>
                 </ul>
 </li>
@@ -3650,8 +3653,21 @@ to be the degree of the polynomial that computes it. For example, the <code>Mul<
 circuit in <a href="#flp-generic-overview" class="xref">Section 8.1</a> is defined by the polynomial <code>Mul(x) = x *
 x</code>, which has degree <code>2</code>. Hence, the arithmetic degree of this gadget is <code>2</code>.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
 <p id="section-8.2-4">Each gadge also defines a parameter <code>ARITY</code> that specifies the cicruit's arity.<a href="#section-8.2-4" class="pilcrow">¶</a></p>
-<p id="section-8.2-5">The following class methods are derived for each concrete <code>Valid</code>:<a href="#section-8.2-5" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8.2-6">
+<p id="section-8.2-5">A concrete <code>Valid</code> provides the following methods for encoding a measurement as
+an input vector and truncating an input vector to the legnth of an aggregatable
+output:<a href="#section-8.2-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.2-6.1">
+            <code>Circuit.encode(measurement: Measurement) -&gt; Vec[Field]</code> returns a vector of
+length <code>INPUT_LEN</code> represeenting a measuremnet.<a href="#section-8.2-6.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-8.2-6.2">
+            <code>Circuit.truncate(input: Vec[Field]) -&gt; Vec[Field]</code> returns a vector of length
+<code>OUTPUT_LEN</code> representing an aggregatable output.<a href="#section-8.2-6.2" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-8.2-7">The following class methods are derived for each concrete <code>Valid</code>:<a href="#section-8.2-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.2-8">
 <pre>
 def prove_rand_len(Valid):
     return sum(map(lambda G: G.ARITY, Valid.GADGETS))
@@ -3671,7 +3687,7 @@ def verifier_len(Valid):
     for G in Valid.GADGETS:
         length += G.ARITY + 1
     return length
-</pre><a href="#section-8.2-6" class="pilcrow">¶</a>
+</pre><a href="#section-8.2-8" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -3800,15 +3816,16 @@ defined in the remaining subsections.<a href="#section-8.3-2" class="pilcrow">¶
 </li>
               <li class="normal" id="section-8.3-5.2.2.3">Let <code>M_i = Valid.GADGET_CALLS[i]</code><a href="#section-8.3-5.2.2.3" class="pilcrow">¶</a>
 </li>
-              <li class="normal" id="section-8.3-5.2.2.4">Let <code>P_i = next_power_of_2(M_i+1)</code><a href="#section-8.3-5.2.2.4" class="pilcrow">¶</a>
+              <li class="normal" id="section-8.3-5.2.2.4">Let <code>P_i = next_power_of_2(M_i+1)</code>
+  ` Let <code>alpha_i = Field.gen()^(Field.GEN_ORDER / P_i)</code><a href="#section-8.3-5.2.2.4" class="pilcrow">¶</a>
 </li>
             </ul>
 </li>
         </ul>
-<div id="prover">
+<div id="flp-generic-construction-prove">
 <section id="section-8.3.1">
-          <h4 id="name-prover">
-<a href="#section-8.3.1" class="section-number selfRef">8.3.1. </a><a href="#name-prover" class="section-name selfRef">Prover</a>
+          <h4 id="name-proof-generation">
+<a href="#section-8.3.1" class="section-number selfRef">8.3.1. </a><a href="#name-proof-generation" class="section-name selfRef">Proof Generation</a>
           </h4>
 <p id="section-8.3.1-1">On input <code>inp</code>, <code>prove_rand</code>, and <code>joint_rand</code>, the proof is computed as
 follows:<a href="#section-8.3.1-1" class="pilcrow">¶</a></p>
@@ -3833,12 +3850,10 @@ gadget in the corresponding table. Specifically, for every <code>i</code> in <co
                 <li class="normal" id="section-8.3.1-2.4.2.2">Let <code>padded_wire = wire + padding</code>, where <code>padding</code> is the all-zero vector
 of length <code>P_i - len(wire)</code>.<a href="#section-8.3.1-2.4.2.2" class="pilcrow">¶</a>
 </li>
-                <li class="normal" id="section-8.3.1-2.4.2.3">Let <code>alpha = Field.gen()^(Field.GEN_ORDER / P_i)</code>.<a href="#section-8.3.1-2.4.2.3" class="pilcrow">¶</a>
+                <li class="normal" id="section-8.3.1-2.4.2.3">Let <code>F</code> be the lowest degree polynomial for which <code>F(alpha_i^k) ==
+padded_wire[k]</code> for all <code>k</code> in <code>[P_i]</code>.<a href="#section-8.3.1-2.4.2.3" class="pilcrow">¶</a>
 </li>
-                <li class="normal" id="section-8.3.1-2.4.2.4">Let <code>F</code> be the lowest degree polynomial for which <code>F(alpha^k) ==
-padded_wire[k]</code> for all <code>k</code> in <code>[P_i]</code>.<a href="#section-8.3.1-2.4.2.4" class="pilcrow">¶</a>
-</li>
-                <li class="normal" id="section-8.3.1-2.4.2.5">Set <code>poly_wire_i[j-1]</code> to <code>F</code>.<a href="#section-8.3.1-2.4.2.5" class="pilcrow">¶</a>
+                <li class="normal" id="section-8.3.1-2.4.2.4">Set <code>poly_wire_i[j-1]</code> to <code>F</code>.<a href="#section-8.3.1-2.4.2.4" class="pilcrow">¶</a>
 </li>
               </ul>
 </li>
@@ -3852,24 +3867,83 @@ gadget. (Arithmetic is in the ring of polynomials over <code>Field</code>.)<a hr
               </ul>
 </li>
           </ol>
-<p id="section-8.3.1-3">The proof is <code>proof = S_1 + T_1 + ... + S_H + T_H</code>, where <code>T_i</code> is the vector of
-coefficients of <code>poly_gadget_i</code> for each <code>i</code> in <code>[H]</code>.<a href="#section-8.3.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.3.1-3">The proof is the vector <code>proof = S_1 + T_1 + ... + S_H + T_H</code>, where <code>T_i</code> is
+the vector of coefficients of <code>poly_gadget_i</code> for each <code>i</code> in <code>[H]</code>.<a href="#section-8.3.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="verifier">
+<div id="flp-generic-construction-query">
 <section id="section-8.3.2">
-          <h4 id="name-verifier">
-<a href="#section-8.3.2" class="section-number selfRef">8.3.2. </a><a href="#name-verifier" class="section-name selfRef">Verifier</a>
+          <h4 id="name-query-generation">
+<a href="#section-8.3.2" class="section-number selfRef">8.3.2. </a><a href="#name-query-generation" class="section-name selfRef">Query Generation</a>
           </h4>
-<p id="section-8.3.2-1">XXX<a href="#section-8.3.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.3.2-1">On input of <code>inp</code>, <code>proof</code>, <code>query_rand</code>, and <code>joint_rand</code>, the verifier message
+is generated as follows:<a href="#section-8.3.2-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3.2-2">
+<li id="section-8.3.2-2.1">For every <code>i</code> in <code>[H]</code> create an empty table <code>W_i</code>.<a href="#section-8.3.2-2.1" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.2">Partition <code>proof</code> into the subvectors <code>S_1</code>, <code>T_1</code>, ..., <code>S_H</code>, <code>T_H</code> defined
+in <a href="#flp-generic-construction-prove" class="xref">Section 8.3.1</a>.<a href="#section-8.3.2-2.2" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.3">Evaluate <code>Valid</code> on input of <code>inp, joint_rand</code>, recording the inputs of each
+gadget in the corresponding table. This step is similar to the prover's step
+(3.) except the verifier does not evaluate the gadgets. Instead, it computes
+the output of the <code>k</code>th call to <code>G_i</code> by evaluating
+<code>poly_gadget_i(alpha_i^k)</code>. Let <code>v</code> denote the output of the circuit
+evaluation.<a href="#section-8.3.2-2.3" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.4">Compute the wire polynomials just as in the prover's step (4.).<a href="#section-8.3.2-2.4" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.5">
+              <p id="section-8.3.2-2.5.1">Compute the tests for well-formedness of the gadget polynomials. For every
+<code>i</code> in <code>[H]</code>:<a href="#section-8.3.2-2.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.2-2.5.2.1">Let <code>t = query_rand[i]</code> and check if <code>t^(P_i) == 1</code>. If so, then raise
+ERR_ABORT and halt. (This prevents the verifier from inadvertently leaking
+a gadget output in the verifier message.)<a href="#section-8.3.2-2.5.2.1" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.2-2.5.2.2">Let <code>y_i = poly_gadget_i(t)</code>.<a href="#section-8.3.2-2.5.2.2" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.2-2.5.2.3">For each <code>j</code> in <code>[L_i]</code> let <code>x_i[j-1] = poly_wire_i[j-1](t)</code>.<a href="#section-8.3.2-2.5.2.3" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+          </ol>
+<p id="section-8.3.2-3">The verifier message is the vector <code>verifier = [v] + x_1 + [y_1] + ... + x_H +
+[y_H]</code>.<a href="#section-8.3.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="decision">
+<section id="section-8.3.3">
+          <h4 id="name-decision">
+<a href="#section-8.3.3" class="section-number selfRef">8.3.3. </a><a href="#name-decision" class="section-name selfRef">Decision</a>
+          </h4>
+<p id="section-8.3.3-1">On input of <code>verifier</code>, the verifier decides if the input is valid as follows:<a href="#section-8.3.3-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3.3-2">
+<li id="section-8.3.3-2.1">Parse <code>verifier</code> into <code>v</code>, <code>x_1</code>, <code>y_1</code>, ..., <code>x_H</code>, <code>y_H</code> as defined in
+<a href="#flp-generic-construction-query" class="xref">Section 8.3.2</a>.<a href="#section-8.3.3-2.1" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.3-2.2">
+              <p id="section-8.3.3-2.2.1">Check for well-formedness of the gadget polynomials. For every <code>i</code> in <code>[H]</code>:<a href="#section-8.3.3-2.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.3-2.2.2.1">Let <code>z = G_i(x_i)</code>. That is, evaluate the circuit <code>G_i</code> on <code>x_i</code> and set
+<code>z</code> to the output.<a href="#section-8.3.3-2.2.2.1" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.3-2.2.2.2">Let <code>w_ii == (z != y_i)</code>, then return <code>False</code> and halt.<a href="#section-8.3.3-2.2.2.2" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li id="section-8.3.3-2.3">Return <code>True</code> if <code>v == 0</code> and <code>False</code> otherwise.<a href="#section-8.3.3-2.3" class="pilcrow">¶</a>
+</li>
+          </ol>
 </section>
 </div>
 <div id="encoding">
-<section id="section-8.3.3">
+<section id="section-8.3.4">
           <h4 id="name-encoding">
-<a href="#section-8.3.3" class="section-number selfRef">8.3.3. </a><a href="#name-encoding" class="section-name selfRef">Encoding</a>
+<a href="#section-8.3.4" class="section-number selfRef">8.3.4. </a><a href="#name-encoding" class="section-name selfRef">Encoding</a>
           </h4>
-<p id="section-8.3.3-1">XXX<a href="#section-8.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-8.3.4-1">The FLP encoding and truncation methods invoke <code>Circuit.encode</code> and
+<code>Circuit.truncate</code> in the natural way.<a href="#section-8.3.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
