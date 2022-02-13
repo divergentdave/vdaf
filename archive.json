@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-10T00:04:23.678883+00:00",
+  "timestamp": "2022-02-13T00:05:19.614289+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -2199,6 +2199,32 @@
       "mergeCommit": {
         "oid": "5de2062ac1f1524a9ce8e23c08a24938c5f32fc1"
       },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 27,
+      "id": "PR_kwDOGKuqOc4ydh-y",
+      "title": "prio3: Specify the generic FLP",
+      "url": "https://github.com/cjpatton/vdaf/pull/27",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Specification of the \"generic FLP\", an extension of Theorem 4.3 from [BBCGGI19]. This proof system is implemented by https://github.com/abetterinternet/libprio-rs/blob/main/src/pcp.rs.\r\n\r\n2022/2/10: This PR is marked as \"draft\" for now, as it'll need a few more clean-up passes before it's ready to merge. I wanted to have something up early so @chris-wood has something to work off of for the reference implementation.",
+      "createdAt": "2022-02-11T02:25:06Z",
+      "updatedAt": "2022-02-11T02:28:22Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "3ce95c78de509a7db603ca549509798122cbd220",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/flp",
+      "headRefOid": "37bc9024814f14c9a673b74f812be02e55a27f57",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
       "comments": [],
       "reviews": []
     }
