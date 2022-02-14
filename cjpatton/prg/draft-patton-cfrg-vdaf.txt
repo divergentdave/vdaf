@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 13 August 2022                                            Cisco
+Expires: 18 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                         9 February 2022
+                                                        14 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 August 2022.
+   This Internet-Draft will expire on 18 August 2022.
 
 Copyright Notice
 
@@ -73,16 +73,15 @@ Table of Contents
    2.  Conventions and Definitions
    3.  Overview
    4.  Definition of VDAFs
-     4.1.  Constants and Associated Types
-     4.2.  Setup
-     4.3.  Sharding
-     4.4.  Preparation
-     4.5.  Aggregation
-     4.6.  Unsharding
-     4.7.  Execution of a VDAF
+     4.1.  Setup
+     4.2.  Sharding
+     4.3.  Preparation
+     4.4.  Aggregation
+     4.5.  Unsharding
+     4.6.  Execution of a VDAF
    5.  Preliminaries
      5.1.  Finite Fields
-       5.1.1.  Inner product of Vectors
+       5.1.1.  Helper Functions
        5.1.2.  Parameters
      5.2.  Pseudorandom Generators
        5.2.1.  Constructions
@@ -104,11 +103,12 @@ Table of Contents
        7.2.3.  Aggregation
        7.2.4.  Unsharding
        7.2.5.  Helper Functions
-   8.  Security Considerations
-   9.  IANA Considerations
-   10. References
-     10.1.  Normative References
-     10.2.  Informative References
+   8.  A General-Purpose FLP
+   9.  Security Considerations
+   10. IANA Considerations
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
    Acknowledgments
    Authors' Addresses
 
@@ -255,7 +255,7 @@ Table of Contents
    gives a brief overview of VDAFs; Section 4 defines the syntax for
    VDAFs; Section 5 defines various functionalities that are common to
    our constructions; Section 7 describes the poplar1 construction;
-   Section 6 describes the prio3 construction; and Section 8 enumerates
+   Section 6 describes the prio3 construction; and Section 9 enumerates
    the security considerations for VDAFs.
 
 2.  Conventions and Definitions
@@ -274,14 +274,18 @@ Table of Contents
 
    Some common functionalities:
 
-   *  zeros(len: Unsigned) -> output: Bytes returns an array of zero
-      bytes.  The length of output MUST be len.
+   *  zeros(len: Unsigned) -> Bytes returns an array of zero bytes.  The
+      length of output MUST be len.
 
-   *  gen_rand(len: Unsigned) -> output: Bytes returns an array of
-      random bytes.  The length of output MUST be len.
+   *  gen_rand(len: Unsigned) -> Bytes returns an array of random bytes.
+      The length of output MUST be len.
 
-   *  byte(int: Unsigned) -> Byte returns the representation of int as a
-      byte.  The value of int MUST be in range [0,256).
+   *  byte(int: Unsigned) -> Bytes returns the representation of int as
+      a byte string.  The value of int MUST be in range [0,256).
+
+   *  xor(left: Bytes, right: Bytes) -> Bytes returns the bitwise XOR of
+      left and right.  An exception is raised if the inputs are not the
+      same length.
 
    *  I2OSP and OS2IP from [RFC8017], which are used, respectively, to
       convert a non-negative integer to a byte string and convert a byte
@@ -403,46 +407,43 @@ Table of Contents
 
    The remainder of this section defines the VDAF interface in terms of
    an abstract base class Vdaf.  This class defines the set of methods
-   and attributes a conceret VDAF must provide.
+   and attributes a concrete VDAF must provide.  The attributes are
+   listed in [{vdaf-param}}; the methods are defined in the subsections
+   that follow.
 
-4.1.  Constants and Associated Types
+       +=============+=============================================+
+       | Parameter   | Description                                 |
+       +=============+=============================================+
+       | ROUNDS      | Number of rounds of communication during    |
+       |             | the preparation phase (Section 4.3)         |
+       +-------------+---------------------------------------------+
+       | SHARES      | Number of input shares into which each      |
+       |             | measurement is sharded (Section 4.2)        |
+       +-------------+---------------------------------------------+
+       | Measurement | Type of each measurement                    |
+       +-------------+---------------------------------------------+
+       | PublicParam | Type of public parameter used by the Client |
+       |             | during the sharding phase (Section 4.2)     |
+       +-------------+---------------------------------------------+
+       | VerifyParam | Type of verification parameter used by each |
+       |             | Aggregator during the preparation phase     |
+       |             | (Section 4.3)                               |
+       +-------------+---------------------------------------------+
+       | AggParam    | Type of aggregation parameter               |
+       +-------------+---------------------------------------------+
+       | Prep        | State of each Aggregator during the         |
+       |             | preparation phase (Section 4.3)             |
+       +-------------+---------------------------------------------+
+       | OutShare    | Type of each output share                   |
+       +-------------+---------------------------------------------+
+       | AggShare    | Type of each aggregate share                |
+       +-------------+---------------------------------------------+
+       | AggResult   | Type of the aggregate result                |
+       +-------------+---------------------------------------------+
 
-   Each concrete VDAF specifies the following constants:
+        Table 1: Constants and types defined by each concrete VDAF.
 
-   *  SHARES: Unsigned is the number of Aggregators for which the VDAF
-      is defined.
-
-   *  ROUNDS: Unsigned is the number of rounds of communication during
-      the preparation phase.  (The communication pattern is derfined in
-      Section 4.4.)
-
-   In addition, the VDAF provides the following types:
-
-   *  Measurement is the type measurement type used by a client during
-      the sharding phase (Section 4.3).
-
-   *  PublicParam is the type of public parameter used by a Client
-      during the sharding phase.
-
-   *  VerifyParam is the type of verification parameter used by each
-      Aggregator during the preparation phase (Section 4.4).
-
-   *  AggParam is the type of aggregation parameter used by each
-      Aggregator during the preparation phase.
-
-   *  OutShare is the type of each output share recovered by the
-      Aggregators during the preparation phase.
-
-   *  AggShare is the type of result of combining a sequence of output
-      shares during the aggregation phase (Section 4.5).
-
-   *  AggResult is the type of aggregate result (Section 4.6).
-
-   *  Prep represents the state of an Aggregator during the preparation
-      phase.  This class implements the interface described in
-      Section 4.4.
-
-4.2.  Setup
+4.1.  Setup
 
    Before execution of the VDAF can begin, it is necessary to distribute
    long-lived parameters to the Client and Aggregators.  The long-lived
@@ -455,10 +456,10 @@ Table of Contents
       Aggregator's verification parameter is considered secret and MUST
       NOT be revealed to the Clients, Collector or other Aggregators.
       The parameters MAY be reused across multiple VDAF evaluations.
-      See Section 8 for a discussion of the security implications this
+      See Section 9 for a discussion of the security implications this
       has depending on the threat model.
 
-4.3.  Sharding
+4.2.  Sharding
 
    In order to protect the privacy of its measurements, a VDAF client
    splits its measurements into "input shares".  The
@@ -498,7 +499,7 @@ Table of Contents
       rotate the verify_param without also having to update the clients.
       We should consider dropping this at some point.
 
-4.4.  Preparation
+4.3.  Preparation
 
    To recover and verify output shares, the Aggregators interact with
    one another over ROUNDS rounds.  Prior to each round, each Aggregator
@@ -547,7 +548,7 @@ Table of Contents
          |              |                   |
          V              V                   V
        +-----------+  +-----------+       +-----------+
-       | prep next |  | prep next |       | prep next |
+       | prep_next |  | prep_next |       | prep_next |
        +-----------+  +-----------+       +-----------+
          |              |              ...  |
          V              V                   V
@@ -557,8 +558,8 @@ Table of Contents
    measurement.  At the end of the computation, each Aggregator holds an
                          output share or an error.
 
-   To facilitate the preparation process, a concerete VDAF implements
-   the following class methods:
+   To facilitate the preparation process, a concrete VDAF implements the
+   following class methods:
 
    *  Vdaf.prep_init(verify_param: VerifyParam, agg_param: AggParam,
       nonce: Bytes, input_share: Bytes) -> Prep is the deterministic
@@ -581,10 +582,10 @@ Table of Contents
       message or, if this is the first round, None.
 
    *  Vdaf.prep_shares_to_prep(agg_param: AggParam, prep_shares:
-      Vec[Bytes]) -> Bytes is the deterministc preparation-message
-      preprocessing algorithm.  It combines the preperation-message
+      Vec[Bytes]) -> Bytes is the deterministic preparation-message
+      preprocessing algorithm.  It combines the preparation-message
       shares generated by the Aggregators in the previous round into the
-      pepration message consumed by each in the next round.
+      preparation message consumed by each in the next round.
 
    In effect, each Aggregator moves through a linear state machine with
    ROUNDS+1 states.  The Aggregator enters the first state on using the
@@ -619,9 +620,9 @@ Table of Contents
    output shares (while also maintaining privacy).
 
       OPEN ISSUE Depending on what we do for issue#20, we may end up
-      needeing to revise the above paragraph.
+      needing to revise the above paragraph.
 
-4.5.  Aggregation
+4.4.  Aggregation
 
    Once an Aggregator holds validated output shares for a batch of
    measurements (where batches are defined by the application), it
@@ -659,7 +660,7 @@ Table of Contents
    provided at the same time.  Some VDAFs may also support a "streaming"
    form, where shares are processed one at a time.
 
-4.6.  Unsharding
+4.5.  Unsharding
 
    After the Aggregators have aggregated a sufficient number of output
    shares, each sends its aggregate share to the Collector, who runs the
@@ -696,7 +697,7 @@ Table of Contents
       [I-D.draft-gpew-priv-ppm].)  Or is this out-of-scope of this
       document?
 
-4.7.  Execution of a VDAF
+4.6.  Execution of a VDAF
 
    Executing a VDAF involves the concurrent evaluation of the VDAF on
    individual inputs and aggregation of the recovered output shares.
@@ -739,7 +740,7 @@ Table of Contents
                    inbound = Vdaf.prep_shares_to_prep(agg_param,
                                                       outbound)
 
-           # The final outputs of prepare phasre are the output shares.
+           # The final outputs of prepare phase are the output shares.
            out_shares.append(outbound)
 
        # Each Aggregator aggregates its output shares into an aggregate
@@ -761,7 +762,7 @@ Table of Contents
    The aggregation parameter is chosen by the Aggregators prior to
    executing the VDAF.  This document does not specify how the nonces
    are chosen, but some of our security considerations require that the
-   nonces be unique for each VDAF evaluation.  See Section 8 for
+   nonces be unique for each VDAF evaluation.  See Section 9 for
    details.
 
    Another important question this document leaves out of scope is how a
@@ -773,7 +774,7 @@ Table of Contents
    "wrapper protocol", such as [I-D.draft-gpew-priv-ppm] that implements
    suitable cryptographic functionalities.  Moreover, some fraction of
    the Aggregators (or Clients) may be malicious and diverge from their
-   prescribed behaviors.  Section 8 describes the execution of the VDAF
+   prescribed behaviors.  Section 9 describes the execution of the VDAF
    in various adversarial environments and what properties the wrapper
    protocol needs to provide in each.
 
@@ -784,10 +785,9 @@ Table of Contents
 
 5.1.  Finite Fields
 
-   Both prio3 and poplar1 use finite fields with characteristic 1, i.e.,
-   the field GF(p) for some prime p.  Finite field elements are
-   represented by a class Field with the following associated
-   parameters:
+   Both prio3 and poplar1 use finite fields of prime order.  Finite
+   field elements are represented by a class Field with the following
+   associated parameters:
 
    *  ENCODED_SIZE: Unsigned is the number of bytes used to encode a
       field element as a byte string.
@@ -813,13 +813,13 @@ Table of Contents
    *  elem.as_unsigned() -> Unsigned returns the integer representation
       of field element elem.
 
-   Likewise, each concrete Field implements a constructor for coverting
+   Likewise, each concrete Field implements a constructor for converting
    an unsigned integer into a field element:
 
    *  Field(integer: Unsigned) returns integer represented as a field
       element.
 
-   Finally, each concerete Field has two derived class methods, one for
+   Finally, each concrete Field has two derived class methods, one for
    encoding a vector of field elements as a byte string and another for
    decoding a vector of field elements.
 
@@ -843,14 +843,27 @@ Table of Contents
 
              Figure 7: Derived class methods for finite fields.
 
-5.1.1.  Inner product of Vectors
+5.1.1.  Helper Functions
 
-   The following method is defined for computing the inner product of
-   two vectors:
+   The following auxiliary functions on vectors of field elements are
+   used in the remainder of this document.  Note that an exception is
+   raised by each function if the operands are not the same length.
 
+   # Compute the inner product of the operands.
    def inner_product(left: Vec[Field], right: Vec[Field]) -> Field:
-   result = Field(0) for (x, y) in zip(left, right): result += x * y
-   return result
+       return reduce(lambda x, y: x + y,
+                     map(lambda x: x[0] * x[1],
+                         zip(left, right)))
+
+   # Subtract the right operand from the left and return the result.
+   def vec_sub(left, right):
+       return list(map(lambda x: x[0] - x[1], zip(left, right)))
+
+   # Add the right operand to the left and return the result.
+   def vec_add(left, right):
+       return list(map(lambda x: x[0] + x[1], zip(left, right)))
+
+               Figure 8: Common functions for finite fields.
 
 5.1.2.  Parameters
 
@@ -899,7 +912,7 @@ Table of Contents
            vec.append(Field(x))
        return vec
 
-                 Figure 8: Derived class methods for PRGs.
+                 Figure 9: Derived class methods for PRGs.
 
 5.2.1.  Constructions
 
@@ -921,7 +934,7 @@ def expand(_, seed, info, length):
     a fixed, all-zero IV.
     return AES128-CTR(key, zeros(16), zeros(length))
 
-         Figure 9: Definition of PRG PrgBlockCipher(Aes128).
+         Figure 10: Definition of PRG PrgBlockCipher(Aes128).
 
       CP: We might be able to get away with skipping the initial CMAC
       for some fixed value of info, e.g., info == "".
@@ -938,7 +951,7 @@ def expand(_, seed, info, length):
    def expand(_, seed, info, length):
        return HKDF-SHA512-Expand(seed, info, length)
 
-               Figure 10: Definition of PRG PrgHkdf(Sha256).
+               Figure 11: Definition of PRG PrgHkdf(Sha256).
 
    Note that the maximum output size for HKDF is 255 times the output
    size of the underlying hash function (32 bytes in our case).  As a
@@ -955,8 +968,9 @@ def expand(_, seed, info, length):
    over a finite field, and the aggregate is computed by summing the
    vectors element-wise.  Validity is defined by an arithmetic circuit C
    that takes as input a vector of field elements x: if C(x) == 0, then
-   we say that x is valid; otherwise, we say that x is invalid.  A
-   number of useful measurement types can be defined this way:
+   we say that x is valid; otherwise, we say that x is invalid.  We call
+   C the "validity circuit".  A number of useful measurement types can
+   be defined this way:
 
    *  Simples statistics, like sum, average, and standard deviation;
 
@@ -1007,7 +1021,9 @@ def expand(_, seed, info, length):
 
    prio3 can be viewed as a transformation of a particular class of FLP
    systems into a VDAF.  The next section specified the syntax of
-   suitable FLPs in detail.  The transformation is given in Section 6.2.
+   suitable FLPs in detail; the transformation is given in Section 6.2.
+   Finally, a concrete, general-purpose FLP suitable for any validity
+   circuit is specified in section Section 8.
 
 6.1.  Fully Linear Proof (FLP) Systems
 
@@ -1019,40 +1035,41 @@ def expand(_, seed, info, length):
 
    As usual, we will describe the interface implemented by a concrete
    FLP in terms of an abstraction base class Flp that specifies the set
-   of methods, constants, and types a concrete FLP must provide.
+   of methods and parameters a concrete FLP must provide.
 
-   First, a concrete FLP defines the following constants:
+   The parameters provided by a concrete FLP are listed in Table 2.
 
-   *  PROVE_RAND_LEN: Unsigned is the length of the prover randomness,
-      i.e., the amount of randomness consumed by the prover.  This
-      number of random field elements are provided to the prover for
-      generating the proof.  (See below for an explanation.)
+       +================+==========================================+
+       | Parameter      | Description                              |
+       +================+==========================================+
+       | PROVE_RAND_LEN | Length of the prover randomness, the     |
+       |                | number of random field elements consumed |
+       |                | by the prover when generating a proof    |
+       +----------------+------------------------------------------+
+       | QUERY_RAND_LEN | Length of the query randomness, the      |
+       |                | number of random field elements consumed |
+       |                | by the verifier                          |
+       +----------------+------------------------------------------+
+       | JOINT_RAND_LEN | Length of the joint randomness, the      |
+       |                | number of random field elements consumed |
+       |                | by both the prover and verifier          |
+       +----------------+------------------------------------------+
+       | INPUT_LEN      | Length of the encoded measurement        |
+       |                | (Section 6.1.1)                          |
+       +----------------+------------------------------------------+
+       | OUTPUT_LEN     | Length of the aggregatable output        |
+       |                | (Section 6.1.1)                          |
+       +----------------+------------------------------------------+
+       | PROOF_LEN      | Length of the proof                      |
+       +----------------+------------------------------------------+
+       | VERIFIER_LEN   | Length of the verifier message generated |
+       |                | by queering the input and proof          |
+       +----------------+------------------------------------------+
+       | Field          | The finite field for which the FLP is    |
+       |                | defined (Section 5.1)                    |
+       +----------------+------------------------------------------+
 
-   *  QUERY_RAND_LEN: Unsigned is the length of the query randomness,
-      i.e., the amount of randomness consumed by the verifier.
-
-   *  JOINT_RAND_LEN: Unsigned is the length of the joint randomness in
-      number of field elements.  The joint randomness is the randomness
-      consumed by by both the prover and verifier.
-
-   *  INPUT_LEN: Unsigned is the number of field elements comprising an
-      input.  A measurement is encoded as a vector of this length before
-      the proof is generated.  (See Section 6.1.1 for details.)
-
-   *  OUTPUT_LEN: Unsigned is the length of the aggregable output.  (See
-      Section 6.1.1.)
-
-   *  PROOF_LEN: Unsigned is the length of the proof in number of field
-      elements.
-
-   *  VERIFIER_LEN: Unsigned is the length of the verifier message
-      generated by querying an input and proof.  (See below for an
-      explanation.)
-
-   A concerte FLP also defines an associated type:
-
-   *  Field is the finite field for which the FLP is defined.  This
-      object is compatible with the interface described in Section 5.1.
+         Table 2: Constants and types defined by each concrete FLP.
 
    An FLP specifies the following algorithms for generating and
    verifying proofs of validity for encoded inputs (encoding is
@@ -1083,7 +1100,7 @@ def expand(_, seed, info, length):
 
    Our application requires that the FLP is "fully linear" in the sense
    defined in [BBCGGI19].  This property amounts essentially to a
-   syntactic restriction on the proof systeem.  As a practical matter,
+   syntactic restriction on the proof system.  As a practical matter,
    what this property implies is that the query-generation algorithm can
    be run by each Aggregator locally on its share of the input and
    proof, and the results can be combined to recover the verifier
@@ -1107,7 +1124,7 @@ def expand(_, seed, info, length):
        # Verifier decides if the input is valid.
        return Flp.decide(verifier)
 
-                      Figure 11: Execution of an FLP.
+                      Figure 12: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(Flp,. input) always returns True.  On the other hand, if
@@ -1140,7 +1157,7 @@ def expand(_, seed, info, length):
    output:
 
    *  Flp.truncate(input: Vec[Field]) -> Vec[Field] maps an encoded
-      input to an aggregable output.  The length of the input MUST be
+      input to an aggregatable output.  The length of the input MUST be
       INPUT_LEN and the length of the output MUST be OUTPUT_LEN.
 
    The need for the truncation method arises from the observation that
@@ -1148,7 +1165,7 @@ def expand(_, seed, info, length):
    generation; and once the proof is checked, the redundancy can be
    removed before aggregating.  An example is the "integer sum" data
    type from [CGB17] in which an integer in range [0, 2^k) is encoded as
-   a vectot of k field elements.  Taken together, these two
+   a vector of k field elements.  Taken together, these two
    functionalities correspond roughly to the notion of Affine-
    aggregatable encodings (AFEs) from [CGB17].
 
@@ -1157,50 +1174,50 @@ def expand(_, seed, info, length):
    This section specifies Prio3, an implementation of the Vdaf interface
    (Section 4).  It has two generic parameters: an Flp (Section 6.1) and
    a Prg (Section 5.2).  The associated constants and types required by
-   the Vdaf interface are defined in Table 1.  The methods required for
-   sharding, preparation, aggregation, and unsharding are desribed in
+   the Vdaf interface are defined in Table 3.  The methods required for
+   sharding, preparation, aggregation, and unsharding are described in
    the remaining subsections.
 
-           +=============+=====================================+
-           | Parameter   | Value                               |
-           +=============+=====================================+
-           | ROUNDS      | 1                                   |
-           +-------------+-------------------------------------+
-           | SHARES      | in range [2, 255)                   |
-           +-------------+-------------------------------------+
-           | Measurement | Flp.Measurement                     |
-           +-------------+-------------------------------------+
-           | PublicParam | None                                |
-           +-------------+-------------------------------------+
-           | VerifyParam | Tuple[Unsigned, Bytes]              |
-           +-------------+-------------------------------------+
-           | AggParam    | None                                |
-           +-------------+-------------------------------------+
-           | Prep        | Tuple[Vec[Flp.Field], Bytes, Bytes] |
-           +-------------+-------------------------------------+
-           | OutShare    | Vec[Flp.Field]                      |
-           +-------------+-------------------------------------+
-           | AggShare    | Vec[Flp.Field]                      |
-           +-------------+-------------------------------------+
-           | AggResult   | Vec[Unsigned]                       |
-           +-------------+-------------------------------------+
+      +=============+===============================================+
+      | Parameter   | Value                                         |
+      +=============+===============================================+
+      | ROUNDS      | 1                                             |
+      +-------------+-----------------------------------------------+
+      | SHARES      | in range [2, 255)                             |
+      +-------------+-----------------------------------------------+
+      | Measurement | Flp.Measurement                               |
+      +-------------+-----------------------------------------------+
+      | PublicParam | None                                          |
+      +-------------+-----------------------------------------------+
+      | VerifyParam | Tuple[Unsigned, Bytes]                        |
+      +-------------+-----------------------------------------------+
+      | AggParam    | None                                          |
+      +-------------+-----------------------------------------------+
+      | Prep        | Tuple[Vec[Flp.Field], Optional[Bytes], Bytes] |
+      +-------------+-----------------------------------------------+
+      | OutShare    | Vec[Flp.Field]                                |
+      +-------------+-----------------------------------------------+
+      | AggShare    | Vec[Flp.Field]                                |
+      +-------------+-----------------------------------------------+
+      | AggResult   | Vec[Unsigned]                                 |
+      +-------------+-----------------------------------------------+
 
-             Table 1: Associated parameters for the prio3 VDAF.
+             Table 3: Associated parameters for the prio3 VDAF.
 
 6.2.1.  Setup
 
    The setup algorithm generates a symmetric key shared by all of the
    Aggregators.  The key is used to derive unique joint randomness for
    the FLP query-generation algorithm run by the aggregators during
-   preparation.  An Aggregator's verification paramter also includes its
-   "ID", a a unique integer in [0, SHARES)
+   preparation.  An Aggregator's verification parameter also includes
+   its "ID", a a unique integer in [0, SHARES)
 
    def setup(Prio3):
        k_query_init = gen_rand(Prio3.Prg.SEED_SIZE)
        verify_param = [(j, k_query_init) for j in range(Prio3.SHARES)]
        return (None, verify_param)
 
-                 Figure 12: The setup algorithm for prio3.
+                 Figure 13: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1262,9 +1279,9 @@ def expand(_, seed, info, length):
            k_helper_blinds.append(k_blind)
            k_helper_hints.append(k_hint)
        k_leader_blind = gen_rand(Prio3.Prg.SEED_SIZE)
-       k_leader_hint = Prio3.Prg.derive(
-               k_leader_blind,
-               byte(0) + Prio3.Flp.Field.encode_vec(leader_input_share))
+       encoded = Prio3.Flp.Field.encode_vec(leader_input_share)
+       k_leader_hint = Prio3.Prg.derive(k_leader_blind,
+                                        byte(0) + encoded)
        k_joint_rand = xor(k_joint_rand, k_leader_hint)
 
        # Finish joint randomness hints.
@@ -1316,14 +1333,14 @@ def expand(_, seed, info, length):
            ))
        return input_shares
 
-             Figure 13: Input-distribution algorithm for prio3.
+             Figure 14: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
    This section describes the process of recovering output shares from
    the input shares.  The high-level idea is that each Aggregators first
    queries its input and proof share locally, then exchanges its
-   verifier share with the other Aggregators.  The verifeir shares are
+   verifier share with the other Aggregators.  The verifier shares are
    then combined into the verifier message, which is used by each
    Aggregator locally to decide whether to accept.
 
@@ -1368,15 +1385,18 @@ def expand(_, seed, info, length):
            b"query rand",
            Prio3.Flp.QUERY_RAND_LEN
        )
-       encoded = Prio3.Flp.Field.encode_vec(input_share)
-       k_joint_rand_share = Prio3.Prg.derive(k_blind, byte(j) + encoded)
-       k_joint_rand = xor(k_hint, k_joint_rand_share)
-       joint_rand = Prio3.Prg.expand_into_vec(
-           Prio3.Flp.Field,
-           k_joint_rand,
-           b"joint rand",
-           Prio3.Flp.JOINT_RAND_LEN
-       )
+       joint_rand, k_joint_rand, k_joint_rand_share = [], None, None
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           encoded = Prio3.Flp.Field.encode_vec(input_share)
+           k_joint_rand_share = Prio3.Prg.derive(k_blind,
+                                                 byte(j) + encoded)
+           k_joint_rand = xor(k_hint, k_joint_rand_share)
+           joint_rand = Prio3.Prg.expand_into_vec(
+               Prio3.Flp.Field,
+               k_joint_rand,
+               b"joint rand",
+               Prio3.Flp.JOINT_RAND_LEN
+           )
        verifier_share = Prio3.Flp.query(input_share,
                                         proof_share,
                                         query_rand,
@@ -1410,16 +1430,14 @@ def expand(_, seed, info, length):
                Prio3.decode_prepare_message(encoded)
 
            verifier = vec_add(verifier, verifier_share)
-           k_joint_rand_check = xor(k_joint_rand_check,
-                                    k_joint_rand_share)
+
+           if Prio3.Flp.JOINT_RAND_LEN > 0:
+               k_joint_rand_check = xor(k_joint_rand_check,
+                                        k_joint_rand_share)
 
        return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
-                  Figure 14: Preparation state for prio3.
-
-      NOTE JOINT_RAND_LEN may be 0, in which case the joint randomness
-      computation is not necessary.  Should we bake this option into the
-      spec?
+                  Figure 15: Preparation state for prio3.
 
 6.2.4.  Aggregation
 
@@ -1429,7 +1447,7 @@ def expand(_, seed, info, length):
            agg_share = vec_add(agg_share, out_share)
        return agg_share
 
-                Figure 15: Aggregation algorithm for prio3.
+                Figure 16: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1439,7 +1457,7 @@ def expand(_, seed, info, length):
            agg = vec_add(agg, agg_share)
        return list(map(lambda x: x.as_unsigned(), agg))
 
-         Figure 16: Computation of the aggregate result for prio3.
+         Figure 17: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1451,8 +1469,9 @@ def expand(_, seed, info, length):
        encoded = Bytes()
        encoded += Prio3.Flp.Field.encode_vec(input_share)
        encoded += Prio3.Flp.Field.encode_vec(proof_share)
-       encoded += k_blind
-       encoded += k_hint
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           encoded += k_blind
+           encoded += k_hint
        return encoded
 
    def decode_leader_share(Prio3, encoded):
@@ -1463,8 +1482,10 @@ def expand(_, seed, info, length):
        encoded_proof_share, encoded = encoded[:l], encoded[l:]
        proof_share = Prio3.Flp.Field.decode_vec(encoded_proof_share)
        l = Prio3.Prg.SEED_SIZE
-       k_blind, encoded = encoded[:l], encoded[l:]
-       k_hint, encoded = encoded[:l], encoded[l:]
+       k_blind, k_hint = None, None
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           k_blind, encoded = encoded[:l], encoded[l:]
+           k_hint, encoded = encoded[:l], encoded[l:]
        if len(encoded) != 0:
            raise ERR_DECODE
        return (input_share, proof_share, k_blind, k_hint)
@@ -1477,8 +1498,9 @@ def expand(_, seed, info, length):
        encoded = Bytes()
        encoded += k_input_share
        encoded += k_proof_share
-       encoded += k_blind
-       encoded += k_hint
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           encoded += k_blind
+           encoded += k_hint
        return encoded
 
    def decode_helper_share(Prio3, encoded):
@@ -1493,8 +1515,10 @@ def expand(_, seed, info, length):
                                                k_proof_share,
                                                b"proof share",
                                                Prio3.Flp.PROOF_LEN)
-       k_blind, encoded = encoded[:l], encoded[l:]
-       k_hint, encoded = encoded[:l], encoded[l:]
+       k_blind, k_hint = None, None
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           k_blind, encoded = encoded[:l], encoded[l:]
+           k_hint, encoded = encoded[:l], encoded[l:]
        if len(encoded) != 0:
            raise ERR_DECODE
        return (input_share, proof_share, k_blind, k_hint)
@@ -1502,20 +1526,23 @@ def expand(_, seed, info, length):
    def encode_prepare_message(Prio3, verifier, k_joint_rand):
        encoded = Bytes()
        encoded += Prio3.Flp.Field.encode_vec(verifier)
-       encoded += k_joint_rand
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           encoded += k_joint_rand
        return encoded
 
    def decode_prepare_message(Prio3, encoded):
        l = Prio3.Flp.Field.ENCODED_SIZE * Prio3.Flp.VERIFIER_LEN
        encoded_verifier, encoded = encoded[:l], encoded[l:]
        verifier = Prio3.Flp.Field.decode_vec(encoded_verifier)
-       l = Prio3.Prg.SEED_SIZE
-       k_joint_rand, encoded = encoded[:l], encoded[l:]
+       k_joint_rand = None
+       if Prio3.Flp.JOINT_RAND_LEN > 0:
+           l = Prio3.Prg.SEED_SIZE
+           k_joint_rand, encoded = encoded[:l], encoded[l:]
        if len(encoded) != 0:
            raise ERR_DECODE
        return (verifier, k_joint_rand)
 
-              Figure 17: Helper functions required for prio3.
+              Figure 18: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1652,7 +1679,7 @@ def expand(_, seed, info, length):
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 18: The setup algorithm for poplar1.
+                Figure 19: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1705,7 +1732,7 @@ def expand(_, seed, info, length):
 
      return input_shares
 
-          Figure 19: The input-distribution algorithm for poplar1.
+          Figure 20: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1740,7 +1767,7 @@ def expand(_, seed, info, length):
        if self.step == "ready" and inbound == None:
          # Evaluate IDPF on candidate prefixes.
          data_share, auth_share = [], []
-         for x in self.candiate_prefixes:
+         for x in self.candidate_prefixes:
            value = kdpf_key.eval(l, x)
            data_share.append(value[0])
            auth_share.append(value[1])
@@ -1763,7 +1790,7 @@ def expand(_, seed, info, length):
            (verifier_1[0] * verifier_1[0] \
             - verifier_1[1] \
             - verifier_1[2]) * self.party_id \
-           + A_share * verifer_1[0] \
+           + A_share * verifier_1[0] \
            + B_share
          ]
 
@@ -1787,7 +1814,7 @@ def expand(_, seed, info, length):
 
      return Field[l].encode_vec(verifier)
 
-                 Figure 20: Preparation state for poplar1.
+                 Figure 21: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1802,7 +1829,7 @@ def expand(_, seed, info, length):
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 21: Aggregation algorithm for poplar1.
+               Figure 22: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1816,7 +1843,7 @@ def expand(_, seed, info, length):
 
      return Field[l].encode_vec(agg)
 
-        Figure 22: Computation of the aggregate result for poplar1.
+        Figure 23: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
@@ -1829,18 +1856,22 @@ def expand(_, seed, info, length):
 
    *  decode_indexes(encoded: Bytes) -> (l: Unsigned, indexes:
       Vec[Unsigned]) decodes a sequence of indexes, i.e., candidate
-      indexes for IDFP evaluation.  The value of l MUST be in range [1,
+      indexes for IDPF evaluation.  The value of l MUST be in range [1,
       BITS] and indexes[i] MUST be in range [2^(l-1), 2^l) for all i.
       An error is raised if encoded cannot be decoded.
 
-8.  Security Considerations
+8.  A General-Purpose FLP
+
+      TODO
+
+9.  Security Considerations
 
       NOTE: This is a brief outline of the security considerations.
       This section will be filled out more as the draft matures and
       security analyses are completed.
 
    Multi-party protocols for privacy-preserving measurement have two
-   essential security gaols:
+   essential security goals:
 
    1.  Privacy: An attacker that controls the network, the Collector,
        and a subset of Clients and Aggregators learns nothing about the
@@ -1904,13 +1935,13 @@ def expand(_, seed, info, length):
    features, e.g., by injecting noise before the sharding stage and
    removing it after unsharding.
 
-9.  IANA Considerations
+10.  IANA Considerations
 
    This document makes no request of IANA.
 
-10.  References
+11.  References
 
-10.1.  Normative References
+11.1.  Normative References
 
    [I-D.draft-irtf-cfrg-hash-to-curve]
               Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
@@ -1934,13 +1965,16 @@ def expand(_, seed, info, length):
               DOI 10.17487/RFC5869, May 2010,
               <https://www.rfc-editor.org/rfc/rfc5869>.
 
-   [RFC8017]  "*** BROKEN REFERENCE ***".
+   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
+              "PKCS #1: RSA Cryptography Specifications Version 2.2",
+              RFC 8017, DOI 10.17487/RFC8017, November 2016,
+              <https://www.rfc-editor.org/rfc/rfc8017>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
-10.2.  Informative References
+11.2.  Informative References
 
    [AGJOP21]  Addanki, S., Garbe, K., Jaffe, E., Ostrovsky, R., and A.
               Polychroniadou, "Prio+: Privacy Preserving Aggregate
