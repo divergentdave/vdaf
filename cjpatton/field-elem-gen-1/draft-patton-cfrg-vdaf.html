@@ -2226,7 +2226,7 @@ def expand_into_vec(Prg, Field,
     uniform_bytes = Prg.expand(seed, info, len_in_bytes)
 
     vec = []
-    for i in range(0, uniform_bytes, L):
+    for i in range(0, len(uniform_bytes), L):
         tv = uniform_bytes[i:i+L]
         x = OS2IP(tv)
         vec.append(Field(x))
