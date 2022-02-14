@@ -789,6 +789,8 @@ Table of Contents
    field elements are represented by a class Field with the following
    associated parameters:
 
+   *  MODULUS: Unsigned is the prime modulus that defines the field.
+
    *  ENCODED_SIZE: Unsigned is the number of bytes used to encode a
       field element as a byte string.
 
@@ -821,7 +823,8 @@ Table of Contents
    an unsigned integer into a field element:
 
    *  Field(integer: Unsigned) returns integer represented as a field
-      element.
+      element.  If integer >= Field.MODULUS, then integer is first
+      reduced mdoulo Field.MODULUS.
 
    Finally, each concrete Field has two derived class methods, one for
    encoding a vector of field elements as a byte string and another for

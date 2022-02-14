@@ -2060,18 +2060,21 @@ elements are represented by a class <code>Field</code> with the following associ
 parameters:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-2.1">
-            <code>ENCODED_SIZE: Unsigned</code> is the number of bytes used to encode a field element
-as a byte string.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
+            <code>MODULUS: Unsigned</code> is the prime modulus that defines the field.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-5.1-2.2">
-            <p id="section-5.1-2.2.1"><code>EXPANDED_SIZE: Unsigned</code> is the number of pseudorandom bytes that are sampled
+            <code>ENCODED_SIZE: Unsigned</code> is the number of bytes used to encode a field element
+as a byte string.<a href="#section-5.1-2.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-5.1-2.3">
+            <p id="section-5.1-2.3.1"><code>EXPANDED_SIZE: Unsigned</code> is the number of pseudorandom bytes that are sampled
 when per field element when expanding a seed into a sequence of field elements
-(see <a href="#prg" class="xref">Section 5.2</a>).<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
+(see <a href="#prg" class="xref">Section 5.2</a>).<a href="#section-5.1-2.3.1" class="pilcrow">¶</a></p>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.1-2.2.2.1">
-                <p id="section-5.1-2.2.2.1.1">CP It might be helpful to specify valid ranges for <code>EXPANDED_SIZE</code>. Perhaps
+<li class="normal ulEmpty" id="section-5.1-2.3.2.1">
+                <p id="section-5.1-2.3.2.1.1">CP It might be helpful to specify valid ranges for <code>EXPANDED_SIZE</code>. Perhaps
 it should be <code>ENCODED_SIZE &lt;= EXPANDED_SIZE &lt; k + ENCODED_SIZE</code> for some
-<code>k</code>?<a href="#section-5.1-2.2.2.1.1" class="pilcrow">¶</a></p>
+<code>k</code>?<a href="#section-5.1-2.3.2.1.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
@@ -2100,7 +2103,9 @@ field element <code>elem</code>.<a href="#section-5.1-6.1" class="pilcrow">¶</a
 unsigned integer into a field element:<a href="#section-5.1-7" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-8.1">
-            <code>Field(integer: Unsigned)</code> returns <code>integer</code> represented as a field element.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
+            <code>Field(integer: Unsigned)</code> returns <code>integer</code> represented as a field element.
+If <code>integer &gt;= Field.MODULUS</code>, then <code>integer</code> is first reduced mdoulo
+<code>Field.MODULUS</code>.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
 </li>
         </ul>
 <p id="section-5.1-9">Finally, each concrete <code>Field</code> has two derived class methods, one for encoding
