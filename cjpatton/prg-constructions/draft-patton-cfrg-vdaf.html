@@ -2229,7 +2229,7 @@ def expand_into_vec(Prg, Field,
 AES-128, into a PRG. Seed expansion involves two steps. In the first step, CMAC
 <span>[<a href="#RFC4493" class="xref">RFC4493</a>]</span> is applied to the seed and info string to get a fresh key. In the
 second step, the fresh key is used in CTR-mode to produce a key stream for
-generating the ouutput. A fixed initialization vector (IV) is used.<a href="#section-5.2.1.1-1" class="pilcrow">¶</a></p>
+generating the output. A fixed initialization vector (IV) is used.<a href="#section-5.2.1.1-1" class="pilcrow">¶</a></p>
 <span id="name-definition-of-prg-prgblockc"></span><div id="prg-aes128">
 <figure id="figure-10">
               <div class="alignLeft art-text artwork" id="section-5.2.1.1-2.1">
@@ -2240,7 +2240,7 @@ def expand(_, seed, info, length):
     key = AES128-CMAC(seed, info)
 
     # CTR-mode encryption of the all-zero string of the desired length and using
-    a fixed, all-zero IV.
+    # a fixed, all-zero IV.
     return AES128-CTR(key, zeros(16), zeros(length))
 </pre>
 </div>

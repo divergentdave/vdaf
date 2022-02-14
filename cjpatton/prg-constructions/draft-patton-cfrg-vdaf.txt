@@ -909,7 +909,7 @@ Table of Contents
    blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
    steps.  In the first step, CMAC [RFC4493] is applied to the seed and
    info string to get a fresh key.  In the second step, the fresh key is
-   used in CTR-mode to produce a key stream for generating the ouutput.
+   used in CTR-mode to produce a key stream for generating the output.
    A fixed initialization vector (IV) is used.
 
 SEED_SIZE=16
@@ -918,7 +918,7 @@ def expand(_, seed, info, length):
     key = AES128-CMAC(seed, info)
 
     # CTR-mode encryption of the all-zero string of the desired length and using
-    a fixed, all-zero IV.
+    # a fixed, all-zero IV.
     return AES128-CTR(key, zeros(16), zeros(length))
 
          Figure 10: Definition of PRG PrgBlockCipher(Aes128).
