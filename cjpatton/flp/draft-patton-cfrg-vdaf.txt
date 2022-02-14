@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                               R.L. Barnes
-Expires: 15 August 2022                                            Cisco
+Expires: 18 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                        11 February 2022
+                                                        14 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 15 August 2022.
+   This Internet-Draft will expire on 18 August 2022.
 
 Copyright Notice
 
@@ -1825,17 +1825,33 @@ Table of Contents
 
    This section describes an FLP based on the fully linear PCP described
    in [BBCGGI19], Section 4.2.  We begin with an overview of their proof
-   system (Section 8.1) and specify the construction in Section 8.3.
+   system in Section 8.1.  The FLP specify the construction in
+   Section 8.3.
+
+      OPEN ISSUE We're not yet sure if specifying this general-purpose
+      FLP is desirable.  It might be preferable to specify specialized
+      FLPs for each data type that we want to standardize, for two
+      reasons.  First, clear and concise specifications are likely
+      easier to write for specialized FLPs rather than the general one.
+      Second, we may end up tailoring each FLP to the data type in a way
+      that improves performance, but breaks compatibility with the
+      general-purpose FLP.
+
+      In any case, we can't make this decision until we know which data
+      types to standardize, so for now, we'll stick with the general-
+      purpose construction.  The reference implementation can be found
+      at https://github.com/cjpatton/vdaf/tree/main/poc.
 
 8.1.  Overview
 
    In the proof system of [BBCGGI19], validity is defined via an
-   arithmetic circuit evaluated over the input: If the circuit output is
-   0, then the input is deemed valid; otherwise the input is deemed
-   invalid.  Thus the high level goal of this proof system is to allow
-   the verifier to evaluate the validity circuit.  The difficulty is
-   that this computation needs to be distributed amongst multiple
-   Aggregators, each of which has only a share of the input.
+   arithmetic circuit evaluated over the input.  If the circuit output
+   is 0, then the input is deemed valid; otherwise, the input is deemed
+   invalid.  Thus the goal of the proof system is merely to allow the
+   verifier to evaluate the validity circuit over the input.  The
+   difficulty is that, in our applicaiton, this computation needs to be
+   distributed amongst multiple Aggregators, each of which has only a
+   share of the input.
 
    Suppose for a moment that the validity circuit C is affine, meaning
    its only operations are addition and multiplication-by-constant.  In
@@ -1844,19 +1860,18 @@ Table of Contents
    input x is valid, each Aggregator could evaluate C on its share of x
    locally, broadcast the output share to its peers, then combine the
    output shares locally to recover C(x).  This is because for any
-   sequence of SHARES additive shares of the input:
+   SHARES-way secret sharing of x:
 
-   C(input_share[0] + ... + input_share[SHARES-1]) =
-       C(input_share[0]) + ... + C(input_share[SHARES-1])
+   C(x_share[0] + ... + x_share[SHARES-1]) =
+       C(x_share[0]) + ... + C(x_share[SHARES-1])
 
    (Note that, for this equality to hold, it may be necessary to scale
    any constants in the circuit by SHARES.)  However this is not the
-   case if C is not affine (i.e., it contains at least one
-   multiplication operation in which neither operand is a constant).
-   Thus the primary purpose of the proof in the proof system of
-   [BBCGGI19] is to allow the (distributed) verifier to compute the non-
-   affine operations using only linear operations on (its share of) the
-   input and proof.
+   case if C is not-affine (i.e., it contains at least one
+   multiplication gate whose operands are non-constant).  The primary
+   purpose of the proof in the proof system of [BBCGGI19] is to allow
+   the (distributed) verifier to compute the non-affine operations using
+   only linear operations on (its share of) the input and proof.
 
    The proof system is restricted to validity circuits that exhibit a
    special structure.  Specifically, an arithmetic circuit with
@@ -1867,50 +1882,52 @@ Table of Contents
 
    As an illustrative example, consider a validity circuit C that
    recognizes the set L = set([0], [1]).  That is, C takes as input a
-   length-1 vector input and returns 0 if input[0] in range(2) and
-   outputs something else otherwise.  This circuit can be expressed as
-   the following degree-2 polynomial:
+   length-1 vector x and returns 0 if x[0] in range(2) and outputs
+   something else otherwise.  This circuit can be expressed as the
+   following degree-2 polynomial:
 
-   C(x) = (x - 1) * x = x^2 - x
+   C(x[0]) = (x[0] - 1) * x[0] = x[0]^2 - x[0]
 
-   This polynomial recognizes L because x^2 = x is only true for x in
-   range(2).  Notice that the polynomial involves a non-affine operation
-   (x^2).  In order to apply [BBCGGI19], Theorem 4.3, the circuit would
-   be rewritten in terms of a gadget that subsumes this non-affine
-   operation.  For example, the gadget might be multiplication:
+   This polynomial recognizes L because x[0]^2 = x[0] is only true if
+   x[0] == 0 or x[0] == 1.  Notice that the polynomial involves a non-
+   affine operation (x[0]^2).  In order to apply [BBCGGI19], Theorem
+   4.3, the circuit would be rewritten in terms of a gadget that
+   subsumes this non-affine operation.  For example, if the gadget is
+   multiplication:
 
    Mul(left, right) = left * right
 
-   And the validity circuit would be rewritten like so:
+   then the validity circuit would be rewritten like so:
 
-   C(x) = Mul(x, x) - x
+   C(x[0]) = Mul(x[0], x[0]) - x[0]
 
    The proof system of [BBCGGI19] allows the verifier to evaluate each
-   instance of the gadget (i.e., Mul(x, x) in our example) using a
+   instance of the gadget (i.e., Mul(x[0], x[0]) in our example) using a
    linear function of the input and proof.
 
-   The validity proof for an input x is constructed roughly as follows.
+   The validity proof for input x is constructed roughly as follows.
    Let C be the gadget circuit and suppose the gadget is arity-L (i.e.,
    it has L input wires.).  Let wire[j-1,k-1] denote the value of the
    jth wire of the kth call to the gadget during the evaluation of C(x).
    Suppose there are M such calls and fix distinct field elements
    alpha[0], ..., alpha[M-1].
 
-   The prover constructs from wire and alpha[0], ..., alpha[M-1] a
-   polynomial that, when evaluated at alpha[k-1], produces the output of
-   the kth call to the gadget.  Polynomial evaluation is linear, which
-   means that, in the distributed setting, the Client can disseminate
-   additive shares of the gadget polynomial that the Aggregators then
-   use to compute additive shares of each gadget output.  This allows
-   each Aggregator to compute its share of C(x) locally using only its
-   share of x and the gadget polynomial.
+   The prover constructs from wire and alpha a polynomial that, when
+   evaluated at alpha[k-1], produces the output of the kth call to the
+   gadget.  Let us call this the "gadget polynomial".  Polynomial
+   evaluation is linear, which means that, in the distributed setting,
+   the Client can disseminate additive shares of the gadget polynomial
+   that the Aggregators then use to compute additive shares of each
+   gadget output.  This allows each Aggregator to compute its share of
+   C(x) locally.
 
    There is one more wrinkle, however.  It is still possible for a
    malicious prover to produce a gadget polynomial that would result in
    C(x) being computed incorrectly.  To prevent this, the verifier (or
-   the Aggregators in the distributed setting) perform a probabilistic
+   the Aggregators in the distributed setting) performs a probabilistic
    test to check that the gadget polynomial is well-formed.  This test
-   is described in detail in Section 8.3.
+   and the procedure for constructiong the gadget polynomial are
+   described in detail in Section 8.3.
 
 8.1.1.  Extensions
 
@@ -1925,41 +1942,49 @@ Table of Contents
    vectors for which each element is either 1 or 0.  A deterministic
    circuit could be constructed for this language, but it would involve
    a large number of multiplications that would result in a large proof.
-   (See the discussion in [BBCGGI19], Section 5.2).  A much shorter
-   proof can be constructed for the following randomized circuit:
+   (See the discussion in [BBCGGI19], Section 5.2 for details).  A much
+   shorter proof can be constructed for the following randomized
+   circuit:
 
    C(inp, r) = r * Poly(inp[0]) + ... + r^N * Poly(inp[N-1])
 
    (Note that this is a a special case of [BBCGGI19], Theorem 5.2.)
    Here x is the length-N input and r is a random field element.  The
    gadget circuit Poly is the "range-check" polynomial described above,
-   i.e., Poly(x) = x^2 - x.  The idea is that, if each inp[j] is in
-   range(2), then the circuit will evaluate to 0 regardless of the value
-   of r; but if inp[j] is not in range(2) for some j, the output will be
-   non-0 with high probability.
+   i.e., Poly(x) = x^2 - x.  The idea is that, if inp is valid (i.e.,
+   each inp[j] is 1 or 0), then the circuit will evaluate to 0
+   regardless of the value of r; but if inp[j] is not in range(2) for
+   some j, the output will be non-0 with high probability.
 
    The second extension implemented by our FLP is to allow the validity
    circuit to contain multiple gadget types.  (Note that this
    generalization was first suggested in [BBCGGI19], Remark 4.5.)  For
-   example, the following circuit is allowed, where Mul and Poly are
+   example, the following circuit is allowed, where Mul and Poly are the
    gadgets defined above (the input has length N+1):
 
    C(inp, r) = r * Poly(inp[0]) + ... + r^N * Poly(inp[N-1]) + \
-               2^0 * in p[0]    + ... + 2^(N-1) * inp[N-1]   - \
+               2^0 * inp[0]     + ... + 2^(N-1) * inp[N-1]   - \
                Mul(inp[N], inp[N])
 
-   Finally, in [BBCGGI19], Theorem 4.3, the fixed points alpha[0], ...,
-   alpha[M-1] are not specified, other than to require that the points
-   are all distinct.  In this document, the fixed points are chosen so
-   that the gadget polynomial can be constructed efficiently using the
-   Cooley-Tukey FFT ("Fast Fourier Transform") algorithm.  (Note that
-   this has implications for how the finite field is chosen.)
+   (This circuit checks two things.  First, the first line checks that
+   inp[:N] is a vector of 0s and 1s.  Second, the second and third lines
+   check that inp[N] is a perfect square, and that its square root is
+   equal to the N-bit integer encoded by inp[:N].)
+
+   Finally, [BBCGGI19], Theorem 4.3 makes no restrictions on the choice
+   of the fixed points alpha[0], ..., alpha[M-1], other than to require
+   that the points are all distinct.  In this document, the fixed points
+   are chosen so that the gadget polynomial can be constructed
+   efficiently using the Cooley-Tukey FFT ("Fast Fourier Transform")
+   algorithm.  (Note that this has implications for how the finite field
+   is chosen.)
 
 8.2.  Validity Circuits
 
    The FLP described in Section 8.3 is defined in terms of a validity
-   circuit Valid that implements the interface described here.  The
-   parameters defined by each Valid are as follows:
+   circuit Valid that implements the interface described here.
+
+   A concrete Valid defines the following parameters:
 
          +==============+=======================================+
          | Parameter    | Description                           |
@@ -1983,13 +2008,11 @@ Table of Contents
                   Table 4: Validity circuit parameters.
 
    Each gadget G in GADGETS defines a parameter DEGREE that specifies
-   the circuit's "arithmetic degree".  The arithmetic degree of a
-   circuit is the defined to be the degree of the polynomial that
-   computes it.  For example, the Mul circuit in Section 8.1 is defined
-   by the polynomial Mul(x) = x * x, which has degree 2.  Hence, the
-   arithmetic degree of this gadget is 2.
-
-   Each gadget also defines a parameter ARITY that specifies the
+   the circuit's "arithmetic degree".  This is defined to be the degree
+   of the polynomial that computes it the circuit.  For example, the Mul
+   circuit in Section 8.1 is defined by the polynomial Mul(x) = x * x,
+   which has degree 2.  Hence, the arithmetic degree of this gadget is
+   2.  Each gadget also defines a parameter ARITY that specifies the
    circuit's arity.
 
    A concrete Valid provides the following methods for encoding a
@@ -2002,7 +2025,8 @@ Table of Contents
    *  Circuit.truncate(input: Vec[Field]) -> Vec[Field] returns a vector
       of length OUTPUT_LEN representing an aggregatable output.
 
-   The following class methods are derived for each concrete Valid:
+   Finally, the following class methods are derived for each concrete
+   Valid:
 
    def prove_rand_len(Valid):
        return sum(map(lambda G: G.ARITY, Valid.GADGETS))
@@ -2023,55 +2047,18 @@ Table of Contents
            length += G.ARITY + 1
        return length
 
+      TODO These methods were written by hand.  Re-generate them from
+      the reference implementantion.
+
 8.3.  Construction
 
-      OPEN ISSUE This section gives only a high-level description of the
-      FLP; a more precise specification FLP is needed.  However, we're
-      not yet sure if specifying this general-purpose FLP is desirable.
-      It might be preferable to specify specialized FLPs for each data
-      type that we want to standardize, for two reasons.  First, clear
-      and concise specifications are likely easier to write for
-      specialized FLPs rather than the general one.  Second, we may end
-      up tailoring each FLP to the data type in a way that improves
-      performance, but breaks compatibility with the general-purpose
-      FLP.
-
-      In any case, we can't make this decision until we know which data
-      types to standardize, so for now, we'll stick with the general-
-      purpose construction.  The reference implementation can be found
-      at https://github.com/cjpatton/vdaf/tree/main/poc.
-
    This section specifies FlpGeneric, an implementation of the Flp
-   interface (Section 6.1).  It has as its only generic parameter a
-   validity circuit Valid (Section 8.2).  Its associated constants and
-   types required by the Flp interface are defined in Table 5.  The
-   required methods are defined in the remaining subsections.
+   interface (Section 6.1).  It has as a generic parameter a validity
+   circuit Valid as defined in Section 8.2.
 
-        +================+========================================+
-        | Parameter      | Value                                  |
-        +================+========================================+
-        | PROVE_RAND_LEN | Valid.prove_rand_len()                 |
-        +----------------+----------------------------------------+
-        | QUERY_RAND_LEN | Valid.query_rand_len()                 |
-        +----------------+----------------------------------------+
-        | JOINT_RAND_LEN | Valid.RAND_LEN                         |
-        +----------------+----------------------------------------+
-        | INPUT_LEN      | Valid.INPUT_LEN                        |
-        +----------------+----------------------------------------+
-        | OUTPUT_LEN     | Valid.OUTPUT_LEN                       |
-        +----------------+----------------------------------------+
-        | PROOF_LEN      | Valid.proof_len() (see Section 8.2)    |
-        +----------------+----------------------------------------+
-        | VERIFIER_LEN   | Valid.verifier_len() (see Section 8.2) |
-        +----------------+----------------------------------------+
-        | Measurement    | Valid.Measurement                      |
-        +----------------+----------------------------------------+
-        | Field          | Valid.Field                            |
-        +----------------+----------------------------------------+
-
-                     Table 5: Parameters of FlpGeneric.
-
-   In the remainder, we will use the following constants:
+   The parameters required by the Flp interface are below defined in
+   Table 5.  The required methods are specified in the remaining
+   subsections.  These subsections refer to the following constants:
 
    *  Let H = len(Valid.GADGETS)
 
@@ -2086,76 +2073,101 @@ Table of Contents
       -  Let P_i = next_power_of_2(M_i+1) ` Let alpha_i =
          Field.gen()^(Field.GEN_ORDER / P_i)
 
+
+
+       +================+==========================================+
+       | Parameter      | Value                                    |
+       +================+==========================================+
+       | PROVE_RAND_LEN | Valid.prove_rand_len() (see Section 8.2) |
+       +----------------+------------------------------------------+
+       | QUERY_RAND_LEN | Valid.query_rand_len() (see Section 8.2) |
+       +----------------+------------------------------------------+
+       | JOINT_RAND_LEN | Valid.RAND_LEN                           |
+       +----------------+------------------------------------------+
+       | INPUT_LEN      | Valid.INPUT_LEN                          |
+       +----------------+------------------------------------------+
+       | OUTPUT_LEN     | Valid.OUTPUT_LEN                         |
+       +----------------+------------------------------------------+
+       | PROOF_LEN      | Valid.proof_len() (see Section 8.2)      |
+       +----------------+------------------------------------------+
+       | VERIFIER_LEN   | Valid.verifier_len() (see Section 8.2)   |
+       +----------------+------------------------------------------+
+       | Measurement    | Valid.Measurement                        |
+       +----------------+------------------------------------------+
+       | Field          | Valid.Field                              |
+       +----------------+------------------------------------------+
+
+                   Table 5: FLP Parameters of FlpGeneric.
+
 8.3.1.  Proof Generation
 
    On input inp, prove_rand, and joint_rand, the proof is computed as
    follows:
 
-   1.  For each i in [H] create an empty table W_i.
+   1.  For each i in [H] create an empty table wire_i.
 
-   2.  Partition the prover randomness prove_rand into subvectors S_1,
-       ..., S_H where len(s_i) == L_i for all i in [H].  These are the
-       called the "wire seeds".
+   2.  Partition the prover randomness prove_rand into subvectors
+       seed_1, ..., seed_H where len(s_i) == L_i for all i in [H].  Let
+       us call these the the "wire seeds" of each gadget.
 
-   3.  Evaluate Valid on input of inp, joint_rand, recording the inputs
-       of each gadget in the corresponding table.  Specifically, for
-       every i in [H], set W_i[j-1,k-1] to the value on the jth wire
-       into the kth call to G_i.
+   3.  Evaluate Valid on input of inp and joint_rand, recording the
+       inputs of each gadget in the corresponding table.  Specifically,
+       for every i in [H], set wire_i[j-1,k-1] to the value on the jth
+       wire into the kth call to G_i.
 
    4.  Compute the "wire polynomials".  That is, for every i in [H] and
        j in [L_i], construct poly_wire_i[j-1], the jth wire polynomial
        for the ith gadget, as follows:
 
-       *  Let wire = [S_i[j-1], W_i[j,0], ..., W_i[j,M_i-1]].
+       *  Let w = [seed_i[j-1], wire_i[j,0], ..., wire_i[j,M_i-1]].
 
-       *  Let padded_wire = wire + padding, where padding is the all-
-          zero vector of length P_i - len(wire).
+       *  Let padded_w = w + padding, where padding is the all-zero
+          vector of length P_i - len(w).
 
-       *  Let F be the lowest degree polynomial for which F(alpha_i^k)
-          == padded_wire[k] for all k in [P_i].
-
-       *  Set poly_wire_i[j-1] to F.
+       *  Let poly_wire_i[j-1] be the lowest degree polynomial for which
+          poly_wire_i[j-1](alpha_i^k) == padded_w[k] for all k in [P_i].
 
    5.  Compute the "gadget polynomials".  That is, for every i in [H]:
 
        *  Let poly_gadget_i = G_i(poly_wire_i[0], ..., poly_wire_i[L_i-
           1]).  That is, evaluate the circuit G_i on the wire
           polynomials for the ith gadget.  (Arithmetic is in the ring of
-          polynomials over Field.)
+          polynomials over Validity.Field.)
 
-   The proof is the vector proof = S_1 + T_1 + ... + S_H + T_H, where
-   T_i is the vector of coefficients of poly_gadget_i for each i in [H].
+   The proof is the vector proof = seed_1 + coeff_1 + ... + seed_H +
+   coeff_H, where coeff_i is the vector of coefficients of poly_gadget_i
+   for each i in [H].
 
 8.3.2.  Query Generation
 
    On input of inp, proof, query_rand, and joint_rand, the verifier
    message is generated as follows:
 
-   1.  For every i in [H] create an empty table W_i.
+   1.  For every i in [H] create an empty table wire_i.
 
-   2.  Partition proof into the subvectors S_1, T_1, ..., S_H, T_H
-       defined in Section 8.3.1.
+   2.  Partition proof into the subvectors seed_1, coeff_1, ..., seed_H,
+       coeff_H defined in Section 8.3.1.
 
-   3.  Evaluate Valid on input of inp, joint_rand, recording the inputs
-       of each gadget in the corresponding table.  This step is similar
-       to the prover's step (3.) except the verifier does not evaluate
-       the gadgets.  Instead, it computes the output of the kth call to
-       G_i by evaluating poly_gadget_i(alpha_i^k).  Let v denote the
-       output of the circuit evaluation.
+   3.  Evaluate Valid on input of inp and joint_rand, recording the
+       inputs of each gadget in the corresponding table.  This step is
+       similar to the prover's step (3.) except the verifier does not
+       evaluate the gadgets.  Instead, it computes the output of the kth
+       call to G_i by evaluating poly_gadget_i(alpha_i^k).  Let v denote
+       the output of the circuit evaluation.
 
    4.  Compute the wire polynomials just as in the prover's step (4.).
 
    5.  Compute the tests for well-formedness of the gadget polynomials.
        For every i in [H]:
 
-       *  Let t = query_rand[i] and check if t^(P_i) == 1.  If so, then
+       *  Set t = query_rand[i] and check if t^(P_i) == 1.  If so, then
           raise ERR_ABORT and halt.  (This prevents the verifier from
           inadvertently leaking a gadget output in the verifier
           message.)
 
        *  Let y_i = poly_gadget_i(t).
 
-       *  For each j in [L_i] let x_i[j-1] = poly_wire_i[j-1](t).
+       *  For each j in range(L_i) let x_i[j-1] = poly_wire_i[j-1](t).
 
    The verifier message is the vector verifier = [v] + x_1 + [y_1] + ...
    + x_H + [y_H].
@@ -2174,7 +2186,7 @@ Table of Contents
        *  Let z = G_i(x_i).  That is, evaluate the circuit G_i on x_i
           and set z to the output.
 
-       *  Let w_ii == (z != y_i), then return False and halt.
+       *  If z != y_i, then return False and halt.
 
    3.  Return True if v == 0 and False otherwise.
 
