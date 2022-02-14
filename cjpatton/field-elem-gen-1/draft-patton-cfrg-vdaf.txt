@@ -895,9 +895,9 @@ Table of Contents
 
    Each Prg has two derived class methods.  The first is used to derive
    a fresh seed from an existing one.  The second is used to compute a
-   sequence of pseudorandom field elements froma pseudorandom byte
-   string.  This method used is based on the hash_to_field algorithm
-   described in [I-D.draft-irtf-cfrg-hash-to-curve].
+   sequence of pseudorandom field elements using an algorithm based on
+   the hash_to_field algorithm described in
+   [I-D.draft-irtf-cfrg-hash-to-curve].
 
    # Derive a new seed.
    def derive(Prg, seed: bytes, info: bytes) -> bytes:
