@@ -795,7 +795,7 @@ Table of Contents
       field element as a byte string.
 
    *  EXPANDED_SIZE: Unsigned is the number of pseudorandom bytes that
-      are sampled when per field element when expanding a seed into a
+      are sampled per field element when expanding a seed into a
       sequence of field elements (see Section 5.2).
 
          CP It might be helpful to specify valid ranges for
