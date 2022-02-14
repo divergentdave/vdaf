@@ -796,6 +796,10 @@ Table of Contents
       are sampled when per field element when expanding a seed into a
       sequence of field elements (see Section 5.2).
 
+         CP It might be helpful to specify valid ranges for
+         EXPANDED_SIZE.  Perhaps it should be ENCODED_SIZE <=
+         EXPANDED_SIZE < k + ENCODED_SIZE for some k?
+
    A concrete Field also implements the following class methods:
 
    *  Field.zeros(length: Unsigned) -> output: Vec[Field] returns a

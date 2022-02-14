@@ -2064,9 +2064,16 @@ parameters:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 as a byte string.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-5.1-2.2">
-            <code>EXPANDED_SIZE: Unsigned</code> is the number of pseudorandom bytes that are sampled
+            <p id="section-5.1-2.2.1"><code>EXPANDED_SIZE: Unsigned</code> is the number of pseudorandom bytes that are sampled
 when per field element when expanding a seed into a sequence of field elements
-(see <a href="#prg" class="xref">Section 5.2</a>).<a href="#section-5.1-2.2" class="pilcrow">¶</a>
+(see <a href="#prg" class="xref">Section 5.2</a>).<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-5.1-2.2.2.1">
+                <p id="section-5.1-2.2.2.1.1">CP It might be helpful to specify valid ranges for <code>EXPANDED_SIZE</code>. Perhaps
+it should be <code>ENCODED_SIZE &lt;= EXPANDED_SIZE &lt; k + ENCODED_SIZE</code> for some
+<code>k</code>?<a href="#section-5.1-2.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
 </li>
         </ul>
 <p id="section-5.1-3">A concrete <code>Field</code> also implements the following class methods:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
