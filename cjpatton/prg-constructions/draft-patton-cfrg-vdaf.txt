@@ -789,6 +789,8 @@ Table of Contents
    field elements are represented by a class Field with the following
    associated parameters:
 
+   *  MODULUS: Unsigned is the prime modulus that defines the field.
+
    *  ENCODED_SIZE: Unsigned is the number of bytes used to encode a
       field element as a byte string.
 
@@ -813,7 +815,8 @@ Table of Contents
    an unsigned integer into a field element:
 
    *  Field(integer: Unsigned) returns integer represented as a field
-      element.
+      element.  If integer >= Field.MODULUS, then integer is first
+      reduced mdoulo Field.MODULUS.
 
    Finally, each concrete Field has two derived class methods, one for
    encoding a vector of field elements as a byte string and another for
@@ -884,8 +887,7 @@ Table of Contents
 
    Each Prg has two derived class methods.  The first is used to derive
    a fresh seed from an existing one.  The second is used to compute a
-   sequence of pseudorandom field elements froma pseudorandom byte
-   string.
+   sequence of pseudorandom field elements.
 
    # Derive a new seed.
    def derive(Prg, seed: bytes, info: bytes) -> bytes:
@@ -909,7 +911,7 @@ Table of Contents
    blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
    steps.  In the first step, CMAC [RFC4493] is applied to the seed and
    info string to get a fresh key.  In the second step, the fresh key is
-   used in CTR-mode to produce a key stream for generating the output.
+   used in CTR-mode to produce a key stream for generating the ouutput.
    A fixed initialization vector (IV) is used.
 
 SEED_SIZE=16
@@ -918,7 +920,7 @@ def expand(_, seed, info, length):
     key = AES128-CMAC(seed, info)
 
     # CTR-mode encryption of the all-zero string of the desired length and using
-    # a fixed, all-zero IV.
+    a fixed, all-zero IV.
     return AES128-CTR(key, zeros(16), zeros(length))
 
          Figure 10: Definition of PRG PrgBlockCipher(Aes128).
