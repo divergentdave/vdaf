@@ -2060,8 +2060,11 @@ elements are represented by a class <code>Field</code> with the following associ
 parameters:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-2.1">
+            <code>MODULUS: Unsigned</code> is the prime modulus that defines the field.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-5.1-2.2">
             <code>ENCODED_SIZE: Unsigned</code> is the number of bytes used to encode a field element
-as a byte string.<a href="#section-5.1-2.1" class="pilcrow">¶</a>
+as a byte string.<a href="#section-5.1-2.2" class="pilcrow">¶</a>
 </li>
         </ul>
 <p id="section-5.1-3">A concrete <code>Field</code> also implements the following class methods:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
@@ -2088,7 +2091,9 @@ field element <code>elem</code>.<a href="#section-5.1-6.1" class="pilcrow">¶</a
 unsigned integer into a field element:<a href="#section-5.1-7" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-8.1">
-            <code>Field(integer: Unsigned)</code> returns <code>integer</code> represented as a field element.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
+            <code>Field(integer: Unsigned)</code> returns <code>integer</code> represented as a field element.
+If <code>integer &gt;= Field.MODULUS</code>, then <code>integer</code> is first reduced mdoulo
+<code>Field.MODULUS</code>.<a href="#section-5.1-8.1" class="pilcrow">¶</a>
 </li>
         </ul>
 <p id="section-5.1-9">Finally, each concrete <code>Field</code> has two derived class methods, one for encoding
