@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-13T00:05:19.614289+00:00",
+  "timestamp": "2022-02-15T00:04:45.297604+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -243,7 +243,7 @@
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-08T18:52:12Z",
+      "updatedAt": "2022-02-14T21:40:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -357,6 +357,13 @@
           "body": "Alright, this is super neat. Me and @armfazh are going to work on benchmarking (in libprio) rejection sampling vs pad-then-reduce (a la hash_to_field) vs @schoppmp's algorithm. We should have this done today. \r\n\r\nIn the meantime, @schoppmp: Would you mind working on an alternative PR to #25 that specifies your algorithm?\r\n\r\nEDIT: By the way, I think it would make sense to fix the same \"security parameter\" (say, 64) for all fields, and possibly exclude fields that are too small for this sampling method to be statistically close to uniform (e.g., less than 64 bits). See also #22.",
           "createdAt": "2022-02-08T18:20:25Z",
           "updatedAt": "2022-02-08T18:52:12Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "I've implemented both approaches PRs (linked to this issue).",
+          "createdAt": "2022-02-14T21:40:23Z",
+          "updatedAt": "2022-02-14T21:40:23Z"
         }
       ]
     },
@@ -2153,25 +2160,33 @@
       "id": "PR_kwDOGKuqOc4yNMJN",
       "title": "Specify a method for deriving pseudorandom field elements",
       "url": "https://github.com/cjpatton/vdaf/pull/25",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Closes #13.",
       "createdAt": "2022-02-08T01:15:41Z",
-      "updatedAt": "2022-02-09T01:26:08Z",
+      "updatedAt": "2022-02-14T20:28:15Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "a5af1245c4b1f4b3ffe0bd536ef8f4f6c3936466",
+      "baseRefOid": "d5baf89e87695569f4dbf8d79d9e008fcfc9e79c",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prg",
-      "headRefOid": "886bb5ea3786667bb0b4146a7e82645c5d4f8630",
-      "closedAt": null,
+      "headRefOid": "24998534b894de7a5aeca6bd7764a81608384225",
+      "closedAt": "2022-02-14T20:28:15Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Re-opening this PR with a new base.",
+          "createdAt": "2022-02-14T20:28:15Z",
+          "updatedAt": "2022-02-14T20:28:15Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -2212,21 +2227,187 @@
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "Specification of the \"generic FLP\", an extension of Theorem 4.3 from [BBCGGI19]. This proof system is implemented by https://github.com/abetterinternet/libprio-rs/blob/main/src/pcp.rs.\r\n\r\n2022/2/10: This PR is marked as \"draft\" for now, as it'll need a few more clean-up passes before it's ready to merge. I wanted to have something up early so @chris-wood has something to work off of for the reference implementation.",
+      "body": "Specification of the \"generic FLP\", an extension of Theorem 4.3 from [BBCGGI19]. This proof system is implemented by https://github.com/abetterinternet/libprio-rs/blob/main/src/pcp.rs.\r\n\r\n2022/2/10: This PR is marked as \"draft\" for now, as it'll need a few more clean-up passes before it's ready to merge. I wanted to have something up early so @chris-wood has something to work off of for the reference implementation.\r\n2022/23/14: Ready to merge.",
       "createdAt": "2022-02-11T02:25:06Z",
-      "updatedAt": "2022-02-11T02:28:22Z",
+      "updatedAt": "2022-02-14T16:58:59Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "3ce95c78de509a7db603ca549509798122cbd220",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/flp",
-      "headRefOid": "37bc9024814f14c9a673b74f812be02e55a27f57",
+      "headRefOid": "4b8052759c1333ef846ef186981f98e1364fdecf",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 28,
+      "id": "PR_kwDOGKuqOc4y0Ao1",
+      "title": "Specify two instantiations of `Prg`",
+      "url": "https://github.com/cjpatton/vdaf/pull/28",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Specifies two PRGs. The first is an efficient construction based on\r\nAES128. While pretty straight-forward, this scheme uses CMAC, which is\r\nnot widely used. The The second is a more traditional scheme based on\r\nHKDF.",
+      "createdAt": "2022-02-14T20:33:31Z",
+      "updatedAt": "2022-02-14T22:09:53Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/prg-constructions",
+      "headRefOid": "6d494484257707b68fddabbae5ee3366db9a7c86",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc40lRkI",
+          "commit": {
+            "abbreviatedOid": "7b4e1f9"
+          },
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-14T21:05:30Z",
+          "updatedAt": "2022-02-14T21:07:15Z",
+          "comments": [
+            {
+              "originalPosition": 11,
+              "body": "```suggestion\r\ngenerating the output. A fixed initialization vector (IV) is used.\r\n```",
+              "createdAt": "2022-02-14T21:05:30Z",
+              "updatedAt": "2022-02-14T21:07:15Z"
+            },
+            {
+              "originalPosition": 20,
+              "body": "```suggestion\r\n    # a fixed, all-zero IV.\r\n```",
+              "createdAt": "2022-02-14T21:05:55Z",
+              "updatedAt": "2022-02-14T21:07:15Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 29,
+      "id": "PR_kwDOGKuqOc4y0B4C",
+      "title": "Use \"pad-then-reduce\" method for generating field elements",
+      "url": "https://github.com/cjpatton/vdaf/pull/29",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #13 by taking @armfazh' suggestion.\r\n\r\nSpecifies an algorithm for mapping a pseudorandom byte string to a\r\nvector of field elements. This method is based on the \"hash_to_field\"\r\nalgorithm from draft-irtf-cfrg-hash-to-curve-13.",
+      "createdAt": "2022-02-14T20:39:05Z",
+      "updatedAt": "2022-02-14T21:28:31Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/field-elem-gen-1",
+      "headRefOid": "159d7a217560682d1a2c249fe5c89b555014dfeb",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc40lUK4",
+          "commit": {
+            "abbreviatedOid": "6cdf917"
+          },
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-14T21:17:14Z",
+          "updatedAt": "2022-02-14T21:18:13Z",
+          "comments": [
+            {
+              "originalPosition": 20,
+              "body": "... The second one generates a sequence of field elements from a pseudorandom byte string. Such a generation is based on ...",
+              "createdAt": "2022-02-14T21:17:14Z",
+              "updatedAt": "2022-02-14T21:18:13Z"
+            },
+            {
+              "originalPosition": 5,
+              "body": "```suggestion\r\n  per field element when expanding a seed into a sequence of field elements\r\n```",
+              "createdAt": "2022-02-14T21:17:40Z",
+              "updatedAt": "2022-02-14T21:18:13Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc40lWor",
+          "commit": {
+            "abbreviatedOid": "6cdf917"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-14T21:28:10Z",
+          "updatedAt": "2022-02-14T21:28:11Z",
+          "comments": [
+            {
+              "originalPosition": 20,
+              "body": "Done",
+              "createdAt": "2022-02-14T21:28:10Z",
+              "updatedAt": "2022-02-14T21:28:11Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 30,
+      "id": "PR_kwDOGKuqOc4y0PEW",
+      "title": "Use \"borrow-then-reduce\" method for generating field elements",
+      "url": "https://github.com/cjpatton/vdaf/pull/30",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #13 by taking @schoppmp's suggestion.\r\nAlternative to #29.\r\n\r\nSpecifies an algorithm for a mapping pseudorandom byte string to a\r\nvector of field elements. The algorithm was ported from google's IDPF\r\nimplementation.",
+      "createdAt": "2022-02-14T21:39:21Z",
+      "updatedAt": "2022-02-14T21:46:55Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/field-elem-gen-2",
+      "headRefOid": "734b67651a3aea4156e840f12bbb1e21e0f0a81b",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc40la8c",
+          "commit": {
+            "abbreviatedOid": "734b676"
+          },
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-14T21:46:55Z",
+          "updatedAt": "2022-02-14T21:46:55Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
