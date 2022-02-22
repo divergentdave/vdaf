@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-15T00:04:45.297604+00:00",
+  "timestamp": "2022-02-22T00:05:45.987939+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -2229,7 +2229,7 @@
       "labels": [],
       "body": "Specification of the \"generic FLP\", an extension of Theorem 4.3 from [BBCGGI19]. This proof system is implemented by https://github.com/abetterinternet/libprio-rs/blob/main/src/pcp.rs.\r\n\r\n2022/2/10: This PR is marked as \"draft\" for now, as it'll need a few more clean-up passes before it's ready to merge. I wanted to have something up early so @chris-wood has something to work off of for the reference implementation.\r\n2022/23/14: Ready to merge.",
       "createdAt": "2022-02-11T02:25:06Z",
-      "updatedAt": "2022-02-14T16:58:59Z",
+      "updatedAt": "2022-02-21T19:35:20Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "3ce95c78de509a7db603ca549509798122cbd220",
