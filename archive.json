@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-22T00:05:45.987939+00:00",
+  "timestamp": "2022-02-24T00:06:07.208275+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -243,7 +243,7 @@
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-14T21:40:23Z",
+      "updatedAt": "2022-02-23T17:45:37Z",
       "closedAt": null,
       "comments": [
         {
@@ -364,6 +364,13 @@
           "body": "I've implemented both approaches PRs (linked to this issue).",
           "createdAt": "2022-02-14T21:40:23Z",
           "updatedAt": "2022-02-14T21:40:23Z"
+        },
+        {
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "body": "A comparison of three methods can be found at: https://github.com/abetterinternet/libprio-rs/compare/main...armfazh:prg/bench?expand=1\r\n\r\n|Method|N=10|N=100|N=1000|\r\n|:---|---:|---:|---:|\r\n| Rejection Sampling | 5.2 |  7.8 |  38.1 |\r\n| Pad-and-reduce     | 4.8 | 15.1 | 115.8 |\r\n| Borrow-and-reduce  | 4.5 | 12.7 |  83.7 |\r\n\r\n\\* Timings are \u00b5s measured in Core i7-8650U CPU @ 1.90GHz.\r\n\r\n\r\n",
+          "createdAt": "2022-02-23T17:45:37Z",
+          "updatedAt": "2022-02-23T17:45:37Z"
         }
       ]
     },
@@ -2381,7 +2388,7 @@
       "labels": [],
       "body": "Closes #13 by taking @schoppmp's suggestion.\r\nAlternative to #29.\r\n\r\nSpecifies an algorithm for a mapping pseudorandom byte string to a\r\nvector of field elements. The algorithm was ported from google's IDPF\r\nimplementation.",
       "createdAt": "2022-02-14T21:39:21Z",
-      "updatedAt": "2022-02-14T21:46:55Z",
+      "updatedAt": "2022-02-23T14:30:04Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
@@ -2406,6 +2413,44 @@
           "createdAt": "2022-02-14T21:46:55Z",
           "updatedAt": "2022-02-14T21:46:55Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Hfoi",
+          "commit": {
+            "abbreviatedOid": "734b676"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-23T14:25:28Z",
+          "updatedAt": "2022-02-23T14:30:04Z",
+          "comments": [
+            {
+              "originalPosition": 30,
+              "body": "This can be (length-1) * L + P, since the first sample is taken by reducing r directly, and we don't need to \"fill up\" r at the last iteration.",
+              "createdAt": "2022-02-23T14:25:28Z",
+              "updatedAt": "2022-02-23T14:30:04Z"
+            },
+            {
+              "originalPosition": 40,
+              "body": "This reduction mod 2**P is only needed because Python uses BigInt, right? In that case it might be more efficient to first use a mask to zero out the highest L*8 bits of r, and then do the left-shift. That way we'll only ever use P bits.",
+              "createdAt": "2022-02-23T14:28:47Z",
+              "updatedAt": "2022-02-23T14:30:04Z"
+            },
+            {
+              "originalPosition": 41,
+              "body": "As written above, this is not needed in the last iteration, so we can save L random bytes.",
+              "createdAt": "2022-02-23T14:29:09Z",
+              "updatedAt": "2022-02-23T14:30:04Z"
+            },
+            {
+              "originalPosition": 36,
+              "body": "Assuming the constructor doesn't fail when r > Field.MODULUS. Maybe make the modulo reduction explicit here?",
+              "createdAt": "2022-02-23T14:29:51Z",
+              "updatedAt": "2022-02-23T14:30:04Z"
+            }
+          ]
         }
       ]
     }
