@@ -1866,12 +1866,12 @@ Table of Contents
 
    In the proof system of [BBCGGI19], validity is defined via an
    arithmetic circuit evaluated over the input: If the circuit output is
-   0, then the input is deemed valid; otherwise, the input is deemed
-   invalid.  Thus the goal of the proof system is merely to allow the
-   verifier to evaluate the validity circuit over the input.  The
-   difficulty is that, in our application, this computation needs to be
-   distributed among multiple Aggregators, each of which has only a
-   share of the input.
+   zero, then the input is deemed valid; otherwise, if the circuit
+   output is non-zero, then the input is deemed invalid.  Thus the goal
+   of the proof system is merely to allow the verifier to evaluate the
+   validity circuit over the input.  Four application (Section 6), this
+   computation is distributed among multiple Aggregators, each of which
+   has only a share of the input.
 
    Suppose for a moment that the validity circuit C is affine, meaning
    its only operations are addition and multiplication-by-constant.  In
@@ -1930,7 +1930,9 @@ Table of Contents
    (i.e., it has L input wires.).  Let wire[j-1,k-1] denote the value of
    the jth wire of the kth call to the gadget during the evaluation of
    C(x).  Suppose there are M such calls and fix distinct field elements
-   alpha[0], ..., alpha[M-1].
+   alpha[0], ..., alpha[M-1].  (We will require these points to have a
+   special property, as we'll discuss in Section 8.1.1; but for the
+   moment it is only important that they are distinct.)
 
    The prover constructs from wire and alpha a polynomial that, when
    evaluated at alpha[k-1], produces the output of the kth call to the

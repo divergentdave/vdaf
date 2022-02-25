@@ -3502,12 +3502,12 @@ is readily consumable by the CFRG.<a href="#section-8-3.1.1" class="pilcrow">¶<
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-overview-2" class="section-name selfRef">Overview</a>
         </h3>
 <p id="section-8.1-1">In the proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, validity is defined via an arithmetic
-circuit evaluated over the input: If the circuit output is 0, then the input
-is deemed valid; otherwise, the input is deemed invalid. Thus the goal of the
-proof system is merely to allow the verifier to evaluate the validity circuit
-over the input. The difficulty is that, in our application, this computation
-needs to be distributed among multiple Aggregators, each of which has only a
-share of the input.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+circuit evaluated over the input: If the circuit output is zero, then the input
+is deemed valid; otherwise, if the circuit output is non-zero, then the input is
+deemed invalid. Thus the goal of the proof system is merely to allow the
+verifier to evaluate the validity circuit over the input. Four application
+(<a href="#prio3" class="xref">Section 6</a>), this computation is distributed among multiple Aggregators, each of
+which has only a share of the input.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
 <p id="section-8.1-2">Suppose for a moment that the validity circuit <code>C</code> is affine, meaning its only
 operations are addition and multiplication-by-constant. In particular, suppose
 the circuit does not contain a multiplication gate whose operands are both
@@ -3564,7 +3564,10 @@ of the input and proof.<a href="#section-8.1-12" class="pilcrow">¶</a></p>
 the validity circuit and suppose the gadget is arity-<code>L</code> (i.e., it has <code>L</code> input
 wires.). Let <code>wire[j-1,k-1]</code> denote the value of the <code>j</code>th wire of the <code>k</code>th
 call to the gadget during the evaluation of <code>C(x)</code>. Suppose there are <code>M</code> such
-calls and fix distinct field elements <code>alpha[0], ..., alpha[M-1]</code>.<a href="#section-8.1-13" class="pilcrow">¶</a></p>
+calls and fix distinct field elements <code>alpha[0], ..., alpha[M-1]</code>. (We will
+require these points to have a special property, as we'll discuss in
+<a href="#flp-generic-overview-extensions" class="xref">Section 8.1.1</a>; but for the moment it is only important
+that they are distinct.)<a href="#section-8.1-13" class="pilcrow">¶</a></p>
 <p id="section-8.1-14">The prover constructs from <code>wire</code> and <code>alpha</code> a polynomial that, when evaluated
 at <code>alpha[k-1]</code>, produces the output of the <code>k</code>th call to the gadget. Let us
 call this the "gadget polynomial". Polynomial evaluation is linear, which means
@@ -3578,7 +3581,7 @@ incorrectly. To prevent this, the verifier (or the Aggregators in the
 distributed setting) performs a probabilistic test to check that the gadget
 polynomial is well-formed. This test and the procedure for constructing the
 gadget polynomial are described in detail in <a href="#flp-generic-construction" class="xref">Section 8.3</a>.<a href="#section-8.1-15" class="pilcrow">¶</a></p>
-<div id="extensions">
+<div id="flp-generic-overview-extensions">
 <section id="section-8.1.1">
           <h4 id="name-extensions">
 <a href="#section-8.1.1" class="section-number selfRef">8.1.1. </a><a href="#name-extensions" class="section-name selfRef">Extensions</a>
