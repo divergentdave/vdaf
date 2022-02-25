@@ -4,11 +4,11 @@
 
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
-Intended status: Informational                               R.L. Barnes
-Expires: 18 August 2022                                            Cisco
+Intended status: Informational                              R. L. Barnes
+Expires: 29 August 2022                                            Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                        14 February 2022
+                                                        25 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 August 2022.
+   This Internet-Draft will expire on 29 August 2022.
 
 Copyright Notice
 
@@ -802,6 +802,8 @@ Table of Contents
    field elements are represented by a class Field with the following
    associated parameters:
 
+   *  MODULUS: Unsigned is the prime modulus that defines the field.
+
    *  ENCODED_SIZE: Unsigned is the number of bytes used to encode a
       field element as a byte string.
 
@@ -826,7 +828,8 @@ Table of Contents
    an unsigned integer into a field element:
 
    *  Field(integer: Unsigned) returns integer represented as a field
-      element.
+      element.  If integer >= Field.MODULUS, then integer is first
+      reduced mdoulo Field.MODULUS.
 
    Finally, each concrete Field has two derived class methods, one for
    encoding a vector of field elements as a byte string and another for
@@ -911,8 +914,23 @@ Table of Contents
       derives a byte string from the given seed and info string.  The
       length of the output MUST be length.
 
-      TODO Specify a generic method for mapping the PRG output to a
-      sequence of field elements.
+   Each Prg has two derived class methods.  The first is used to derive
+   a fresh seed from an existing one.  The second is used to compute a
+   sequence of pseudorandom field elements.
+
+   # Derive a new seed.
+   def derive(Prg, seed: bytes, info: bytes) -> bytes:
+       return Prg.expand(seed, info, Prg.SEED_SIZE)
+
+   # Expand a seed into a vector of Field elements.
+   def expand_into_vec(Prg, Field,
+                       seed: Bytes,
+                       info: Bytes,
+                       length: Unsigned) -> Vec[Field]:
+       # TODO Specify a method for mapping a pseudorandom byte string
+       # to a sequence of field elemetns.
+
+                 Figure 9: Derived class methods for PRGs.
 
 5.2.1.  Constructions
 
@@ -1085,7 +1103,7 @@ Table of Contents
        # Verifier decides if the input is valid.
        return Flp.decide(verifier)
 
-                       Figure 9: Execution of an FLP.
+                      Figure 10: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(Flp,. input) always returns True.  On the other hand, if
@@ -1178,7 +1196,7 @@ Table of Contents
        verify_param = [(j, k_query_init) for j in range(Prio3.SHARES)]
        return (None, verify_param)
 
-                 Figure 10: The setup algorithm for prio3.
+                 Figure 11: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1294,7 +1312,7 @@ Table of Contents
            ))
        return input_shares
 
-             Figure 11: Input-distribution algorithm for prio3.
+             Figure 12: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
@@ -1398,7 +1416,7 @@ Table of Contents
 
        return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
-                  Figure 12: Preparation state for prio3.
+                  Figure 13: Preparation state for prio3.
 
 6.2.4.  Aggregation
 
@@ -1408,7 +1426,7 @@ Table of Contents
            agg_share = vec_add(agg_share, out_share)
        return agg_share
 
-                Figure 13: Aggregation algorithm for prio3.
+                Figure 14: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1418,7 +1436,7 @@ Table of Contents
            agg = vec_add(agg, agg_share)
        return list(map(lambda x: x.as_unsigned(), agg))
 
-         Figure 14: Computation of the aggregate result for prio3.
+         Figure 15: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1503,7 +1521,7 @@ Table of Contents
            raise ERR_DECODE
        return (verifier, k_joint_rand)
 
-              Figure 15: Helper functions required for prio3.
+              Figure 16: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1640,7 +1658,7 @@ Table of Contents
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 16: The setup algorithm for poplar1.
+                Figure 17: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1693,7 +1711,7 @@ Table of Contents
 
      return input_shares
 
-          Figure 17: The input-distribution algorithm for poplar1.
+          Figure 18: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1775,7 +1793,7 @@ Table of Contents
 
      return Field[l].encode_vec(verifier)
 
-                 Figure 18: Preparation state for poplar1.
+                 Figure 19: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1790,7 +1808,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 19: Aggregation algorithm for poplar1.
+               Figure 20: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1804,7 +1822,7 @@ Table of Contents
 
      return Field[l].encode_vec(agg)
 
-        Figure 20: Computation of the aggregate result for poplar1.
+        Figure 21: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
@@ -2355,17 +2373,14 @@ Authors' Addresses
 
    Christopher Patton
    Cloudflare, Inc.
-
    Email: cpatton@cloudflare.com
 
 
    Richard L. Barnes
    Cisco
-
    Email: rlb@ipv.sx
 
 
    Phillipp Schoppmann
    Google
-
    Email: schoppmann@google.com
