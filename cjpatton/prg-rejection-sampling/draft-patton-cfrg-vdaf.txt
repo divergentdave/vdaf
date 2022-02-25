@@ -885,14 +885,20 @@ Table of Contents
    A concrete Prg implements the following class method:
 
    *  Prg(seed: Bytes, info: Bytes, length: Unsigned) constructs an
-      instance of Prg from the given seed and info string.
+      instance of Prg from the given seed and info string.  The seed
+      MUST be of length SEED_SIZE and MUST be generated securely (i.e.,
+      it is either the output of gen_rand or a previous invocation of
+      the PRG).
 
    *  prg.next(length: Unsigned) returns the next length bytes of output
       of the PRG.
 
    Each Prg has two derived class methods.  The first is used to derive
    a fresh seed from an existing one.  The second is used to compute a
-   sequence of pseudorandom field elements.
+   sequence of pseudorandom field elements.  For each method, the seed
+   MUST be of length SEED_SIZE and MUST be generated securely (i.e., it
+   is either the output of gen_rand or a previous invocation of the
+   PRG).
 
    # Derive a new seed.
    def derive(Prg, seed: bytes, info: bytes) -> bytes:
