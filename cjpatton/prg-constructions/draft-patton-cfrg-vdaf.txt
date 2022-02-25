@@ -954,6 +954,10 @@ Table of Contents
 
       CP TODO Add this to reference implementation
 
+      OPEN ISSUE Phillipp points out that a fixed-key mode of AES may be
+      more performant (https://eprint.iacr.org/2019/074.pdf).  See
+      https://github.com/cjpatton/vdaf/issues/32 for details.
+
    Our first construction, PrgBlockCipher(Aes128), converts a
    blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
    steps.  In the first step, CMAC [RFC4493] is applied to the seed and

@@ -2315,14 +2315,21 @@ def expand_into_vec(Prg, Field,
                 <p id="section-5.2.1.1-1.1.1">CP TODO Add this to reference implementation<a href="#section-5.2.1.1-1.1.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
-<p id="section-5.2.1.1-2">Our first construction, <code>PrgBlockCipher(Aes128)</code>, converts a blockcipher, namely
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-5.2.1.1-2.1">
+                <p id="section-5.2.1.1-2.1.1">OPEN ISSUE Phillipp points out that a fixed-key mode of AES may be more
+performant (https://eprint.iacr.org/2019/074.pdf). See
+https://github.com/cjpatton/vdaf/issues/32 for details.<a href="#section-5.2.1.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+<p id="section-5.2.1.1-3">Our first construction, <code>PrgBlockCipher(Aes128)</code>, converts a blockcipher, namely
 AES-128, into a PRG. Seed expansion involves two steps. In the first step, CMAC
 <span>[<a href="#RFC4493" class="xref">RFC4493</a>]</span> is applied to the seed and info string to get a fresh key. In the
 second step, the fresh key is used in CTR-mode to produce a key stream for
-generating the output. A fixed initialization vector (IV) is used.<a href="#section-5.2.1.1-2" class="pilcrow">¶</a></p>
+generating the output. A fixed initialization vector (IV) is used.<a href="#section-5.2.1.1-3" class="pilcrow">¶</a></p>
 <span id="name-definition-of-prg-prgblockc"></span><div id="prg-aes128">
 <figure id="figure-10">
-              <div class="alignLeft art-text artwork" id="section-5.2.1.1-3.1">
+              <div class="alignLeft art-text artwork" id="section-5.2.1.1-4.1">
 <pre>
 class PrgAes128:
 
@@ -2351,9 +2358,9 @@ class PrgAes128:
               </figcaption></figure>
 </div>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.2.1.1-4.1">
-                <p id="section-5.2.1.1-4.1.1">CP: We might be able to get away with skipping the initial CMAC for some fixed
-value of info, e.g., info == "".<a href="#section-5.2.1.1-4.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-5.2.1.1-5.1">
+                <p id="section-5.2.1.1-5.1.1">CP: We might be able to get away with skipping the initial CMAC for some fixed
+value of info, e.g., info == "".<a href="#section-5.2.1.1-5.1.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </section>
