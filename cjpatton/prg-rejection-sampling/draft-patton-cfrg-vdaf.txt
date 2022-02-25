@@ -888,7 +888,7 @@ Table of Contents
       instance of Prg from the given seed and info string.  The seed
       MUST be of length SEED_SIZE and MUST be generated securely (i.e.,
       it is either the output of gen_rand or a previous invocation of
-      the PRG).
+      the PRG).  The info string is used for domain separation.
 
    *  prg.next(length: Unsigned) returns the next length bytes of output
       of the PRG.  If the seed was securely generated, the output can be

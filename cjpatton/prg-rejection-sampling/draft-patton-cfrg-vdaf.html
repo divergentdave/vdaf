@@ -2199,7 +2199,8 @@ described in <a href="#prg-constructions" class="xref">Section 5.2.1</a>.<a href
             <code>Prg(seed: Bytes, info: Bytes, length: Unsigned)</code> constructs an instance of
 <code>Prg</code> from the given seed and info string. The seed <span class="bcp14">MUST</span> be of length
 <code>SEED_SIZE</code> and <span class="bcp14">MUST</span> be generated securely (i.e., it is either the output of
-<code>gen_rand</code> or a previous invocation of the PRG).<a href="#section-5.2-6.1" class="pilcrow">¶</a>
+<code>gen_rand</code> or a previous invocation of the PRG). The info string is used for
+domain separation.<a href="#section-5.2-6.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-5.2-6.2">
             <code>prg.next(length: Unsigned)</code> returns the next <code>length</code> bytes of output of the
