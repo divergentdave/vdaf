@@ -17,11 +17,11 @@ are never seen by any server in the clear. At the same time, VDAFs allow the
 servers to detect if a malicious or misconfigured client submitted an
 input that would result in an incorrect aggregate result. 
     " name="description">
-<meta content="xml2rfc 3.12.1" name="generator">
+<meta content="xml2rfc 3.12.2" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-patton-cfrg-vdaf-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.12.1
+  xml2rfc 3.12.2
     Python 3.9.7
     appdirs 1.4.4
     ConfigArgParse 1.3
@@ -1024,7 +1024,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Patton, et al.</td>
-<td class="center">Expires 18 August 2022</td>
+<td class="center">Expires 29 August 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1037,12 +1037,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-patton-cfrg-vdaf-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-02-14" class="published">14 February 2022</time>
+<time datetime="2022-02-25" class="published">25 February 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-08-18">18 August 2022</time></dd>
+<dd class="expires"><time datetime="2022-08-29">29 August 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1050,7 +1050,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <div class="org">Cloudflare, Inc.</div>
 </div>
 <div class="author">
-      <div class="author-name">R.L. Barnes</div>
+      <div class="author-name">R. L. Barnes</div>
 <div class="org">Cisco</div>
 </div>
 <div class="author">
@@ -1101,7 +1101,7 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 18 August 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 29 August 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1172,7 +1172,10 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
                     <p id="section-toc.1-1.5.2.1.2.1.1"><a href="#section-5.1.1" class="xref">5.1.1</a>.  <a href="#name-helper-functions" class="xref">Helper Functions</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.2">
-                    <p id="section-toc.1-1.5.2.1.2.2.1"><a href="#section-5.1.2" class="xref">5.1.2</a>.  <a href="#name-parameters" class="xref">Parameters</a></p>
+                    <p id="section-toc.1-1.5.2.1.2.2.1"><a href="#section-5.1.2" class="xref">5.1.2</a>.  <a href="#name-fft-friendly-fields" class="xref">FFT-Friendly Fields</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.3">
+                    <p id="section-toc.1-1.5.2.1.2.3.1"><a href="#section-5.1.3" class="xref">5.1.3</a>.  <a href="#name-parameters" class="xref">Parameters</a></p>
 </li>
                 </ul>
 </li>
@@ -1252,6 +1255,36 @@ input that would result in an incorrect aggregate result.<a href="#section-abstr
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-a-general-purpose-flp" class="xref">A General-Purpose FLP</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-overview-2" class="xref">Overview</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1.2.1">
+                    <p id="section-toc.1-1.8.2.1.2.1.1"><a href="#section-8.1.1" class="xref">8.1.1</a>.  <a href="#name-extensions" class="xref">Extensions</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-validity-circuits" class="xref">Validity Circuits</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="xref">8.3</a>.  <a href="#name-construction-3" class="xref">Construction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.1">
+                    <p id="section-toc.1-1.8.2.3.2.1.1"><a href="#section-8.3.1" class="xref">8.3.1</a>.  <a href="#name-proof-generation" class="xref">Proof Generation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.2">
+                    <p id="section-toc.1-1.8.2.3.2.2.1"><a href="#section-8.3.2" class="xref">8.3.2</a>.  <a href="#name-query-generation" class="xref">Query Generation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.3">
+                    <p id="section-toc.1-1.8.2.3.2.3.1"><a href="#section-8.3.3" class="xref">8.3.3</a>.  <a href="#name-decision" class="xref">Decision</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3.2.4">
+                    <p id="section-toc.1-1.8.2.3.2.4.1"><a href="#section-8.3.4" class="xref">8.3.4</a>.  <a href="#name-encoding" class="xref">Encoding</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
             <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a></p>
@@ -1439,7 +1472,7 @@ length of <code>output</code> <span class="bcp14">MUST</span> be <code>len</code
 </li>
         <li class="normal" id="section-2-4.3">
           <code>byte(int: Unsigned) -&gt; Bytes</code> returns the representation of <code>int</code> as a byte
-string. The value of <code>int</code> <span class="bcp14">MUST</span> be in range <code>[0,256)</code>.<a href="#section-2-4.3" class="pilcrow">¶</a>
+string. The value of <code>int</code> <span class="bcp14">MUST</span> be in <code>[0,256)</code>.<a href="#section-2-4.3" class="pilcrow">¶</a>
 </li>
         <li class="normal" id="section-2-4.4">
           <code>xor(left: Bytes, right: Bytes) -&gt; Bytes</code> returns the bitwise XOR of <code>left</code>
@@ -1449,6 +1482,10 @@ and <code>right</code>. An exception is raised if the inputs are not the same le
           <code>I2OSP</code> and <code>OS2IP</code> from <span>[<a href="#RFC8017" class="xref">RFC8017</a>]</span>, which are used, respectively, to
 convert a non-negative integer to a byte string and convert a byte string to a
 non-negative integer.<a href="#section-2-4.5" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-2-4.6">
+          <code>next_power_of_2(n: Unsigned) -&gt; Unsigned</code> returns the smallest integer
+greater than or equal to <code>n</code> that is also a power of two.<a href="#section-2-4.6" class="pilcrow">¶</a>
 </li>
       </ul>
 </section>
@@ -2140,9 +2177,7 @@ the operands are not the same length.<a href="#section-5.1.1-1" class="pilcrow">
 <pre>
 # Compute the inner product of the operands.
 def inner_product(left: Vec[Field], right: Vec[Field]) -&gt; Field:
-    return reduce(lambda x, y: x + y,
-                  map(lambda x: x[0] * x[1],
-                      zip(left, right)))
+    return sum(map(lambda x: x[0] * x[1], zip(left, right)))
 
 # Subtract the right operand from the left and return the result.
 def vec_sub(left, right):
@@ -2159,14 +2194,39 @@ def vec_add(left, right):
 </div>
 </section>
 </div>
-<div id="parameters">
+<div id="field-fft-friendly">
 <section id="section-5.1.2">
+          <h4 id="name-fft-friendly-fields">
+<a href="#section-5.1.2" class="section-number selfRef">5.1.2. </a><a href="#name-fft-friendly-fields" class="section-name selfRef">FFT-Friendly Fields</a>
+          </h4>
+<p id="section-5.1.2-1">Some VDAFs require fields that are suitable for efficient computation of the
+discrete Fourier transform. (One example is prio3 (<a href="#prio3" class="xref">Section 6</a>) when instantiated
+with the generic FLP of <a href="#flp-generic-construction" class="xref">Section 8.3</a>.) Specifically, a field is
+said to be "FFT-friendly" if, in addition to satisfying the interface described
+in <a href="#field" class="xref">Section 5.1</a>, implements the following method:<a href="#section-5.1.2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1.2-2.1">
+              <code>Field.gen() -&gt; Field</code> returns the generator of a large subgroup of the
+multiplicative group.<a href="#section-5.1.2-2.1" class="pilcrow">¶</a>
+</li>
+          </ul>
+<p id="section-5.1.2-3">FFT-friendly fields also define the following parameter:<a href="#section-5.1.2-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1.2-4.1">
+              <code>GEN_ORDER: Unsigned</code> is the order of a multiplicative subgroup generated by
+<code>Field.gen()</code>. This value <span class="bcp14">MUST</span> be a power of 2.<a href="#section-5.1.2-4.1" class="pilcrow">¶</a>
+</li>
+          </ul>
+</section>
+</div>
+<div id="parameters">
+<section id="section-5.1.3">
           <h4 id="name-parameters">
-<a href="#section-5.1.2" class="section-number selfRef">5.1.2. </a><a href="#name-parameters" class="section-name selfRef">Parameters</a>
+<a href="#section-5.1.3" class="section-number selfRef">5.1.3. </a><a href="#name-parameters" class="section-name selfRef">Parameters</a>
           </h4>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-5.1.2-1.1">
-              <p id="section-5.1.2-1.1.1">TODO: Pick field parameters and specify them here. See issue#22.<a href="#section-5.1.2-1.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-5.1.3-1.1">
+              <p id="section-5.1.3-1.1.1">TODO: Pick field parameters and specify them here. See issue#22.<a href="#section-5.1.3-1.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 </section>
@@ -2243,7 +2303,7 @@ def expand_into_vec(Prg, Field,
       </h2>
 <ul class="normal ulEmpty">
 <li class="normal ulEmpty" id="section-6-1.1">
-          <p id="section-6-1.1.1">NOTE This construction has not undergone significant security analysis.<a href="#section-6-1.1.1" class="pilcrow">¶</a></p>
+          <p id="section-6-1.1.1">NOTE This construction has not undergone significant security analysis.\<a href="#section-6-1.1.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <p id="section-6-2">This section describes a VDAF suitable for the following data aggregation task.
@@ -2296,7 +2356,7 @@ valid input.<a href="#section-6-8" class="pilcrow">¶</a></p>
 into a VDAF. The next section specified the syntax of suitable FLPs in detail;
 the transformation is given in <a href="#prio3-construction" class="xref">Section 6.2</a>. Finally, a concrete,
 general-purpose FLP suitable for any validity circuit is specified in section
-<a href="#flp-construction" class="xref">Section 8</a>.<a href="#section-6-9" class="pilcrow">¶</a></p>
+<a href="#flp-generic" class="xref">Section 8</a>.<a href="#section-6-9" class="pilcrow">¶</a></p>
 <div id="flp">
 <section id="section-6.1">
         <h3 id="name-fully-linear-proof-flp-syst">
@@ -2367,9 +2427,15 @@ parameters a concrete FLP must provide.<a href="#section-6.1-2" class="pilcrow">
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">
+                <code>Measurement</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Type of each measurement</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
                 <code>Field</code>
 </td>
-              <td class="text-left" rowspan="1" colspan="1">The finite field for which the FLP is defined (<a href="#field" class="xref">Section 5.1</a>)</td>
+              <td class="text-left" rowspan="1" colspan="1">As defined in (<a href="#field" class="xref">Section 5.1</a>)</td>
             </tr>
           </tbody>
         </table>
@@ -2516,7 +2582,7 @@ aggregation, and unsharding are described in the remaining subsections.<a href="
               <td class="text-left" rowspan="1" colspan="1">
                 <code>SHARES</code>
 </td>
-              <td class="text-left" rowspan="1" colspan="1">in range <code>[2, 255)</code>
+              <td class="text-left" rowspan="1" colspan="1">in <code>[2, 255)</code>
 </td>
             </tr>
             <tr>
@@ -3399,16 +3465,536 @@ decoded.<a href="#section-7.2.5-2.3" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
-<div id="flp-construction">
+<div id="flp-generic">
 <section id="section-8">
       <h2 id="name-a-general-purpose-flp">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-a-general-purpose-flp" class="section-name selfRef">A General-Purpose FLP</a>
       </h2>
+<p id="section-8-1">This section describes an FLP based on the fully linear proof system described
+in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 4.2. We begin in <a href="#flp-generic-overview" class="xref">Section 8.1</a> with an
+overview of their proof system and the extensions to their proof system made
+here. The construction is specified in <a href="#flp-generic-construction" class="xref">Section 8.3</a>.<a href="#section-8-1" class="pilcrow">¶</a></p>
 <ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-8-1.1">
-          <p id="section-8-1.1.1">TODO<a href="#section-8-1.1.1" class="pilcrow">¶</a></p>
+<li class="normal ulEmpty" id="section-8-2.1">
+          <p id="section-8-2.1.1">OPEN ISSUE We're not yet sure if specifying this general-purpose FLP is
+desirable. It might be preferable to specify specialized FLPs for each data
+type that we want to standardize, for two reasons. First, clear and concise
+specifications are likely easier to write for specialized FLPs rather than the
+general one. Second, we may end up tailoring each FLP to the data type in a
+way that improves performance, but breaks compatibility with the
+general-purpose FLP.<a href="#section-8-2.1.1" class="pilcrow">¶</a></p>
+<p id="section-8-2.1.2">In any case, we can't make this decision until we know which data types to
+standardize, so for now, we'll stick with the general-purpose construction.
+The reference implementation can be found at
+https://github.com/cjpatton/vdaf/tree/main/poc.<a href="#section-8-2.1.2" class="pilcrow">¶</a></p>
 </li>
       </ul>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-8-3.1">
+          <p id="section-8-3.1.1">OPEN ISSUE Chris Wood points out that the this section reads more like a paper
+more than a standard. Eventually we'll want to work this into something that
+is readily consumable by the CFRG.<a href="#section-8-3.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<div id="flp-generic-overview">
+<section id="section-8.1">
+        <h3 id="name-overview-2">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-overview-2" class="section-name selfRef">Overview</a>
+        </h3>
+<p id="section-8.1-1">In the proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, validity is defined via an arithmetic
+circuit evaluated over the input: If the circuit output is zero, then the input
+is deemed valid; otherwise, if the circuit output is non-zero, then the input is
+deemed invalid. Thus the goal of the proof system is merely to allow the
+verifier to evaluate the validity circuit over the input. Four application
+(<a href="#prio3" class="xref">Section 6</a>), this computation is distributed among multiple Aggregators, each of
+which has only a share of the input.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Suppose for a moment that the validity circuit <code>C</code> is affine, meaning its only
+operations are addition and multiplication-by-constant. In particular, suppose
+the circuit does not contain a multiplication gate whose operands are both
+non-constant. Then to decide if an input <code>x</code> is valid, each Aggregator could
+evaluate <code>C</code> on its share of <code>x</code> locally, broadcast the output share to its
+peers, then combine the output shares locally to recover <code>C(x)</code>. This is true
+because for any <code>SHARES</code>-way secret sharing of <code>x</code>:<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-3">
+<pre>
+C(x_shares[0] + ... + x_shares[SHARES-1]) =
+    C(x_shares[0]) + ... + C(x_shares[SHARES-1])
+</pre><a href="#section-8.1-3" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-4">(Note that, for this equality to hold, it may be necessary to scale any
+constants in the circuit by <code>SHARES</code>.) However this is not the case if <code>C</code> is
+not-affine (i.e., it contains at least one multiplication gate whose operands
+are non-constant). In the proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, the proof allows the
+(distributed) verifier to compute the non-affine operations using only linear
+operations on (its share of) the input and proof.<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+<p id="section-8.1-5">To make this work, the proof system is restricted to validity circuits that
+exhibit a special structure. Specifically, an arithmetic circuit with "G-gates"
+(see <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Definition 5.2) is composed of affine gates and any number of
+instances of a distinguished gate <code>G</code>, which may be non-affine. We will refer to
+this class of circuits as "gadget circuits" and to <code>G</code> as the "gadget".<a href="#section-8.1-5" class="pilcrow">¶</a></p>
+<p id="section-8.1-6">As an illustrative example, consider a validity circuit <code>C</code> that recognizes the
+set <code>L = set([0], [1])</code>. That is, <code>C</code> takes as input a length-1 vector <code>x</code> and
+returns 0 if <code>x[0]</code> is in <code>[0,2)</code> and outputs something else otherwise. This
+circuit can be expressed as the following degree-2 polynomial:<a href="#section-8.1-6" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-7">
+<pre>
+C(x) = (x[0] - 1) * x[0] = x[0]^2 - x[0]
+</pre><a href="#section-8.1-7" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-8">This polynomial recognizes <code>L</code> because <code>x[0]^2 = x[0]</code> is only true if <code>x[0] ==
+0</code> or <code>x[0] == 1</code>. Notice that the polynomial involves a non-affine operation,
+<code>x[0]^2</code>. In order to apply <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3, the circuit would be
+rewritten in terms of a gadget that subsumes this non-affine operation. For
+example, the gadget might be multiplication:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-9">
+<pre>
+Mul(left, right) = left * right
+</pre><a href="#section-8.1-9" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-10">The validity circuit can be rewritten in terms of <code>Mul</code> like so:<a href="#section-8.1-10" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-11">
+<pre>
+C(x[0]) = Mul(x[0], x[0]) - x[0]
+</pre><a href="#section-8.1-11" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-12">The proof system of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span> allows the verifier to evaluate each instance
+of the gadget (i.e., <code>Mul(x[0], x[0])</code> in our example) using a linear function
+of the input and proof.<a href="#section-8.1-12" class="pilcrow">¶</a></p>
+<p id="section-8.1-13">The validity proof for input <code>x</code> is constructed roughly as follows. Let <code>C</code> be
+the validity circuit and suppose the gadget is arity-<code>L</code> (i.e., it has <code>L</code> input
+wires.). Let <code>wire[j-1,k-1]</code> denote the value of the <code>j</code>th wire of the <code>k</code>th
+call to the gadget during the evaluation of <code>C(x)</code>. Suppose there are <code>M</code> such
+calls and fix distinct field elements <code>alpha[0], ..., alpha[M-1]</code>. (We will
+require these points to have a special property, as we'll discuss in
+<a href="#flp-generic-overview-extensions" class="xref">Section 8.1.1</a>; but for the moment it is only important
+that they are distinct.)<a href="#section-8.1-13" class="pilcrow">¶</a></p>
+<p id="section-8.1-14">The prover constructs from <code>wire</code> and <code>alpha</code> a polynomial that, when evaluated
+at <code>alpha[k-1]</code>, produces the output of the <code>k</code>th call to the gadget. Let us
+call this the "gadget polynomial". Polynomial evaluation is linear, which means
+that, in the distributed setting, the Client can disseminate additive shares of
+the gadget polynomial that the Aggregators then use to compute additive shares
+of each gadget output. This allows each Aggregator to compute its share of
+<code>C(x)</code> locally.<a href="#section-8.1-14" class="pilcrow">¶</a></p>
+<p id="section-8.1-15">There is one more wrinkle, however: It is still possible for a malicious prover
+to produce a gadget polynomial that would result in <code>C(x)</code> being computed
+incorrectly. To prevent this, the verifier (or the Aggregators in the
+distributed setting) performs a probabilistic test to check that the gadget
+polynomial is well-formed. This test and the procedure for constructing the
+gadget polynomial are described in detail in <a href="#flp-generic-construction" class="xref">Section 8.3</a>.<a href="#section-8.1-15" class="pilcrow">¶</a></p>
+<div id="flp-generic-overview-extensions">
+<section id="section-8.1.1">
+          <h4 id="name-extensions">
+<a href="#section-8.1.1" class="section-number selfRef">8.1.1. </a><a href="#name-extensions" class="section-name selfRef">Extensions</a>
+          </h4>
+<p id="section-8.1.1-1">The FLP described in the next section extends the proof system <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>,
+Section 4.2 in three ways.<a href="#section-8.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1.1-2">First, the validity circuit in our construction includes an additional, random
+input (this is the "joint randomness" derived from the input shares in prio3;
+see <a href="#prio3" class="xref">Section 6</a>). This allows for circuit optimizations that trade a small
+soundness error for a shorter proof. For example, consider a circuit that
+recognizes the set of length-<code>N</code> vectors for which each element is either one or
+zero. A deterministic circuit could be constructed for this language, but it
+would involve a large number of multiplications that would result in a large
+proof. (See the discussion in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Section 5.2 for details). A much
+shorter proof can be constructed for the following randomized circuit:<a href="#section-8.1.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1.1-3">
+<pre>
+C(inp, r) = r * Poly(inp[0]) + ... + r^N * Poly(inp[N-1])
+</pre><a href="#section-8.1.1-3" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1.1-4">(Note that this is a special case of <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 5.2.) Here <code>inp</code> is
+the length-<code>N</code> input and <code>r</code> is a random field element. The gadget circuit
+<code>Poly</code> is the "range-check" polynomial described above, i.e., <code>Poly(x) = x^2 -
+x</code>. The idea is that, if <code>inp</code> is valid (i.e., each <code>inp[j]</code> is in <code>[0,2)</code>),
+then the circuit will evaluate to 0 regardless of the value of <code>r</code>; but if
+<code>inp[j]</code> is not in <code>[0,2)</code> for some <code>j</code>, the output will be non-zero with high
+probability.<a href="#section-8.1.1-4" class="pilcrow">¶</a></p>
+<p id="section-8.1.1-5">The second extension implemented by our FLP is to allow the validity circuit to
+contain multiple gadget types. (Note that this generalization was first
+suggested in <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Remark 4.5.) For example, the following circuit is
+allowed, where <code>Mul</code> and <code>Poly</code> are the gadgets defined above (the input has
+length <code>N+1</code>):<a href="#section-8.1.1-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1.1-6">
+<pre>
+C(inp, r) = r * Poly(inp[0]) + ... + r^N * Poly(inp[N-1]) + \
+            2^0 * inp[0]     + ... + 2^(N-1) * inp[N-1]   - \
+            Mul(inp[N], inp[N])
+</pre><a href="#section-8.1.1-6" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1.1-7">(This circuit checks two things. First, the first line checks that <code>inp[:N]</code> is
+a vector of zeros and ones. Second, the second and third lines check that
+<code>inp[N]</code> is a perfect square, and that its square root is equal to the <code>N</code>-bit
+integer encoded by <code>inp[:N]</code>.)<a href="#section-8.1.1-7" class="pilcrow">¶</a></p>
+<p id="section-8.1.1-8">Finally, <span>[<a href="#BBCGGI19" class="xref">BBCGGI19</a>]</span>, Theorem 4.3 makes no restrictions on the choice of the
+fixed points <code>alpha[0], ..., alpha[M-1]</code>, other than to require that the points
+are all distinct. In this document, the fixed points are chosen so that the
+gadget polynomial can be constructed efficiently using the Cooley-Tukey FFT
+("Fast Fourier Transform") algorithm. Note that this requires the field to be
+"FFT-friendly" as defined in <a href="#field-fft-friendly" class="xref">Section 5.1.2</a>.<a href="#section-8.1.1-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="flp-generic-valid">
+<section id="section-8.2">
+        <h3 id="name-validity-circuits">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-validity-circuits" class="section-name selfRef">Validity Circuits</a>
+        </h3>
+<p id="section-8.2-1">The FLP described in <a href="#flp-generic-construction" class="xref">Section 8.3</a> is defined in terms of a
+validity circuit <code>Valid</code> that implements the interface described here.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">A concrete <code>Valid</code> defines the following parameters:<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<span id="name-validity-circuit-parameters"></span><table class="center" id="table-4">
+          <caption>
+<a href="#table-4" class="selfRef">Table 4</a>:
+<a href="#name-validity-circuit-parameters" class="selfRef">Validity circuit parameters.</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>GADGETS</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">A list of gadgets</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>GADGET_CALLS</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Number of times each gadget is called</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>INPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>OUTPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the aggregatable output</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>RAND_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Length of the random input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Measurement</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The type of measurement</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Field</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">An FFT-friendly finite field as defined in <a href="#field-fft-friendly" class="xref">Section 5.1.2</a>
+</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-8.2-4">Each gadget <code>G</code> in <code>GADGETS</code> defines a parameter <code>DEGREE</code> that specifies the
+circuit's "arithmetic degree". This is defined to be the degree of the
+polynomial that computes it the circuit. For example, the <code>Mul</code> circuit in
+<a href="#flp-generic-overview" class="xref">Section 8.1</a> is defined by the polynomial <code>Mul(x) = x * x</code>, which
+has degree <code>2</code>. Hence, the arithmetic degree of this gadget is <code>2</code>. Each gadget
+also defines a parameter <code>ARITY</code> that specifies the circuit's arity (i.e., the
+number of input wires).<a href="#section-8.2-4" class="pilcrow">¶</a></p>
+<p id="section-8.2-5">A concrete <code>Valid</code> provides the following methods for encoding a measurement as
+an input vector and truncating an input vector to the length of an aggregatable
+output:<a href="#section-8.2-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.2-6.1">
+            <code>Circuit.encode(measurement: Measurement) -&gt; Vec[Field]</code> returns a vector of
+length <code>INPUT_LEN</code> representing a measurement.<a href="#section-8.2-6.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-8.2-6.2">
+            <code>Circuit.truncate(input: Vec[Field]) -&gt; Vec[Field]</code> returns a vector of length
+<code>OUTPUT_LEN</code> representing an aggregatable output.<a href="#section-8.2-6.2" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-8.2-7">Finally, the following class methods are derived for each concrete <code>Valid</code>:<a href="#section-8.2-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.2-8">
+<pre>
+def prove_rand_len(Valid):
+    return sum(map(lambda G: G.ARITY, Valid.GADGETS))
+
+def query_rand_len(Valid):
+    return len(Cicuit.GADGETS)
+
+def proof_len(Valid):
+    length = 0
+    for (calls, G) in zip(Valid.GADGET_CALLS, Valid.GADGETS):
+        padded_calls = next_power_of_2(1 + calls)
+        length += G.ARITY + G.DEGREE * (padded_calls - 1) + 1
+    return length
+
+def verifier_len(Valid):
+    length = 1
+    for G in Valid.GADGETS:
+        length += G.ARITY + 1
+    return length
+</pre><a href="#section-8.2-8" class="pilcrow">¶</a>
+</div>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-8.2-9.1">
+            <p id="section-8.2-9.1.1">TODO These methods were written by hand. Re-generate them from the reference
+implementantion.<a href="#section-8.2-9.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="flp-generic-construction">
+<section id="section-8.3">
+        <h3 id="name-construction-3">
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-construction-3" class="section-name selfRef">Construction</a>
+        </h3>
+<p id="section-8.3-1">This section specifies <code>FlpGeneric</code>, an implementation of the <code>Flp</code> interface
+(<a href="#flp" class="xref">Section 6.1</a>). It has as a generic parameter a validity circuit <code>Valid</code> implementing
+the interface defined in <a href="#flp-generic-valid" class="xref">Section 8.2</a>.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+<p id="section-8.3-2">The FLP parameters for <code>FlpGeneric</code> are defined in <a href="#flp-generic-param" class="xref">Table 5</a>. The
+required methods for generating the proof, generating the verifier, and deciding
+validity are specified in the remaining subsections.<a href="#section-8.3-2" class="pilcrow">¶</a></p>
+<p id="section-8.3-3">In the remainder, we let <code>[n]</code> denote the set <code>{1, ..., n}</code> for positive integer
+<code>n</code>. We also define the following constants:<a href="#section-8.3-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3-4.1">Let <code>H = len(Valid.GADGETS)</code><a href="#section-8.3-4.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-8.3-4.2">
+            <p id="section-8.3-4.2.1">For each <code>i</code> in <code>[H]</code>:<a href="#section-8.3-4.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3-4.2.2.1">Let <code>G_i = Valid.GADGETS[i]</code><a href="#section-8.3-4.2.2.1" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-8.3-4.2.2.2">Let <code>L_i = Valid.GADGETS[i].ARITY</code><a href="#section-8.3-4.2.2.2" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-8.3-4.2.2.3">Let <code>M_i = Valid.GADGET_CALLS[i]</code><a href="#section-8.3-4.2.2.3" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-8.3-4.2.2.4">Let <code>P_i = next_power_of_2(M_i+1)</code><a href="#section-8.3-4.2.2.4" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-8.3-4.2.2.5">Let <code>alpha_i = Field.gen()^(Field.GEN_ORDER / P_i)</code><a href="#section-8.3-4.2.2.5" class="pilcrow">¶</a>
+</li>
+            </ul>
+</li>
+        </ul>
+<p id="section-8.3-5"><br></p>
+<span id="name-flp-parameters-of-flpgeneri"></span><div id="flp-generic-param">
+<table class="center" id="table-5">
+          <caption>
+<a href="#table-5" class="selfRef">Table 5</a>:
+<a href="#name-flp-parameters-of-flpgeneri" class="selfRef">FLP Parameters of FlpGeneric.</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Parameter</th>
+              <th class="text-left" rowspan="1" colspan="1">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>PROVE_RAND_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.prove_rand_len()</code> (see <a href="#flp-generic-valid" class="xref">Section 8.2</a>)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>QUERY_RAND_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.query_rand_len()</code> (see <a href="#flp-generic-valid" class="xref">Section 8.2</a>)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>JOINT_RAND_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.RAND_LEN</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>INPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.INPUT_LEN</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>OUTPUT_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.OUTPUT_LEN</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>PROOF_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.proof_len()</code> (see <a href="#flp-generic-valid" class="xref">Section 8.2</a>)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>VERIFIER_LEN</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.verifier_len()</code> (see <a href="#flp-generic-valid" class="xref">Section 8.2</a>)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Measurement</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.Measurement</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Field</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>Valid.Field</code>
+</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+<div id="flp-generic-construction-prove">
+<section id="section-8.3.1">
+          <h4 id="name-proof-generation">
+<a href="#section-8.3.1" class="section-number selfRef">8.3.1. </a><a href="#name-proof-generation" class="section-name selfRef">Proof Generation</a>
+          </h4>
+<p id="section-8.3.1-1">On input <code>inp</code>, <code>prove_rand</code>, and <code>joint_rand</code>, the proof is computed as
+follows:<a href="#section-8.3.1-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3.1-2">
+<li id="section-8.3.1-2.1">For each <code>i</code> in <code>[H]</code> create an empty table <code>wire_i</code>.<a href="#section-8.3.1-2.1" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.1-2.2">Partition the prover randomness <code>prove_rand</code> into subvectors <code>seed_1, ...,
+seed_H</code> where <code>len(s_i) == L_i</code> for all <code>i</code> in <code>[H]</code>. Let us call these the
+"wire seeds" of each gadget.<a href="#section-8.3.1-2.2" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.1-2.3">Evaluate <code>Valid</code> on input of <code>inp</code> and <code>joint_rand</code>, recording the inputs of
+each gadget in the corresponding table. Specifically, for every <code>i</code> in <code>[H]</code>,
+set <code>wire_i[j-1,k-1]</code> to the value on the <code>j</code>th wire into the <code>k</code>th call to
+gadget <code>G_i</code>.<a href="#section-8.3.1-2.3" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.1-2.4">
+              <p id="section-8.3.1-2.4.1">Compute the "wire polynomials". That is, for every <code>i</code> in <code>[H]</code> and <code>j</code> in
+<code>[L_i]</code>, construct <code>poly_wire_i[j-1]</code>, the <code>j</code>th wire polynomial for the
+<code>i</code>th gadget, as follows:<a href="#section-8.3.1-2.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.1-2.4.2.1">Let <code>w = [seed_i[j-1], wire_i[j-1,0], ..., wire_i[j-1,M_i-1]]</code>.<a href="#section-8.3.1-2.4.2.1" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.1-2.4.2.2">Let <code>padded_w = w + padding</code>, where <code>padding</code> is the all-zero vector of
+length <code>P_i - len(w)</code>.<a href="#section-8.3.1-2.4.2.2" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.1-2.4.2.3">Let <code>poly_wire_i[j-1]</code> be the lowest degree polynomial for which
+<code>poly_wire_i[j-1](alpha_i^k) == padded_w[k]</code> for all <code>k</code> in <code>[P_i]</code>.<a href="#section-8.3.1-2.4.2.3" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li id="section-8.3.1-2.5">
+              <p id="section-8.3.1-2.5.1">Compute the "gadget polynomials". That is, for every <code>i</code> in <code>[H]</code>:<a href="#section-8.3.1-2.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.1-2.5.2.1">Let <code>poly_gadget_i = G_i(poly_wire_i[0], ..., poly_wire_i[L_i-1])</code>. That
+is, evaluate the circuit <code>G_i</code> on the wire polynomials for the <code>i</code>th
+gadget. (Arithmetic is in the ring of polynomials over <code>Validity.Field</code>.)<a href="#section-8.3.1-2.5.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+          </ol>
+<p id="section-8.3.1-3">The proof is the vector <code>proof = seed_1 + coeff_1 + ... + seed_H + coeff_H</code>,
+where <code>coeff_i</code> is the vector of coefficients of <code>poly_gadget_i</code> for each <code>i</code> in
+<code>[H]</code>.<a href="#section-8.3.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flp-generic-construction-query">
+<section id="section-8.3.2">
+          <h4 id="name-query-generation">
+<a href="#section-8.3.2" class="section-number selfRef">8.3.2. </a><a href="#name-query-generation" class="section-name selfRef">Query Generation</a>
+          </h4>
+<p id="section-8.3.2-1">On input of <code>inp</code>, <code>proof</code>, <code>query_rand</code>, and <code>joint_rand</code>, the verifier message
+is generated as follows:<a href="#section-8.3.2-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3.2-2">
+<li id="section-8.3.2-2.1">For every <code>i</code> in <code>[H]</code> create an empty table <code>wire_i</code>.<a href="#section-8.3.2-2.1" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.2">Partition <code>proof</code> into the subvectors <code>seed_1</code>, <code>coeff_1</code>, ..., <code>seed_H</code>,
+<code>coeff_H</code> defined in <a href="#flp-generic-construction-prove" class="xref">Section 8.3.1</a>.<a href="#section-8.3.2-2.2" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.3">Evaluate <code>Valid</code> on input of <code>inp</code> and <code>joint_rand</code>, recording the inputs of
+each gadget in the corresponding table. This step is similar to the prover's
+step (3.) except the verifier does not evaluate the gadgets. Instead, it
+computes the output of the <code>k</code>th call to <code>G_i</code> by evaluating
+<code>poly_gadget_i(alpha_i^k)</code>. Let <code>v</code> denote the output of the circuit
+evaluation.<a href="#section-8.3.2-2.3" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.4">Compute the wire polynomials just as in the prover's step (4.).<a href="#section-8.3.2-2.4" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.2-2.5">
+              <p id="section-8.3.2-2.5.1">Compute the tests for well-formedness of the gadget polynomials. For every
+<code>i</code> in <code>[H]</code>:<a href="#section-8.3.2-2.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.2-2.5.2.1">Let <code>t = query_rand[i]</code>. Check if <code>t^(P_i) == 1</code>: If so, then raise
+ERR_ABORT and halt. (This prevents the verifier from inadvertently leaking
+a gadget output in the verifier message.)<a href="#section-8.3.2-2.5.2.1" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.2-2.5.2.2">Let <code>y_i = poly_gadget_i(t)</code>.<a href="#section-8.3.2-2.5.2.2" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.2-2.5.2.3">For each <code>j</code> in <code>[0,L_i)</code> let <code>x_i[j-1] = poly_wire_i[j-1](t)</code>.<a href="#section-8.3.2-2.5.2.3" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+          </ol>
+<p id="section-8.3.2-3">The verifier message is the vector <code>verifier = [v] + x_1 + [y_1] + ... + x_H +
+[y_H]</code>.<a href="#section-8.3.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="decision">
+<section id="section-8.3.3">
+          <h4 id="name-decision">
+<a href="#section-8.3.3" class="section-number selfRef">8.3.3. </a><a href="#name-decision" class="section-name selfRef">Decision</a>
+          </h4>
+<p id="section-8.3.3-1">On input of vector <code>verifier</code>, the verifier decides if the input is valid as
+follows:<a href="#section-8.3.3-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3.3-2">
+<li id="section-8.3.3-2.1">Parse <code>verifier</code> into <code>v</code>, <code>x_1</code>, <code>y_1</code>, ..., <code>x_H</code>, <code>y_H</code> as defined in
+<a href="#flp-generic-construction-query" class="xref">Section 8.3.2</a>.<a href="#section-8.3.3-2.1" class="pilcrow">¶</a>
+</li>
+            <li id="section-8.3.3-2.2">
+              <p id="section-8.3.3-2.2.1">Check for well-formedness of the gadget polynomials. For every <code>i</code> in <code>[H]</code>:<a href="#section-8.3.3-2.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.3.3-2.2.2.1">Let <code>z = G_i(x_i)</code>. That is, evaluate the circuit <code>G_i</code> on <code>x_i</code> and set
+<code>z</code> to the output.<a href="#section-8.3.3-2.2.2.1" class="pilcrow">¶</a>
+</li>
+                <li class="normal" id="section-8.3.3-2.2.2.2">If <code>z != y_i</code>, then return <code>False</code> and halt.<a href="#section-8.3.3-2.2.2.2" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li id="section-8.3.3-2.3">Return <code>True</code> if <code>v == 0</code> and <code>False</code> otherwise.<a href="#section-8.3.3-2.3" class="pilcrow">¶</a>
+</li>
+          </ol>
+</section>
+</div>
+<div id="encoding">
+<section id="section-8.3.4">
+          <h4 id="name-encoding">
+<a href="#section-8.3.4" class="section-number selfRef">8.3.4. </a><a href="#name-encoding" class="section-name selfRef">Encoding</a>
+          </h4>
+<p id="section-8.3.4-1">The FLP encoding and truncation methods invoke <code>Circuit.encode</code> and
+<code>Circuit.truncate</code> in the natural way.<a href="#section-8.3.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
 </section>
 </div>
 <div id="security">
