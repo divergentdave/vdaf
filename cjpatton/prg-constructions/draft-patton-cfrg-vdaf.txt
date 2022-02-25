@@ -934,28 +934,28 @@ Table of Contents
    used in CTR-mode to produce a key stream for generating the output.
    A fixed initialization vector (IV) is used.
 
-  class PrgAes128:
+class PrgAes128:
 
-      SEED_SIZE: Unsigned = 16
+    SEED_SIZE: Unsigned = 16
 
-      def __init__(self, seed, info):
-          self.length_consumed = 0
+    def __init__(self, seed, info):
+        self.length_consumed = 0
 
-          # Use CMAC as a pseuodorandom function to derive a key.
-          self.key = AES128-CMAC(seed, info)
+        # Use CMAC as a pseuodorandom function to derive a key.
+        self.key = AES128-CMAC(seed, info)
 
-      def next(self, length):
-          self.length_consumed += length
+    def next(self, length):
+        self.length_consumed += length
 
-          # CTR-mode encryption of the all-zero string of the desired
-          # length and using a fixed, all-zero IV.
-          #
-          # TODO Make this implementation more efficient. In particular,
-          # don't regenerate the already consumed stream.
-          stream = AES-CTR(key, zeros(16), zeros(self.length_consumed))
-          return stream[-length:]
+        # CTR-mode encryption of the all-zero string of the desired
+        # length and using a fixed, all-zero IV.
+        #
+        # TODO Make this implementation more efficient. In particular,
+        # don't regenerate the already consumed stream.
+        stream = AES128-CTR(key, zeros(16), zeros(self.length_consumed))
+        return stream[-length:]
 
-           Figure 10: Definition of PRG PrgBlockCipher(Aes128).
+         Figure 10: Definition of PRG PrgBlockCipher(Aes128).
 
       CP: We might be able to get away with skipping the initial CMAC
       for some fixed value of info, e.g., info == "".

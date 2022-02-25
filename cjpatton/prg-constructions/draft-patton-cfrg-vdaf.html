@@ -2281,7 +2281,7 @@ class PrgAes128:
         #
         # TODO Make this implementation more efficient. In particular,
         # don't regenerate the already consumed stream.
-        stream = AES-CTR(key, zeros(16), zeros(self.length_consumed))
+        stream = AES128-CTR(key, zeros(16), zeros(self.length_consumed))
         return stream[-length:]
 </pre>
 </div>
