@@ -922,7 +922,9 @@ Table of Contents
 
 5.2.1.  Constructions
 
-5.2.1.1.  PrgBlockCipher(Aes128)
+5.2.1.1.  PrgAes128
+
+      CP TODO Add this to reference implementation
 
    Our first construction, PrgBlockCipher(Aes128), converts a
    blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
@@ -931,38 +933,31 @@ Table of Contents
    used in CTR-mode to produce a key stream for generating the output.
    A fixed initialization vector (IV) is used.
 
-SEED_SIZE=16
+  class PrgAes128:
 
-def expand(_, seed, info, length):
-    key = AES128-CMAC(seed, info)
+      SEED_SIZE: Unsigned = 16
 
-    # CTR-mode encryption of the all-zero string of the desired length and using
-    # a fixed, all-zero IV.
-    return AES128-CTR(key, zeros(16), zeros(length))
+      def __init__(self, seed, info):
+          self.length_consumed = 0
 
-         Figure 10: Definition of PRG PrgBlockCipher(Aes128).
+          # Use CMAC as a pseuodorandom function to derive a key.
+          self.key = AES128-CMAC(seed, info)
+
+      def next(self, length):
+          self.length_consumed += length
+
+          # CTR-mode encryption of the all-zero string of the desired
+          # length and using a fixed, all-zero IV.
+          #
+          # TODO Make this implementation more efficient. In particular,
+          # don't regenerate the already consumed stream.
+          stream = AES-CTR(key, zeros(16), zeros(self.length_consumed))
+          return stream[-length:]
+
+           Figure 10: Definition of PRG PrgBlockCipher(Aes128).
 
       CP: We might be able to get away with skipping the initial CMAC
       for some fixed value of info, e.g., info == "".
-
-5.2.1.2.  PrgHkdf(Sha256)
-
-   Our second construction, PrgHkdf(Sha256), uses HKDF [RFC5869] with
-   SHA-256 as the underlying hash function.  Let HKDF-SHA256-Expand
-   denote the expansion operation of HKDF with SHA-256.  The PRG uses
-   this operation directly, using the seed as the "PRK" value:
-
-   SEED_SIZE=32
-
-   def expand(_, seed, info, length):
-       return HKDF-SHA512-Expand(seed, info, length)
-
-               Figure 11: Definition of PRG PrgHkdf(Sha256).
-
-   Note that the maximum output size for HKDF is 255 times the output
-   size of the underlying hash function (32 bytes in our case).  As a
-   result of this limitation, PrgHkdf(Sha256) may not be suitable for
-   some VDAFs.
 
 6.  prio3
 
@@ -1130,7 +1125,7 @@ def expand(_, seed, info, length):
        # Verifier decides if the input is valid.
        return Flp.decide(verifier)
 
-                      Figure 12: Execution of an FLP.
+                      Figure 11: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(Flp,. input) always returns True.  On the other hand, if
@@ -1223,7 +1218,7 @@ def expand(_, seed, info, length):
        verify_param = [(j, k_query_init) for j in range(Prio3.SHARES)]
        return (None, verify_param)
 
-                 Figure 13: The setup algorithm for prio3.
+                 Figure 12: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1339,7 +1334,7 @@ def expand(_, seed, info, length):
            ))
        return input_shares
 
-             Figure 14: Input-distribution algorithm for prio3.
+             Figure 13: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
@@ -1443,7 +1438,7 @@ def expand(_, seed, info, length):
 
        return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
-                  Figure 15: Preparation state for prio3.
+                  Figure 14: Preparation state for prio3.
 
 6.2.4.  Aggregation
 
@@ -1453,7 +1448,7 @@ def expand(_, seed, info, length):
            agg_share = vec_add(agg_share, out_share)
        return agg_share
 
-                Figure 16: Aggregation algorithm for prio3.
+                Figure 15: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1463,7 +1458,7 @@ def expand(_, seed, info, length):
            agg = vec_add(agg, agg_share)
        return list(map(lambda x: x.as_unsigned(), agg))
 
-         Figure 17: Computation of the aggregate result for prio3.
+         Figure 16: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1548,7 +1543,7 @@ def expand(_, seed, info, length):
            raise ERR_DECODE
        return (verifier, k_joint_rand)
 
-              Figure 18: Helper functions required for prio3.
+              Figure 17: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1685,7 +1680,7 @@ def expand(_, seed, info, length):
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 19: The setup algorithm for poplar1.
+                Figure 18: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1738,7 +1733,7 @@ def expand(_, seed, info, length):
 
      return input_shares
 
-          Figure 20: The input-distribution algorithm for poplar1.
+          Figure 19: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1820,7 +1815,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
   return Field[l].encode_vec(verifier)
 
-              Figure 21: Preparation state for poplar1.
+              Figure 20: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1835,7 +1830,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 22: Aggregation algorithm for poplar1.
+               Figure 21: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1849,7 +1844,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
      return Field[l].encode_vec(agg)
 
-        Figure 23: Computation of the aggregate result for poplar1.
+        Figure 22: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
@@ -1957,11 +1952,6 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
    [RFC4493]  Song, JH., Poovendran, R., Lee, J., and T. Iwata, "The
               AES-CMAC Algorithm", RFC 4493, DOI 10.17487/RFC4493, June
               2006, <https://www.rfc-editor.org/rfc/rfc4493>.
-
-   [RFC5869]  Krawczyk, H. and P. Eronen, "HMAC-based Extract-and-Expand
-              Key Derivation Function (HKDF)", RFC 5869,
-              DOI 10.17487/RFC5869, May 2010,
-              <https://www.rfc-editor.org/rfc/rfc5869>.
 
    [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
               "PKCS #1: RSA Cryptography Specifications Version 2.2",
