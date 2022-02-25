@@ -891,7 +891,8 @@ Table of Contents
       the PRG).
 
    *  prg.next(length: Unsigned) returns the next length bytes of output
-      of the PRG.
+      of the PRG.  If the seed was securely generated, the output can be
+      treated as pseudorandom.
 
    Each Prg has two derived class methods.  The first is used to derive
    a fresh seed from an existing one.  The second is used to compute a

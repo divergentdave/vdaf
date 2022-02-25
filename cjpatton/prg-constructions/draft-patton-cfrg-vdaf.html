@@ -2203,7 +2203,8 @@ described in <a href="#prg-constructions" class="xref">Section 5.2.1</a>.<a href
 </li>
           <li class="normal" id="section-5.2-6.2">
             <code>prg.next(length: Unsigned)</code> returns the next <code>length</code> bytes of output of the
-PRG.<a href="#section-5.2-6.2" class="pilcrow">¶</a>
+PRG. If the seed was securely generated, the output can be treated as
+pseudorandom.<a href="#section-5.2-6.2" class="pilcrow">¶</a>
 </li>
         </ul>
 <p id="section-5.2-7">Each <code>Prg</code> has two derived class methods. The first is used to derive a fresh
