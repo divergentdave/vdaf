@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-24T00:06:07.208275+00:00",
+  "timestamp": "2022-02-27T00:06:32.114712+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -234,17 +234,17 @@
     {
       "number": 13,
       "id": "I_kwDOGKuqOc4_1qX5",
-      "title": "Proposal: use hash to field to generate field elements from a seed",
+      "title": "Specify method for generating field elements (was \"Proposal: use hash to field to generate field elements from a seed\")",
       "url": "https://github.com/cjpatton/vdaf/issues/13",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "armfazh",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "> TODO This functionality closely resembles what people usually think of as an extract-then-expand KDF, but differs somewhat in its syntax and, also, its required security properties. Can we get the same functionality from something that's more commonplace? HKDF doesn't fit the bill, unfortunately, because keys can only be expanded to a fairly short length. Our application requires a rather long key stream.\r\n\r\nand\r\n>    *  Field.rand_vec(len: Unsigned) -> output: Vec[Field] returns a\r\n      vector of random field elements.  The length of output MUST be\r\n      len.\r\n>\r\n>         NOTE In reality this would be achieved by generating a random\r\n         key and expanding it into a sequence of field elements using a\r\n         key derivation scheme.  This should probably be made explicit.\r\n\r\n\r\nIn hash to curve draft, there is a method to derive an arbitrary number of field elements from a seed source.\r\nThis is called a Expander, and there are two types: one based on Merkle-Damgard functions and the other based on eXtendable Output functions.\r\nSee section 5.3 : https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5.3\r\n\r\n",
       "createdAt": "2021-12-03T22:53:51Z",
-      "updatedAt": "2022-02-23T17:45:37Z",
-      "closedAt": null,
+      "updatedAt": "2022-02-25T19:42:16Z",
+      "closedAt": "2022-02-25T19:42:16Z",
       "comments": [
         {
           "author": "cjpatton",
@@ -371,6 +371,76 @@
           "body": "A comparison of three methods can be found at: https://github.com/abetterinternet/libprio-rs/compare/main...armfazh:prg/bench?expand=1\r\n\r\n|Method|N=10|N=100|N=1000|\r\n|:---|---:|---:|---:|\r\n| Rejection Sampling | 5.2 |  7.8 |  38.1 |\r\n| Pad-and-reduce     | 4.8 | 15.1 | 115.8 |\r\n| Borrow-and-reduce  | 4.5 | 12.7 |  83.7 |\r\n\r\n\\* Timings are \u00b5s measured in Core i7-8650U CPU @ 1.90GHz.\r\n\r\n\r\n",
           "createdAt": "2022-02-23T17:45:37Z",
           "updatedAt": "2022-02-23T17:45:37Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Thanks @armfazh. Based on this assessment, I think that we should specify rejection sampling. @schoppmp do you object?\r\n",
+          "createdAt": "2022-02-24T01:01:02Z",
+          "updatedAt": "2022-02-24T01:01:02Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "An issue with rejection sampling is that it's hard to do with a constant-time implementation, which was also observed in the [hash-to-curve](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve#section-5) draft. Is your implementation returning early after the required number of finite field elements have been sampled? Or is it always sampling enough times to ensure the probability of rejecting too many samples is small enough (wrt. the security parameter)?",
+          "createdAt": "2022-02-24T12:19:16Z",
+          "updatedAt": "2022-02-24T12:19:29Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "libprio-rs currently generates samples until it reaches the number of field elements requested. This means the runtime is not bounded (in particular it's *definitely* not constant time!): \ufeffhttps://github.com/abetterinternet/libprio-rs/blob/main/src/prng.rs#L56-L82\r\n\r\nIncidentally, @armfazh noted that the current IDPF implementation is also not constant time, due to the division by the modulus here: https://github.com/abetterinternet/libprio-rs/blob/main/src/prng.rs#L56-L82. Though this should be easy enough to fix.\r\n\r\nTaking a step back, do we actually care if the algorithm that computes the mapping from pseudorandom byte strings to field elements is constant time? Take rejection sampling, for instance: assuming the underlying PRG is constant-time (i.e., AES-CTR is implemented in constant time) It seems to me that all that can be leaked by a non-constant-time implementation is the value of the bits that are rejected.",
+          "createdAt": "2022-02-24T16:11:48Z",
+          "updatedAt": "2022-02-24T16:11:48Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Incidentally, @armfazh noted that the current IDPF implementation is also not constant time, due to the division by the modulus here: https://github.com/abetterinternet/libprio-rs/blob/main/src/prng.rs#L56-L82. Though this should be easy enough to fix.\r\n\r\nNot sure what you mean, the link goes to libprio-rs. AFAICT all branches in the [DPF sampling function](https://github.com/google/distributed_point_functions/blob/master/dpf/int_mod_n.h#L155) are based on loop variables or compile-time constants.\r\n\r\n> Taking a step back, do we actually care if the algorithm that computes the mapping from pseudorandom byte strings to field elements is constant time? Take rejection sampling, for instance: assuming the underlying PRG is constant-time (i.e., AES-CTR is implemented in constant time) It seems to me that all that can be leaked by a non-constant-time implementation is the value of the bits that are rejected.\r\n\r\nMaybe you are right and that leakage is fine (in that it can be simulated in a proof). @chris-wood, do you have an insight as to why constant-time is required for hash-to-curve and thus rejection sampling is ruled out?",
+          "createdAt": "2022-02-24T17:27:07Z",
+          "updatedAt": "2022-02-24T17:27:07Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "body": "> Maybe you are right and that leakage is fine (in that it can be simulated in a proof). @chris-wood, do you have an insight as to why constant-time is required for hash-to-curve and thus rejection sampling is ruled out?\r\n\r\nYeah -- some applications of hash-to-curve operate on secret input, and thus any side channels may leak the secret. [Dragonblood](https://papers.mathyvanhoef.com/wac2019-slides.pdf) is one famous example of this that motivated the hash-to-curve standard.",
+          "createdAt": "2022-02-24T17:32:03Z",
+          "updatedAt": "2022-02-24T17:32:03Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Ugh, sorry I copied the wrong link. I'm on a Mac and feel wayyy out of my depth :) Here's the link: https://github.com/google/distributed_point_functions/blob/master/dpf/int_mod_n.h#L170. I'm not sure this is guaranteed to be constant-time, i.e., the runtime of the division operation might depend on the value of `r`. I think this depends on the CPU arch.\r\n\r\n\r\n\r\n",
+          "createdAt": "2022-02-24T17:34:25Z",
+          "updatedAt": "2022-02-24T17:34:25Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@cjpatton Ah got it. Yeah, I was assuming arithmetic operations are constant-time, but they might not be. In that case the fix should still be easy as you pointed out.\r\n\r\n@chris-wood So it seems that the number of iterations needed for many hashes of the same password + different auxiliary information (MAC, counter, ...) can be used to find the password. On the other hand, revealing even full blocks of an AES-CTR output shouldn't reveal anything about the key or any other blocks in the output. So is the issue in Dragonblood that the password is low-entropy?",
+          "createdAt": "2022-02-24T18:15:06Z",
+          "updatedAt": "2022-02-24T18:15:06Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Seems like we may have consensus for rejection sampling. Here's a PR: https://github.com/cjpatton/vdaf/pull/31. @schoppmp if you're happy with this outcome then please review at your convenience :)",
+          "createdAt": "2022-02-25T00:51:38Z",
+          "updatedAt": "2022-02-25T00:51:38Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "SGTM, provided we emphasize that the seed MUST be high-entropy, i.e., not derived from a password using a KDF or similar. I'll take a look at #31.",
+          "createdAt": "2022-02-25T13:30:13Z",
+          "updatedAt": "2022-02-25T13:30:13Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Actually I think high entropy (or, to be more precise, high min-entropy) won't be sufficient for all PRG constructions. See comments on the PR.",
+          "createdAt": "2022-02-25T15:43:24Z",
+          "updatedAt": "2022-02-25T15:43:24Z"
         }
       ]
     },
@@ -547,6 +617,22 @@
           "updatedAt": "2022-02-02T18:02:41Z"
         }
       ]
+    },
+    {
+      "number": 32,
+      "id": "I_kwDOGKuqOc5El_DQ",
+      "title": "PRGs",
+      "url": "https://github.com/cjpatton/vdaf/issues/32",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Our initial PRG construction is based on AES: https://github.com/cjpatton/vdaf/pull/28. @schoppmp points out that there may alternative AES-based constructions that are better suited to our application. In addition, there may be alternative primitives, like an XOF hash function, that are well suited for VDAFs. This issue is for tracking this discussion.",
+      "createdAt": "2022-02-25T19:49:52Z",
+      "updatedAt": "2022-02-25T19:49:52Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -2229,51 +2315,265 @@
       "id": "PR_kwDOGKuqOc4ydh-y",
       "title": "prio3: Specify the generic FLP",
       "url": "https://github.com/cjpatton/vdaf/pull/27",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Specification of the \"generic FLP\", an extension of Theorem 4.3 from [BBCGGI19]. This proof system is implemented by https://github.com/abetterinternet/libprio-rs/blob/main/src/pcp.rs.\r\n\r\n2022/2/10: This PR is marked as \"draft\" for now, as it'll need a few more clean-up passes before it's ready to merge. I wanted to have something up early so @chris-wood has something to work off of for the reference implementation.\r\n2022/23/14: Ready to merge.",
       "createdAt": "2022-02-11T02:25:06Z",
-      "updatedAt": "2022-02-21T19:35:20Z",
+      "updatedAt": "2022-02-25T19:40:13Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "3ce95c78de509a7db603ca549509798122cbd220",
+      "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/flp",
-      "headRefOid": "4b8052759c1333ef846ef186981f98e1364fdecf",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "bea5fd53554b10103a8ec92e4ebe1b820d6dd41c",
+      "closedAt": "2022-02-25T19:40:13Z",
+      "mergedAt": "2022-02-25T19:40:13Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "58d3bf725cbf33c83667f14f1d83746bbaf13fab"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc40_UD0",
+          "commit": {
+            "abbreviatedOid": "4b80527"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-21T18:38:43Z",
+          "updatedAt": "2022-02-25T17:40:54Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "Is this really a requirement, or simply something that's nice to have?",
+              "createdAt": "2022-02-21T18:38:43Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 129,
+              "body": "```suggestion\r\nover the input. For VDAFs, this computation is distributed amongst multiple Aggregators, \r\neach of which has only a share of the input.\r\n```",
+              "createdAt": "2022-02-21T18:42:49Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 191,
+              "body": "I'd hint at how these are fixed (for FFT friendliness) somehow.",
+              "createdAt": "2022-02-21T18:57:55Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 282,
+              "body": "I wouldn't use the term arity in this document, even if it's technically correct. I would use something simpler, i.e., the gadgets input counts. ",
+              "createdAt": "2022-02-21T19:07:59Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 358,
+              "body": "```suggestion\r\n1. For each `G` in `Valid.GADGETS` create an empty table `wire_i`.\r\n```",
+              "createdAt": "2022-02-21T19:32:15Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 331,
+              "body": "```suggestion\r\n* For each `i` in `len(Valid.GADGETS)`:\r\n```",
+              "createdAt": "2022-02-21T19:35:10Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            },
+            {
+              "originalPosition": 336,
+              "body": "```suggestion\r\n    * Let `alpha_i = Field.gen()^(Field.GEN_ORDER / P_i)`\r\n```",
+              "createdAt": "2022-02-21T19:35:20Z",
+              "updatedAt": "2022-02-25T17:40:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Sivj",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:00:54Z",
+          "updatedAt": "2022-02-25T19:00:55Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "As noted here, this is required for the generic FLP construction, in particular because it uses the group generator to pick the points used to construct the gadget polynomials. It would be possible to pick these points differently, but that would be a different construction.\r\n\r\nAnother option is to make these fixed points a parameter. I see no reason to do this, however.",
+              "createdAt": "2022-02-25T19:00:55Z",
+              "updatedAt": "2022-02-25T19:00:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SjHt",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:02:17Z",
+          "updatedAt": "2022-02-25T19:02:17Z",
+          "comments": [
+            {
+              "originalPosition": 129,
+              "body": "Done",
+              "createdAt": "2022-02-25T19:02:17Z",
+              "updatedAt": "2022-02-25T19:02:17Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Sj78",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:06:06Z",
+          "updatedAt": "2022-02-25T19:06:06Z",
+          "comments": [
+            {
+              "originalPosition": 191,
+              "body": "Done",
+              "createdAt": "2022-02-25T19:06:06Z",
+              "updatedAt": "2022-02-25T19:06:06Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Sj_a",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:06:22Z",
+          "updatedAt": "2022-02-25T19:06:23Z",
+          "comments": [
+            {
+              "originalPosition": 282,
+              "body": "Ack",
+              "createdAt": "2022-02-25T19:06:23Z",
+              "updatedAt": "2022-02-25T19:06:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SkBt",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:06:31Z",
+          "updatedAt": "2022-02-25T19:06:31Z",
+          "comments": [
+            {
+              "originalPosition": 358,
+              "body": "Ack",
+              "createdAt": "2022-02-25T19:06:31Z",
+              "updatedAt": "2022-02-25T19:06:31Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SkDe",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:06:39Z",
+          "updatedAt": "2022-02-25T19:06:39Z",
+          "comments": [
+            {
+              "originalPosition": 331,
+              "body": "Ack",
+              "createdAt": "2022-02-25T19:06:39Z",
+              "updatedAt": "2022-02-25T19:06:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SkFo",
+          "commit": {
+            "abbreviatedOid": "1e8ee51"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:06:48Z",
+          "updatedAt": "2022-02-25T19:06:48Z",
+          "comments": [
+            {
+              "originalPosition": 336,
+              "body": "Done",
+              "createdAt": "2022-02-25T19:06:48Z",
+              "updatedAt": "2022-02-25T19:06:48Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 28,
       "id": "PR_kwDOGKuqOc4y0Ao1",
-      "title": "Specify two instantiations of `Prg`",
+      "title": "Specify an instantiation of `Prg`",
       "url": "https://github.com/cjpatton/vdaf/pull/28",
       "state": "OPEN",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "Specifies two PRGs. The first is an efficient construction based on\r\nAES128. While pretty straight-forward, this scheme uses CMAC, which is\r\nnot widely used. The The second is a more traditional scheme based on\r\nHKDF.",
+      "body": "Specifies a construction based on AES128. While pretty straight-forward,\r\nthis scheme uses CMAC, which is not widely used. We may want to provide\r\nadditional options in the future.",
       "createdAt": "2022-02-14T20:33:31Z",
-      "updatedAt": "2022-02-14T22:09:53Z",
+      "updatedAt": "2022-02-25T23:16:51Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
-      "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
+      "baseRefOid": "582c3a58e8c9a8c6c9fb1763b52ed4de98b3d248",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prg-constructions",
-      "headRefOid": "6d494484257707b68fddabbae5ee3366db9a7c86",
+      "headRefOid": "33d5930607a3853cb701e768314ec7f27fda2e76",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "> This will likely be called often, but with small `length`s, right? In that case I believe constructions based on [fixed-key AES hashing](https://eprint.iacr.org/2019/074.pdf) should be more efficient, since they avoid repeating the AES key schedule. In the paper there is a tweakable version (using two AES calls) that can be used to derive new seeds for different `info` strings.\r\n\r\nGreat question. There are two key schedules:\r\n* One for CMAC. The same key is used for each blockcipher call, including for generating the subkey K1 (or K2, depending on the length of the message.) See https://datatracker.ietf.org/doc/html/rfc4493#section-2.2.\r\n* One for CTR.\r\n\r\nEventually the cumulative cost of AES costs will outstrip the cost of the initial setup of these two key schedules, so the question is whether we reach this point in our code. There are at least two cases to consider: \r\n1. In #31, each `length` passed to `prg.next()` is small, but we call `prg.next()` many times. Hence the computational cost will be dominated in `AES128-CTR()`.\r\n2. In prio3, we use `Prg.derive()` as a PRF. Here the input is long (though not as long as in (1.)), but the output is short. Hence the computational cost will be dominated by `AES128-CMAC()`.\r\n\r\nMy hunch is that we cross this threshold fairly quickly for (1.), but I'm not so sure about (2.). I think this is something worth benchmarking in any case.\r\n\r\nI suggest we put a pin in this for now. I'll mark this is an \"OPEN ISSUE\" in the text and we can open an issue for tracking benchmarking of various PRGs.\r\n\r\n\r\n",
+          "createdAt": "2022-02-25T19:38:12Z",
+          "updatedAt": "2022-02-25T19:38:12Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "I've added a pointer to https://github.com/cjpatton/vdaf/issues/32 to the text.",
+          "createdAt": "2022-02-25T19:50:52Z",
+          "updatedAt": "2022-02-25T19:50:52Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOGKuqOc40lRkI",
@@ -2300,6 +2600,19 @@
               "updatedAt": "2022-02-14T21:07:15Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SkO8",
+          "commit": {
+            "abbreviatedOid": "9c80897"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "This will likely be called often, but with small `length`s, right? In that case I believe constructions based on [fixed-key AES hashing](https://eprint.iacr.org/2019/074.pdf) should be more efficient, since they avoid repeating the AES key schedule. In the paper there is a tweakable version (using two AES calls) that can be used to derive new seeds for different `info` strings.",
+          "createdAt": "2022-02-25T19:07:29Z",
+          "updatedAt": "2022-02-25T19:07:29Z",
+          "comments": []
         }
       ]
     },
@@ -2308,25 +2621,33 @@
       "id": "PR_kwDOGKuqOc4y0B4C",
       "title": "Use \"pad-then-reduce\" method for generating field elements",
       "url": "https://github.com/cjpatton/vdaf/pull/29",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Closes #13 by taking @armfazh' suggestion.\r\n\r\nSpecifies an algorithm for mapping a pseudorandom byte string to a\r\nvector of field elements. This method is based on the \"hash_to_field\"\r\nalgorithm from draft-irtf-cfrg-hash-to-curve-13.",
       "createdAt": "2022-02-14T20:39:05Z",
-      "updatedAt": "2022-02-14T21:28:31Z",
+      "updatedAt": "2022-02-25T16:13:09Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/field-elem-gen-1",
       "headRefOid": "159d7a217560682d1a2c249fe5c89b555014dfeb",
-      "closedAt": null,
+      "closedAt": "2022-02-25T16:13:08Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Closed in favor of #31.\r\n",
+          "createdAt": "2022-02-25T16:13:08Z",
+          "updatedAt": "2022-02-25T16:13:08Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOGKuqOc40lUK4",
@@ -2381,25 +2702,33 @@
       "id": "PR_kwDOGKuqOc4y0PEW",
       "title": "Use \"borrow-then-reduce\" method for generating field elements",
       "url": "https://github.com/cjpatton/vdaf/pull/30",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Closes #13 by taking @schoppmp's suggestion.\r\nAlternative to #29.\r\n\r\nSpecifies an algorithm for a mapping pseudorandom byte string to a\r\nvector of field elements. The algorithm was ported from google's IDPF\r\nimplementation.",
       "createdAt": "2022-02-14T21:39:21Z",
-      "updatedAt": "2022-02-23T14:30:04Z",
+      "updatedAt": "2022-02-25T16:12:52Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "d8cf35917ab6556cc5e7514a05569136fad23d1e",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/field-elem-gen-2",
       "headRefOid": "734b67651a3aea4156e840f12bbb1e21e0f0a81b",
-      "closedAt": null,
+      "closedAt": "2022-02-25T16:12:52Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "body": "Closed in favor of #31.",
+          "createdAt": "2022-02-25T16:12:52Z",
+          "updatedAt": "2022-02-25T16:12:52Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOGKuqOc40la8c",
@@ -2451,8 +2780,241 @@
               "updatedAt": "2022-02-23T14:30:04Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41KhCb",
+          "commit": {
+            "abbreviatedOid": "734b676"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-24T03:43:14Z",
+          "updatedAt": "2022-02-24T03:43:14Z",
+          "comments": [
+            {
+              "originalPosition": 40,
+              "body": "Yup this this is because Python is bigint.",
+              "createdAt": "2022-02-24T03:43:14Z",
+              "updatedAt": "2022-02-24T03:43:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41KhIU",
+          "commit": {
+            "abbreviatedOid": "734b676"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-24T03:44:08Z",
+          "updatedAt": "2022-02-24T03:44:09Z",
+          "comments": [
+            {
+              "originalPosition": 36,
+              "body": "The `Field(.)` constructor does the reduction, as documented above. But I think it would make sense to make this explicit.",
+              "createdAt": "2022-02-24T03:44:08Z",
+              "updatedAt": "2022-02-24T03:44:09Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41KhJr",
+          "commit": {
+            "abbreviatedOid": "734b676"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-24T03:44:23Z",
+          "updatedAt": "2022-02-24T03:44:23Z",
+          "comments": [
+            {
+              "originalPosition": 30,
+              "body": "Good call! I'll fix if we end up merging.",
+              "createdAt": "2022-02-24T03:44:23Z",
+              "updatedAt": "2022-02-24T03:44:23Z"
+            }
+          ]
         }
       ]
+    },
+    {
+      "number": 31,
+      "id": "PR_kwDOGKuqOc4zcDuH",
+      "title": "Use \"rejection sampling\" for generating field elements",
+      "url": "https://github.com/cjpatton/vdaf/pull/31",
+      "state": "MERGED",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #13 by doing \"rejection sampling\". This an alternative to #29 and #30.",
+      "createdAt": "2022-02-25T00:50:34Z",
+      "updatedAt": "2022-02-25T19:42:17Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "58d3bf725cbf33c83667f14f1d83746bbaf13fab",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/prg-rejection-sampling",
+      "headRefOid": "d6b3965cc36026bd77a2e4fb2f60853f76e39e5d",
+      "closedAt": "2022-02-25T19:42:17Z",
+      "mergedAt": "2022-02-25T19:42:16Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "7d74148aa7d2d8b8bfaf0346d0289ee318ed4801"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGKuqOc41Ral0",
+          "commit": {
+            "abbreviatedOid": "e995fa5"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T14:41:59Z",
+          "updatedAt": "2022-02-25T14:46:19Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "Please add some info about what we expect from the output, e.g.\r\n`\r\nThe bytes returned are uniformly pseudorandom when the PRG was constructed with a uniformly random seed.\r\n`",
+              "createdAt": "2022-02-25T14:41:59Z",
+              "updatedAt": "2022-02-25T14:46:19Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "Can you add some information for why this is needed? Also please add that the seed MUST have high entropy.",
+              "createdAt": "2022-02-25T14:44:46Z",
+              "updatedAt": "2022-02-25T14:46:19Z"
+            },
+            {
+              "originalPosition": 37,
+              "body": "Same as above, please make sure that this is always used in a safe way by requiring that the seed MUST have high entropy and be only used once.",
+              "createdAt": "2022-02-25T14:46:12Z",
+              "updatedAt": "2022-02-25T14:46:20Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Rq8D",
+          "commit": {
+            "abbreviatedOid": "e995fa5"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T15:31:44Z",
+          "updatedAt": "2022-02-25T15:42:27Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "Done. I also stipulated that the random seed might be an output of a previous call to the PRG.\r\n\r\n",
+              "createdAt": "2022-02-25T15:31:44Z",
+              "updatedAt": "2022-02-25T15:42:27Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "The intended usage is explained above:\r\n> Each `Prg` has two derived class methods. The first is used to derive a fresh seed from an existing one.\r\n\r\nIf you want to see this get used, search for `Prg.derive` in the prio3 section.\r\n\r\nHigh entropy ins't going to be sufficient for all PRGs, in particular for those constructed from a pseudorandom permutation (e.g., AES). I stipulated the same requirement for securely generating seeds as above.",
+              "createdAt": "2022-02-25T15:38:44Z",
+              "updatedAt": "2022-02-25T15:42:27Z"
+            },
+            {
+              "originalPosition": 37,
+              "body": "It depends on the PRG construction, but it should be secure to reuse the same seed with different \"info\" strings. That is, the intent of the \"info\" string is to provide domain separation.\r\n\r\nHere I stipulated the same requirements for generating the seed as above.",
+              "createdAt": "2022-02-25T15:42:19Z",
+              "updatedAt": "2022-02-25T15:42:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41SfHc",
+          "commit": {
+            "abbreviatedOid": "5f2e71e"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-25T18:44:28Z",
+          "updatedAt": "2022-02-25T18:49:29Z",
+          "comments": [
+            {
+              "originalPosition": 31,
+              "body": "The current documentation sounds good, thanks!",
+              "createdAt": "2022-02-25T18:44:29Z",
+              "updatedAt": "2022-02-25T18:49:29Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "Maybe add a note about `info` and domain separation?",
+              "createdAt": "2022-02-25T18:48:42Z",
+              "updatedAt": "2022-02-25T18:49:29Z"
+            },
+            {
+              "originalPosition": 37,
+              "body": "Okay, let's maybe add a short sentence on this to the documentation (see comment above).",
+              "createdAt": "2022-02-25T18:49:13Z",
+              "updatedAt": "2022-02-25T18:49:29Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41Sq74",
+          "commit": {
+            "abbreviatedOid": "5f2e71e"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-02-25T19:39:40Z",
+          "updatedAt": "2022-02-25T19:39:41Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "Done",
+              "createdAt": "2022-02-25T19:39:41Z",
+              "updatedAt": "2022-02-25T19:39:41Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "id": "PR_kwDOGKuqOc4zfPGd",
+      "title": "Acknoweledge Armando",
+      "url": "https://github.com/cjpatton/vdaf/pull/33",
+      "state": "MERGED",
+      "author": "cjpatton",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2022-02-25T21:40:36Z",
+      "updatedAt": "2022-02-25T21:56:08Z",
+      "baseRepository": "cjpatton/vdaf",
+      "baseRefName": "main",
+      "baseRefOid": "7d74148aa7d2d8b8bfaf0346d0289ee318ed4801",
+      "headRepository": "cjpatton/vdaf",
+      "headRefName": "cjpatton/ack-armando",
+      "headRefOid": "636e7ac818170194489b089a42464537c16a59e0",
+      "closedAt": "2022-02-25T21:56:07Z",
+      "mergedAt": "2022-02-25T21:56:07Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "03f3ac2114e8e728518728d30b6adb9c8902aedc"
+      },
+      "comments": [],
+      "reviews": []
     }
   ]
 }
