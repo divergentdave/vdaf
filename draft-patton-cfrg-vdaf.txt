@@ -5,10 +5,10 @@
 CFRG                                                           C. Patton
 Internet-Draft                                          Cloudflare, Inc.
 Intended status: Informational                              R. L. Barnes
-Expires: 29 August 2022                                            Cisco
+Expires: 1 September 2022                                          Cisco
                                                            P. Schoppmann
                                                                   Google
-                                                        25 February 2022
+                                                        28 February 2022
 
 
               Verifiable Distributed Aggregation Functions
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 August 2022.
+   This Internet-Draft will expire on 1 September 2022.
 
 Copyright Notice
 
@@ -948,7 +948,44 @@ Table of Contents
 
 5.2.1.  Constructions
 
-      TODO
+5.2.1.1.  PrgAes128
+
+      OPEN ISSUE Phillipp points out that a fixed-key mode of AES may be
+      more performant (https://eprint.iacr.org/2019/074.pdf).  See
+      https://github.com/cjpatton/vdaf/issues/32 for details.
+
+   Our first construction, PrgBlockCipher(Aes128), converts a
+   blockcipher, namely AES-128, into a PRG.  Seed expansion involves two
+   steps.  In the first step, CMAC [RFC4493] is applied to the seed and
+   info string to get a fresh key.  In the second step, the fresh key is
+   used in CTR-mode to produce a key stream for generating the output.
+   A fixed initialization vector (IV) is used.
+
+class PrgAes128:
+
+    SEED_SIZE: Unsigned = 16
+
+    def __init__(self, seed, info):
+        self.length_consumed = 0
+
+        # Use CMAC as a pseuodorandom function to derive a key.
+        self.key = AES128-CMAC(seed, info)
+
+    def next(self, length):
+        self.length_consumed += length
+
+        # CTR-mode encryption of the all-zero string of the desired
+        # length and using a fixed, all-zero IV.
+        #
+        # TODO Make this implementation more efficient. In particular,
+        # don't regenerate the already consumed stream.
+        stream = AES128-CTR(key, zeros(16), zeros(self.length_consumed))
+        return stream[-length:]
+
+         Figure 10: Definition of PRG PrgBlockCipher(Aes128).
+
+      CP: We might be able to get away with skipping the initial CMAC
+      for some fixed value of info, e.g., info == "".
 
 6.  prio3
 
@@ -1117,7 +1154,7 @@ Table of Contents
        # Verifier decides if the input is valid.
        return Flp.decide(verifier)
 
-                      Figure 10: Execution of an FLP.
+                      Figure 11: Execution of an FLP.
 
    The proof system is constructed so that, if input is a valid input,
    then run_flp(Flp,. input) always returns True.  On the other hand, if
@@ -1210,7 +1247,7 @@ Table of Contents
        verify_param = [(j, k_query_init) for j in range(Prio3.SHARES)]
        return (None, verify_param)
 
-                 Figure 11: The setup algorithm for prio3.
+                 Figure 12: The setup algorithm for prio3.
 
 6.2.2.  Sharding
 
@@ -1326,7 +1363,7 @@ Table of Contents
            ))
        return input_shares
 
-             Figure 12: Input-distribution algorithm for prio3.
+             Figure 13: Input-distribution algorithm for prio3.
 
 6.2.3.  Preparation
 
@@ -1430,7 +1467,7 @@ Table of Contents
 
        return Prio3.encode_prepare_message(verifier, k_joint_rand_check)
 
-                  Figure 13: Preparation state for prio3.
+                  Figure 14: Preparation state for prio3.
 
 6.2.4.  Aggregation
 
@@ -1440,7 +1477,7 @@ Table of Contents
            agg_share = vec_add(agg_share, out_share)
        return agg_share
 
-                Figure 14: Aggregation algorithm for prio3.
+                Figure 15: Aggregation algorithm for prio3.
 
 6.2.5.  Unsharding
 
@@ -1450,7 +1487,7 @@ Table of Contents
            agg = vec_add(agg, agg_share)
        return list(map(lambda x: x.as_unsigned(), agg))
 
-         Figure 15: Computation of the aggregate result for prio3.
+         Figure 16: Computation of the aggregate result for prio3.
 
 6.2.6.  Helper Functions
 
@@ -1535,7 +1572,7 @@ Table of Contents
            raise ERR_DECODE
        return (verifier, k_joint_rand)
 
-              Figure 16: Helper functions required for prio3.
+              Figure 17: Helper functions required for prio3.
 
 7.  poplar1
 
@@ -1672,7 +1709,7 @@ Table of Contents
      k_verify_init = gen_rand(SEED_SIZE)
      return (None, [(0, k_verify_init), (1, k_verify_init)])
 
-                Figure 17: The setup algorithm for poplar1.
+                Figure 18: The setup algorithm for poplar1.
 
 7.2.1.1.  Client
 
@@ -1725,7 +1762,7 @@ Table of Contents
 
      return input_shares
 
-          Figure 18: The input-distribution algorithm for poplar1.
+          Figure 19: The input-distribution algorithm for poplar1.
 
       TODO It would be more efficient to represent the correlation
       shares using PRG seeds as suggested in [BBCGGI21].
@@ -1807,7 +1844,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
   return Field[l].encode_vec(verifier)
 
-              Figure 19: Preparation state for poplar1.
+              Figure 20: Preparation state for poplar1.
 
 7.2.3.  Aggregation
 
@@ -1822,7 +1859,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
      return Field[l].encode_vec(agg_share)
 
-               Figure 20: Aggregation algorithm for poplar1.
+               Figure 21: Aggregation algorithm for poplar1.
 
 7.2.4.  Unsharding
 
@@ -1836,7 +1873,7 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
 
      return Field[l].encode_vec(agg)
 
-        Figure 21: Computation of the aggregate result for poplar1.
+        Figure 22: Computation of the aggregate result for poplar1.
 
 7.2.5.  Helper Functions
 
@@ -2320,6 +2357,10 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC4493]  Song, JH., Poovendran, R., Lee, J., and T. Iwata, "The
+              AES-CMAC Algorithm", RFC 4493, DOI 10.17487/RFC4493, June
+              2006, <https://www.rfc-editor.org/rfc/rfc4493>.
 
    [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
               "PKCS #1: RSA Cryptography Specifications Version 2.2",
