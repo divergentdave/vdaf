@@ -2360,7 +2360,10 @@ def prep_shares_to_prep(agg_param, inbound: Vec[Bytes]):
               AES-CMAC Algorithm", RFC 4493, DOI 10.17487/RFC4493, June
               2006, <https://www.rfc-editor.org/rfc/rfc4493>.
 
-   [RFC8017]  "*** BROKEN REFERENCE ***".
+   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
+              "PKCS #1: RSA Cryptography Specifications Version 2.2",
+              RFC 8017, DOI 10.17487/RFC8017, November 2016,
+              <https://www.rfc-editor.org/rfc/rfc8017>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
