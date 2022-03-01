@@ -1280,7 +1280,7 @@ class PrgAes128:
    described in Section 6.2.6.
 
    def measurement_to_input_shares(Prio3, _public_param, measurement):
-       dst = b"draft-01 Prio3" + Prio3.suite + b" "
+       dst = b"vdaf-00 Prio3" + Prio3.SUITE + b" "
        inp = Prio3.Flp.encode(measurement)
        k_joint_rand = zeros(Prio3.Prg.SEED_SIZE)
 
@@ -1398,12 +1398,12 @@ class PrgAes128:
    Section 6.2.6.
 
    def prep_init(Prio3, verify_param, _agg_param, nonce, input_share):
-       dst = b"draft-01 Prio3" + Prio3.suite + b" "
+       dst = b"vdaf-00 Prio3" + Prio3.SUITE + b" "
        (j, k_query_init) = verify_param
 
        (input_share, proof_share, k_blind, k_hint) = \
            Prio3.decode_leader_share(input_share) if j == 0 else \
-           Prio3.decode_helper_share(input_share)
+           Prio3.decode_helper_share(dst, input_share)
 
        out_share = Prio3.Flp.truncate(input_share)
 
@@ -1532,8 +1532,7 @@ class PrgAes128:
            encoded += k_hint
        return encoded
 
-   def decode_helper_share(Prio3, encoded):
-       dst = b"draft-01 Prio3" + Prio3.suite + b" "
+   def decode_helper_share(Prio3, dst, encoded):
        l = Prio3.Prg.SEED_SIZE
        k_input_share, encoded = encoded[:l], encoded[l:]
        input_share = Prio3.Prg.expand_into_vec(Prio3.Flp.Field,
