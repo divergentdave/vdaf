@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-27T00:06:32.114712+00:00",
+  "timestamp": "2022-03-01T00:06:39.466228+00:00",
   "repo": "cjpatton/vdaf",
   "labels": [
     {
@@ -2540,24 +2540,26 @@
       "id": "PR_kwDOGKuqOc4y0Ao1",
       "title": "Specify an instantiation of `Prg`",
       "url": "https://github.com/cjpatton/vdaf/pull/28",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cjpatton",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Specifies a construction based on AES128. While pretty straight-forward,\r\nthis scheme uses CMAC, which is not widely used. We may want to provide\r\nadditional options in the future.",
       "createdAt": "2022-02-14T20:33:31Z",
-      "updatedAt": "2022-02-25T23:16:51Z",
+      "updatedAt": "2022-02-28T16:07:43Z",
       "baseRepository": "cjpatton/vdaf",
       "baseRefName": "main",
       "baseRefOid": "582c3a58e8c9a8c6c9fb1763b52ed4de98b3d248",
       "headRepository": "cjpatton/vdaf",
       "headRefName": "cjpatton/prg-constructions",
       "headRefOid": "33d5930607a3853cb701e768314ec7f27fda2e76",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-02-28T16:07:42Z",
+      "mergedAt": "2022-02-28T16:07:42Z",
+      "mergedBy": "cjpatton",
+      "mergeCommit": {
+        "oid": "5b832679851002485c004c461948491837624102"
+      },
       "comments": [
         {
           "author": "cjpatton",
@@ -2572,6 +2574,13 @@
           "body": "I've added a pointer to https://github.com/cjpatton/vdaf/issues/32 to the text.",
           "createdAt": "2022-02-25T19:50:52Z",
           "updatedAt": "2022-02-25T19:50:52Z"
+        },
+        {
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I suggest we put a pin in this for now. I'll mark this is an \"OPEN ISSUE\" in the text and we can open an issue for tracking benchmarking of various PRGs.\r\n\r\nSounds good, thanks!",
+          "createdAt": "2022-02-28T11:33:20Z",
+          "updatedAt": "2022-02-28T11:33:20Z"
         }
       ],
       "reviews": [
@@ -2581,7 +2590,7 @@
             "abbreviatedOid": "7b4e1f9"
           },
           "author": "armfazh",
-          "authorAssociation": "NONE",
+          "authorAssociation": "CONTRIBUTOR",
           "state": "APPROVED",
           "body": "",
           "createdAt": "2022-02-14T21:05:30Z",
@@ -2612,6 +2621,19 @@
           "body": "This will likely be called often, but with small `length`s, right? In that case I believe constructions based on [fixed-key AES hashing](https://eprint.iacr.org/2019/074.pdf) should be more efficient, since they avoid repeating the AES key schedule. In the paper there is a tweakable version (using two AES calls) that can be used to derive new seeds for different `info` strings.",
           "createdAt": "2022-02-25T19:07:29Z",
           "updatedAt": "2022-02-25T19:07:29Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOGKuqOc41WDWq",
+          "commit": {
+            "abbreviatedOid": "33d5930"
+          },
+          "author": "schoppmp",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-28T11:33:30Z",
+          "updatedAt": "2022-02-28T11:33:30Z",
           "comments": []
         }
       ]
